@@ -1,10 +1,10 @@
 {
   "extName": {
-    "message": "Voyager",
+    "message": "ChatGPT Voyager",
     "description": "Extension name"
   },
   "extDescription": {
-    "message": "タイムラインナビゲーション、フォルダ整理、プロンプトヴォルト、チャットのエクスポートなどで、Gemini™ の体験を強化します。",
+    "message": "Personal ChatGPT conversation manager",
     "description": "Extension description"
   },
   "scrollMode": {

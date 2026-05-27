@@ -1,10 +1,10 @@
 {
   "extName": {
-    "message": "Voyager",
+    "message": "ChatGPT Voyager",
     "description": "Extension name"
   },
   "extDescription": {
-    "message": "Améliorez votre expérience Gemini™ : chronologie, dossiers, prompts et export.",
+    "message": "Personal ChatGPT conversation manager",
     "description": "Extension description"
   },
   "scrollMode": {

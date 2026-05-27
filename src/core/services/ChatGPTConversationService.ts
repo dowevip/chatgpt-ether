@@ -1,0 +1,198 @@
+import browser from 'webextension-polyfill';
+
+import type { ChatGPTConversationIndex, ChatGPTFolder } from '@/core/types/conversation';
+
+export const CHATGPT_FOLDERS_STORAGE_KEY = 'chatgptVoyager.folders';
+export const CHATGPT_CONVERSATIONS_STORAGE_KEY = 'chatgptVoyager.conversations';
+
+export type CurrentChatGPTConversationInput = {
+  conversationId: string;
+  title: string;
+  url: string;
+};
+
+function now(): number {
+  return Date.now();
+}
+
+function createId(prefix: string): string {
+  const random =
+    globalThis.crypto && 'randomUUID' in globalThis.crypto
+      ? globalThis.crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  return `${prefix}_${random}`;
+}
+
+function isFolder(value: unknown): value is ChatGPTFolder {
+  if (!value || typeof value !== 'object') return false;
+  const record = value as Record<string, unknown>;
+  return typeof record.id === 'string' && typeof record.name === 'string';
+}
+
+function isConversation(value: unknown): value is ChatGPTConversationIndex {
+  if (!value || typeof value !== 'object') return false;
+  const record = value as Record<string, unknown>;
+  return (
+    typeof record.conversationId === 'string' &&
+    typeof record.title === 'string' &&
+    typeof record.url === 'string'
+  );
+}
+
+export async function listChatGPTFolders(): Promise<ChatGPTFolder[]> {
+  const result = await browser.storage.local.get(CHATGPT_FOLDERS_STORAGE_KEY);
+  const raw = result[CHATGPT_FOLDERS_STORAGE_KEY];
+  if (!Array.isArray(raw)) return [];
+
+  return raw.filter(isFolder).sort((left, right) => left.createdAt - right.createdAt);
+}
+
+export async function createChatGPTFolder(name: string): Promise<ChatGPTFolder[]> {
+  const folders = await listChatGPTFolders();
+  const timestamp = now();
+  const folder: ChatGPTFolder = {
+    id: createId('cgv_folder'),
+    name: name.trim().slice(0, 80) || 'Untitled folder',
+    parentId: null,
+    createdAt: timestamp,
+    updatedAt: timestamp,
+  };
+  const nextFolders = [...folders, folder];
+  await browser.storage.local.set({ [CHATGPT_FOLDERS_STORAGE_KEY]: nextFolders });
+  return nextFolders;
+}
+
+export async function renameChatGPTFolder(
+  folderId: string,
+  name: string,
+): Promise<ChatGPTFolder[]> {
+  const folders = await listChatGPTFolders();
+  const timestamp = now();
+  const nextFolders = folders.map((folder) =>
+    folder.id === folderId
+      ? { ...folder, name: name.trim().slice(0, 80) || folder.name, updatedAt: timestamp }
+      : folder,
+  );
+  await browser.storage.local.set({ [CHATGPT_FOLDERS_STORAGE_KEY]: nextFolders });
+  return nextFolders;
+}
+
+export async function deleteChatGPTFolder(folderId: string): Promise<{
+  folders: ChatGPTFolder[];
+  conversations: ChatGPTConversationIndex[];
+}> {
+  const [folders, conversations] = await Promise.all([
+    listChatGPTFolders(),
+    listChatGPTConversations(),
+  ]);
+  const timestamp = now();
+  const nextFolders = folders.filter((folder) => folder.id !== folderId);
+  const nextConversations = conversations.map((conversation) =>
+    conversation.folderId === folderId
+      ? { ...conversation, folderId: null, updatedAt: timestamp }
+      : conversation,
+  );
+
+  await browser.storage.local.set({
+    [CHATGPT_FOLDERS_STORAGE_KEY]: nextFolders,
+    [CHATGPT_CONVERSATIONS_STORAGE_KEY]: nextConversations,
+  });
+
+  return { folders: nextFolders, conversations: nextConversations };
+}
+
+export async function listChatGPTConversations(): Promise<ChatGPTConversationIndex[]> {
+  const result = await browser.storage.local.get(CHATGPT_CONVERSATIONS_STORAGE_KEY);
+  const raw = result[CHATGPT_CONVERSATIONS_STORAGE_KEY];
+  if (!Array.isArray(raw)) return [];
+
+  return raw.filter(isConversation).sort((left, right) => right.lastOpenedAt - left.lastOpenedAt);
+}
+
+export async function saveCurrentChatGPTConversation(
+  input: CurrentChatGPTConversationInput,
+): Promise<ChatGPTConversationIndex[]> {
+  const conversations = await listChatGPTConversations();
+  const timestamp = now();
+  const existing = conversations.find(
+    (conversation) => conversation.conversationId === input.conversationId,
+  );
+  const nextConversation: ChatGPTConversationIndex = {
+    conversationId: input.conversationId,
+    title: input.title.trim() || 'Untitled conversation',
+    url: input.url,
+    folderId: existing?.folderId || null,
+    note: existing?.note || '',
+    createdAt: existing?.createdAt || timestamp,
+    updatedAt: timestamp,
+    lastOpenedAt: timestamp,
+  };
+  const nextConversations = existing
+    ? conversations.map((conversation) =>
+        conversation.conversationId === input.conversationId ? nextConversation : conversation,
+      )
+    : [nextConversation, ...conversations];
+
+  await browser.storage.local.set({ [CHATGPT_CONVERSATIONS_STORAGE_KEY]: nextConversations });
+  return listChatGPTConversations();
+}
+
+export async function moveChatGPTConversationToFolder(
+  conversationId: string,
+  folderId: string | null,
+): Promise<ChatGPTConversationIndex[]> {
+  const conversations = await listChatGPTConversations();
+  const timestamp = now();
+  const nextConversations = conversations.map((conversation) =>
+    conversation.conversationId === conversationId
+      ? { ...conversation, folderId, updatedAt: timestamp }
+      : conversation,
+  );
+
+  await browser.storage.local.set({ [CHATGPT_CONVERSATIONS_STORAGE_KEY]: nextConversations });
+  return listChatGPTConversations();
+}
+
+export async function updateChatGPTConversationNote(
+  conversationId: string,
+  note: string,
+): Promise<ChatGPTConversationIndex[]> {
+  const conversations = await listChatGPTConversations();
+  const timestamp = now();
+  const nextConversations = conversations.map((conversation) =>
+    conversation.conversationId === conversationId
+      ? { ...conversation, note, updatedAt: timestamp }
+      : conversation,
+  );
+
+  await browser.storage.local.set({ [CHATGPT_CONVERSATIONS_STORAGE_KEY]: nextConversations });
+  return listChatGPTConversations();
+}
+
+export async function syncChatGPTConversationTitle(
+  input: CurrentChatGPTConversationInput,
+): Promise<ChatGPTConversationIndex[]> {
+  const conversations = await listChatGPTConversations();
+  const existing = conversations.find(
+    (conversation) => conversation.conversationId === input.conversationId,
+  );
+
+  if (!existing || existing.title === input.title.trim()) {
+    return conversations;
+  }
+
+  const timestamp = now();
+  const nextConversations = conversations.map((conversation) =>
+    conversation.conversationId === input.conversationId
+      ? {
+          ...conversation,
+          title: input.title.trim() || conversation.title,
+          url: input.url,
+          updatedAt: timestamp,
+        }
+      : conversation,
+  );
+
+  await browser.storage.local.set({ [CHATGPT_CONVERSATIONS_STORAGE_KEY]: nextConversations });
+  return listChatGPTConversations();
+}

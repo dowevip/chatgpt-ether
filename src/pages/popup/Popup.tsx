@@ -9,21 +9,8 @@ import {
 } from '@/core/services/AccountIsolationService';
 import { StorageKeys } from '@/core/types/common';
 import type { ConversationReference, Folder } from '@/core/types/folder';
-import {
-  getModifierKey,
-  isFirefox,
-  isSafari,
-  shouldShowSafariUpdateReminder,
-} from '@/core/utils/browser';
-import { shouldShowUpdateReminderForCurrentVersion } from '@/core/utils/updateReminder';
-import { compareVersions } from '@/core/utils/version';
+import { getModifierKey, isFirefox, isSafari } from '@/core/utils/browser';
 import { resolveWatermarkSettings } from '@/core/utils/watermarkSettings';
-import {
-  extractDmgDownloadUrl,
-  extractLatestReleaseVersion,
-  getCachedLatestVersion,
-  getManifestUpdateUrl,
-} from '@/pages/popup/utils/latestVersion';
 
 import { DarkModeToggle } from '../../components/DarkModeToggle';
 import { LanguageSwitcher } from '../../components/LanguageSwitcher';
@@ -33,9 +20,10 @@ import { Label } from '../../components/ui/label';
 import { Switch } from '../../components/ui/switch';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useWidthAdjuster } from '../../hooks/useWidthAdjuster';
-import { CloudSyncSettings } from './components/CloudSyncSettings';
 import { ContextSyncSettings } from './components/ContextSyncSettings';
+import { FoldersPanel } from './components/FoldersPanel';
 import { KeyboardShortcutSettings } from './components/KeyboardShortcutSettings';
+import { PromptVaultPanel } from './components/PromptVaultPanel';
 import { StarredHistory } from './components/StarredHistory';
 import {
   IconChatGPT,
@@ -311,23 +299,6 @@ const normalizeSidebarPx = (value: number) => {
   return clampSidebarPx(value);
 };
 
-const LATEST_VERSION_CACHE_KEY = 'gvLatestVersionCache';
-const LATEST_VERSION_MAX_AGE = 1000 * 60 * 60 * 6; // 6 hours
-const SAFARI_DMG_RETRY_AGE = 1000 * 60 * 30; // 30 min — re-check for DMG if missing
-
-const normalizeVersionString = (version?: string | null): string | null => {
-  if (!version) return null;
-  const trimmed = version.trim();
-  return trimmed ? trimmed.replace(/^v/i, '') : null;
-};
-
-const toReleaseTag = (version?: string | null): string | null => {
-  if (!version) return null;
-  const trimmed = version.trim();
-  if (!trimmed) return null;
-  return trimmed.startsWith('v') ? trimmed : `v${trimmed}`;
-};
-
 interface SettingsUpdate {
   mode?: ScrollMode | null;
   hideContainer?: boolean;
@@ -367,6 +338,40 @@ interface SettingsUpdate {
   folderProjectEnabled?: boolean;
   persistentExportToolbarEnabled?: boolean;
 }
+
+type ChatGPTPageStatus = {
+  isChatGPTPage: boolean;
+  conversationId: string | null;
+  conversationTitle: string | null;
+  userMessageCount: number;
+  assistantMessageCount: number;
+  totalMessageCount: number;
+};
+
+type ChatGPTDashboardState = {
+  loading: boolean;
+  checked: boolean;
+  status: ChatGPTPageStatus | null;
+  error: string | null;
+};
+
+const EMPTY_CHATGPT_DASHBOARD_STATE: ChatGPTDashboardState = {
+  loading: false,
+  checked: false,
+  status: null,
+  error: null,
+};
+
+const CHATGPT_DASHBOARD_ENTRIES = [
+  'Prompt Vault',
+  'Folders',
+  'Starred',
+  'Search',
+  'Sync',
+  'Diagnostics',
+] as const;
+
+type PopupPanel = 'dashboard' | 'promptVault' | 'folders';
 
 function SectionReorderControls({
   isFirst,
@@ -465,8 +470,6 @@ export default function Popup() {
     'latex' | 'unicodemath' | 'no-dollar' | 'notion'
   >('latex');
   const [extVersion, setExtVersion] = useState<string | null>(null);
-  const [latestVersion, setLatestVersion] = useState<string | null>(null);
-  const [safariDmgUrl, setSafariDmgUrl] = useState<string | null>(null);
   const [watermarkDownloadEnabled, setWatermarkDownloadEnabled] = useState<boolean>(true);
   const [watermarkPreviewEnabled, setWatermarkPreviewEnabled] = useState<boolean>(true);
   const [hidePromptManager, setHidePromptManager] = useState<boolean>(false);
@@ -507,9 +510,59 @@ export default function Popup() {
     'idle' | 'loading' | 'copied' | 'error'
   >('idle');
   const [sectionOrder, setSectionOrder] = useState<PopupSectionId[]>([...DEFAULT_SECTION_ORDER]);
+  const [chatgptDashboard, setChatgptDashboard] = useState<ChatGPTDashboardState>(
+    EMPTY_CHATGPT_DASHBOARD_STATE,
+  );
+  const [activePanel, setActivePanel] = useState<PopupPanel>('dashboard');
 
   const isAIStudio = activeAccountPlatform === 'aistudio';
   const currentPlatformLabel = isAIStudio ? t('platformAIStudio') : t('platformGemini');
+
+  const refreshChatGPTDashboard = useCallback(async () => {
+    setChatgptDashboard((prev) => ({ ...prev, loading: true, error: null }));
+    try {
+      const tabs = await browser.tabs.query({ active: true, currentWindow: true });
+      const tabId = tabs[0]?.id;
+
+      if (!tabId) {
+        setChatgptDashboard({
+          loading: false,
+          checked: true,
+          status: null,
+          error: 'No active tab found.',
+        });
+        return;
+      }
+
+      const response = (await browser.tabs.sendMessage(tabId, {
+        type: 'gv.chatgpt.getStatus',
+      })) as { ok?: boolean; data?: ChatGPTPageStatus } | undefined;
+
+      if (response?.ok && response.data?.isChatGPTPage) {
+        setChatgptDashboard({
+          loading: false,
+          checked: true,
+          status: response.data,
+          error: null,
+        });
+        return;
+      }
+
+      setChatgptDashboard({
+        loading: false,
+        checked: true,
+        status: null,
+        error: null,
+      });
+    } catch {
+      setChatgptDashboard({
+        loading: false,
+        checked: true,
+        status: null,
+        error: null,
+      });
+    }
+  }, []);
 
   useEffect(() => {
     browser.tabs
@@ -520,6 +573,10 @@ export default function Popup() {
       })
       .catch(() => {});
   }, []);
+
+  useEffect(() => {
+    void refreshChatGPTDashboard();
+  }, [refreshChatGPTDashboard]);
 
   const handleFormulaCopyFormatChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const format = e.target.value as 'latex' | 'unicodemath' | 'no-dollar' | 'notion';
@@ -843,113 +900,6 @@ export default function Popup() {
       console.error('[Gemini Voyager] Failed to get extension version:', err);
     }
   }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    const fetchLatestVersion = async () => {
-      if (!extVersion) return;
-
-      // Check for store installation (Chrome/Edge Web Store)
-      // Store-installed extensions have an 'update_url' in the manifest.
-      // We skip manual version checks for these users to rely on store auto-updates
-      // and prevent confusing "new version" prompts when GitHub is ahead of the store.
-      const manifest = chrome?.runtime?.getManifest?.();
-
-      // For Safari: only skip update check if the feature is disabled (default)
-      // If shouldShowSafariUpdateReminder() returns true, allow update checks
-      if (isSafari() && !shouldShowSafariUpdateReminder()) {
-        return;
-      }
-
-      // For other browsers: skip if they have update_url (store installation)
-      if (!isSafari() && getManifestUpdateUrl(manifest)) {
-        return;
-      }
-
-      try {
-        const cache = await browser.storage.local.get(LATEST_VERSION_CACHE_KEY);
-        const now = Date.now();
-
-        const cachedEntry = cache?.[LATEST_VERSION_CACHE_KEY];
-        let latest = getCachedLatestVersion(cachedEntry, now, LATEST_VERSION_MAX_AGE);
-        let dmgUrl: string | null = null;
-
-        if (latest && isSafari()) {
-          // Try to read cached DMG URL
-          if (
-            typeof cachedEntry === 'object' &&
-            cachedEntry !== null &&
-            'dmgUrl' in cachedEntry &&
-            typeof (cachedEntry as Record<string, unknown>).dmgUrl === 'string'
-          ) {
-            dmgUrl = (cachedEntry as Record<string, unknown>).dmgUrl as string;
-          }
-          // If DMG URL was not cached, re-fetch — but respect a 30 min cooldown
-          // to avoid hitting GitHub API rate limits
-          if (
-            !dmgUrl &&
-            typeof cachedEntry === 'object' &&
-            cachedEntry !== null &&
-            'fetchedAt' in cachedEntry &&
-            typeof (cachedEntry as Record<string, unknown>).fetchedAt === 'number' &&
-            now - ((cachedEntry as Record<string, unknown>).fetchedAt as number) >=
-              SAFARI_DMG_RETRY_AGE
-          ) {
-            latest = null;
-          }
-        }
-
-        if (!latest) {
-          const resp = await fetch(
-            'https://api.github.com/repos/Nagi-ovo/gemini-voyager/releases/latest',
-            {
-              headers: { Accept: 'application/vnd.github+json' },
-            },
-          );
-
-          if (!resp.ok) {
-            throw new Error(`HTTP ${resp.status}`);
-          }
-
-          const data: unknown = await resp.json();
-          const candidate = extractLatestReleaseVersion(data);
-
-          if (candidate) {
-            latest = candidate;
-            const isSafariFetch = isSafari();
-            if (isSafariFetch) {
-              dmgUrl = extractDmgDownloadUrl(data);
-            }
-            await browser.storage.local.set({
-              [LATEST_VERSION_CACHE_KEY]: {
-                version: candidate,
-                fetchedAt: now,
-                ...(isSafariFetch ? { dmgUrl } : {}),
-              },
-            });
-          }
-        }
-
-        if (cancelled || !latest) return;
-
-        setLatestVersion(latest);
-        if (isSafari()) {
-          setSafariDmgUrl(dmgUrl);
-        }
-      } catch (error) {
-        if (!cancelled) {
-          console.warn('[Gemini Voyager] Failed to check latest version:', error);
-        }
-      }
-    };
-
-    fetchLatestVersion();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [extVersion]);
 
   useEffect(() => {
     try {
@@ -1355,27 +1305,7 @@ export default function Popup() {
     [customWebsites, requestCustomWebsitePermission, revokeCustomWebsitePermission, setSyncStorage],
   );
 
-  const normalizedCurrentVersion = normalizeVersionString(extVersion);
-  const normalizedLatestVersion = normalizeVersionString(latestVersion);
   const isSafariBrowser = isSafari();
-  const safariUpdateReminderEnabled = isSafariBrowser && shouldShowSafariUpdateReminder();
-  const shouldShowUpdateNotification = shouldShowUpdateReminderForCurrentVersion({
-    currentVersion: normalizedCurrentVersion,
-    isSafariBrowser,
-    safariReminderEnabled: safariUpdateReminderEnabled,
-  });
-  const hasUpdate =
-    shouldShowUpdateNotification && normalizedCurrentVersion && normalizedLatestVersion
-      ? compareVersions(normalizedLatestVersion, normalizedCurrentVersion) > 0
-      : false;
-  const latestReleaseTag = toReleaseTag(latestVersion ?? normalizedLatestVersion ?? undefined);
-  const latestReleaseUrl = latestReleaseTag
-    ? `https://github.com/Nagi-ovo/gemini-voyager/releases/tag/${latestReleaseTag}`
-    : 'https://github.com/Nagi-ovo/gemini-voyager/releases/latest';
-  const currentReleaseTag = toReleaseTag(extVersion);
-  const releaseUrl = extVersion
-    ? `https://github.com/Nagi-ovo/gemini-voyager/releases/tag/${currentReleaseTag ?? `v${extVersion}`}`
-    : 'https://github.com/Nagi-ovo/gemini-voyager/releases';
 
   const websiteUrl =
     language === 'zh' ? 'https://voyager.nagi.fun' : `https://voyager.nagi.fun/${language}`;
@@ -1437,6 +1367,18 @@ export default function Popup() {
     return <StarredHistory onClose={() => setShowStarredHistory(false)} />;
   }
 
+  if (activePanel === 'promptVault') {
+    return <PromptVaultPanel onBack={() => setActivePanel('dashboard')} />;
+  }
+
+  const chatgptStatus = chatgptDashboard.status;
+
+  if (activePanel === 'folders') {
+    return (
+      <FoldersPanel currentStatus={chatgptStatus} onBack={() => setActivePanel('dashboard')} />
+    );
+  }
+
   return (
     <div className="bg-background text-foreground w-[360px]">
       {/* Header */}
@@ -1449,58 +1391,91 @@ export default function Popup() {
       </div>
 
       <div className="flex flex-col gap-4 p-5">
-        {hasUpdate && normalizedLatestVersion && normalizedCurrentVersion && (
-          <Card
-            style={{ order: -2 }}
-            className="border-amber-200 bg-amber-50 p-3 text-amber-900 shadow-sm"
-          >
-            <div className="flex items-start gap-3">
-              <div className="mt-1 text-amber-600">
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                  aria-hidden="true"
-                >
-                  <path d="M12 2l4 4h-3v7h-2V6H8l4-4zm6 11v6H6v-6H4v8h16v-8h-2z" />
-                </svg>
-              </div>
-              <div className="flex-1 space-y-1">
-                <p className="text-sm leading-tight font-semibold">{t('newVersionAvailable')}</p>
-                <p className="text-xs leading-tight">
-                  {t('currentVersionLabel')}: v{normalizedCurrentVersion} ·{' '}
-                  {t('latestVersionLabel')}: v{normalizedLatestVersion}
+        <Card className="p-4">
+          <CardTitle className="mb-3">ChatGPT Dashboard</CardTitle>
+          <CardContent className="space-y-3 p-0">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold">当前页面状态</p>
+                <p className="text-muted-foreground text-xs">
+                  {chatgptDashboard.loading
+                    ? '正在读取当前标签页'
+                    : chatgptStatus?.isChatGPTPage
+                      ? '已识别为 ChatGPT'
+                      : '当前页面未识别为 ChatGPT'}
                 </p>
               </div>
-              {isSafariBrowser ? (
-                safariDmgUrl ? (
-                  <a
-                    href={safariDmgUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="shrink-0 rounded-md bg-amber-100 px-3 py-1.5 text-xs font-semibold text-amber-900 transition-colors hover:bg-amber-200"
-                  >
-                    {t('updateNow')}
-                  </a>
-                ) : (
-                  <span className="shrink-0 text-xs leading-tight text-amber-700">
-                    {t('safariUpdateNotSynced')}
-                  </span>
-                )
-              ) : (
-                <a
-                  href={latestReleaseUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="shrink-0 rounded-md bg-amber-100 px-3 py-1.5 text-xs font-semibold text-amber-900 transition-colors hover:bg-amber-200"
-                >
-                  {t('updateNow')}
-                </a>
-              )}
+              <Button
+                type="button"
+                onClick={() => void refreshChatGPTDashboard()}
+                disabled={chatgptDashboard.loading}
+                className="shrink-0 px-3 py-1.5 text-xs"
+              >
+                刷新当前对话信息
+              </Button>
             </div>
-          </Card>
-        )}
+
+            {chatgptDashboard.error && (
+              <p className="rounded-md bg-red-50 px-3 py-2 text-xs text-red-700">
+                {chatgptDashboard.error}
+              </p>
+            )}
+
+            <div className="grid gap-2 text-xs">
+              <div className="flex justify-between gap-3">
+                <span className="text-muted-foreground">是否识别为 ChatGPT</span>
+                <span className="font-medium">{chatgptStatus?.isChatGPTPage ? '是' : '否'}</span>
+              </div>
+              <div className="flex justify-between gap-3">
+                <span className="text-muted-foreground">conversationId</span>
+                <span className="max-w-[180px] truncate font-mono">
+                  {chatgptStatus?.conversationId || '-'}
+                </span>
+              </div>
+              <div className="flex justify-between gap-3">
+                <span className="text-muted-foreground">conversationTitle</span>
+                <span className="max-w-[180px] truncate font-medium">
+                  {chatgptStatus?.conversationTitle || '-'}
+                </span>
+              </div>
+              <div className="flex justify-between gap-3">
+                <span className="text-muted-foreground">userMessageCount</span>
+                <span className="font-medium">{chatgptStatus?.userMessageCount ?? '-'}</span>
+              </div>
+              <div className="flex justify-between gap-3">
+                <span className="text-muted-foreground">assistantMessageCount</span>
+                <span className="font-medium">{chatgptStatus?.assistantMessageCount ?? '-'}</span>
+              </div>
+              <div className="flex justify-between gap-3">
+                <span className="text-muted-foreground">totalMessageCount</span>
+                <span className="font-medium">{chatgptStatus?.totalMessageCount ?? '-'}</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 pt-1">
+              {CHATGPT_DASHBOARD_ENTRIES.map((label) => (
+                <button
+                  key={label}
+                  type="button"
+                  disabled={label !== 'Prompt Vault' && label !== 'Folders'}
+                  onClick={() => {
+                    if (label === 'Prompt Vault') setActivePanel('promptVault');
+                    if (label === 'Folders') setActivePanel('folders');
+                  }}
+                  className="border-border bg-secondary/40 text-muted-foreground rounded-md border px-2 py-2 text-xs font-medium"
+                  title={
+                    label === 'Prompt Vault' || label === 'Folders'
+                      ? `打开 ${label}`
+                      : '占位入口，后续阶段实现'
+                  }
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
         {/* AI Studio master toggle - only shown when on AI Studio */}
         {isAIStudio && (
           <Card
@@ -1530,8 +1505,6 @@ export default function Popup() {
             </CardContent>
           </Card>
         )}
-        {/* Cloud Sync */}
-        {!isSafariBrowser && wrapSection('cloudSync', <CloudSyncSettings />)}
         {/* Context Sync */}
         {wrapSection('contextSync', <ContextSyncSettings />)}
         {/* Timeline Options */}
@@ -2854,15 +2827,12 @@ export default function Popup() {
         <div className="flex w-full items-center justify-between">
           <div className="text-muted-foreground flex items-center gap-2 text-xs">
             <span className="text-foreground/80 font-semibold">{t('extensionVersion')}</span>
-            <a
-              href={releaseUrl}
-              target="_blank"
-              rel="noreferrer"
+            <span
               className="text-primary hover:text-primary/80 font-semibold transition-colors"
               title={extVersion ? extVersion : undefined}
             >
               {extVersion ?? '...'}
-            </a>
+            </span>
           </div>
 
           <a

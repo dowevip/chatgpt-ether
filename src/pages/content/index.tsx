@@ -1,3 +1,4 @@
+import { chatgptAdapter, insertPromptIntoChatGPTInput } from '@/core/adapters/chatgptAdapter';
 import { StorageKeys } from '@/core/types/common';
 import { isSafari } from '@/core/utils/browser';
 import {
@@ -86,6 +87,87 @@ let draftSaveCleanup: (() => void) | null = null;
 let forkCleanup: (() => void) | null = null;
 let gemsSidebarCleanup: (() => void) | null = null;
 let edgeFinalVersionNoticeCleanup: (() => void) | null = null;
+let chatgptStatusListenerRegistered = false;
+
+type ChatGPTPageStatus = {
+  isChatGPTPage: boolean;
+  conversationId: string | null;
+  conversationTitle: string | null;
+  userMessageCount: number;
+  assistantMessageCount: number;
+  totalMessageCount: number;
+};
+
+function getChatGPTPageStatus(): ChatGPTPageStatus {
+  const userMessageCount = chatgptAdapter.getUserMessageNodes().length;
+  const assistantMessageCount = chatgptAdapter.getAssistantMessageNodes().length;
+
+  return {
+    isChatGPTPage: chatgptAdapter.isSupportedPage(),
+    conversationId: chatgptAdapter.getConversationId(),
+    conversationTitle: chatgptAdapter.getConversationTitle(),
+    userMessageCount,
+    assistantMessageCount,
+    totalMessageCount: userMessageCount + assistantMessageCount,
+  };
+}
+
+function registerChatGPTStatusListener(): void {
+  if (chatgptStatusListenerRegistered) return;
+  chatgptStatusListenerRegistered = true;
+
+  chrome.runtime?.onMessage?.addListener((message, _sender, sendResponse) => {
+    if (message?.type === 'gv.chatgpt.getStatus' || message?.type === 'gv.page.getStatus') {
+      sendResponse({ ok: true, data: getChatGPTPageStatus() });
+      return false;
+    }
+
+    if (message?.type === 'gv.chatgpt.insertPrompt') {
+      const content = typeof message?.payload?.content === 'string' ? message.payload.content : '';
+      console.debug('[ChatGPT Voyager] insertPrompt message received', {
+        contentLength: content.length,
+        url: location.href,
+      });
+      if (!content.trim()) {
+        sendResponse({ ok: false, error: 'Prompt 内容为空。' });
+        return false;
+      }
+
+      try {
+        const result = insertPromptIntoChatGPTInput(content);
+        console.debug('[ChatGPT Voyager] insertPrompt result', {
+          ok: result.ok,
+          method: result.method,
+          error: result.error,
+          debug: result.debug,
+        });
+        sendResponse(result);
+      } catch (error) {
+        sendResponse({
+          ok: false,
+          error: error instanceof Error ? error.message : '插入失败。',
+          debug: {
+            url: location.href,
+            activeElement: document.activeElement?.tagName.toLowerCase() || null,
+            contentLength: content.length,
+          },
+        });
+      }
+      return false;
+    }
+
+    return false;
+  });
+}
+
+function initializeChatGPTStatusOnly(): void {
+  registerChatGPTStatusListener();
+  console.log('[Gemini Voyager] ChatGPT page status detected:', getChatGPTPageStatus());
+}
+
+function isChatGPTVoyagerRuntime(): boolean {
+  return true;
+}
 
 async function isForkFeatureEnabled(): Promise<boolean> {
   try {
@@ -445,6 +527,13 @@ function handleVisibilityChange(): void {
 
     // Quick check: only run on supported websites
     const hostname = location.hostname.toLowerCase();
+    if (isChatGPTVoyagerRuntime()) {
+      if (hostname === 'chatgpt.com') {
+        initializeChatGPTStatusOnly();
+      }
+      return;
+    }
+
     const isSupportedSite =
       hostname.includes('gemini.google.com') ||
       hostname.includes('business.gemini.google') ||
