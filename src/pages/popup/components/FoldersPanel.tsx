@@ -29,9 +29,15 @@ type FoldersPanelProps = {
   onBack: () => void;
 };
 
+const COLLAPSED_FOLDERS_STORAGE_KEY = 'chatgptVoyager.foldersPanel.collapsed';
+
 function folderName(folderId: string | null, folders: ChatGPTFolder[]): string {
   if (!folderId) return '未分类';
-  return folders.find((folder) => folder.id === folderId)?.name || '未知文件夹';
+  const folder = folders.find((item) => item.id === folderId);
+  if (!folder) return '未知文件夹';
+
+  const parent = folder.parentId ? folders.find((item) => item.id === folder.parentId) : null;
+  return parent ? `${parent.name} / ${folder.name}` : folder.name;
 }
 
 function formatTime(timestamp: number): string {
@@ -49,15 +55,32 @@ function matchesConversationQuery(conversation: ChatGPTConversationIndex, query:
     .includes(normalized);
 }
 
+function folderMatchesQuery(folder: ChatGPTFolder, folders: ChatGPTFolder[], query: string): boolean {
+  const normalized = query.trim().toLowerCase();
+  if (!normalized) return true;
+
+  const parent = folder.parentId ? folders.find((item) => item.id === folder.parentId) : null;
+  return [folder.name, parent?.name || ''].join(' ').toLowerCase().includes(normalized);
+}
+
 export function FoldersPanel({ currentStatus, onBack }: FoldersPanelProps) {
   const [folders, setFolders] = useState<ChatGPTFolder[]>([]);
   const [conversations, setConversations] = useState<ChatGPTConversationIndex[]>([]);
   const [newFolderName, setNewFolderName] = useState('');
+  const [newFolderParentId, setNewFolderParentId] = useState('');
   const [editingFolderId, setEditingFolderId] = useState<string | null>(null);
   const [editingFolderName, setEditingFolderName] = useState('');
   const [conversationQuery, setConversationQuery] = useState('');
   const [folderFilterId, setFolderFilterId] = useState('');
   const [folderMoveQueries, setFolderMoveQueries] = useState<Record<string, string>>({});
+  const [collapsedFolderIds, setCollapsedFolderIds] = useState<Record<string, boolean>>(() => {
+    try {
+      const raw = localStorage.getItem(COLLAPSED_FOLDERS_STORAGE_KEY);
+      return raw ? JSON.parse(raw) : {};
+    } catch {
+      return {};
+    }
+  });
   const [message, setMessage] = useState<string | null>(null);
 
   const canSaveCurrent =
@@ -68,7 +91,7 @@ export function FoldersPanel({ currentStatus, onBack }: FoldersPanelProps) {
 
     return {
       conversationId: currentStatus.conversationId,
-      title: currentStatus.conversationTitle || 'Untitled conversation',
+      title: currentStatus.conversationTitle || '未命名对话',
       url: `https://chatgpt.com/c/${currentStatus.conversationId}`,
     };
   }, [currentStatus]);
@@ -85,6 +108,10 @@ export function FoldersPanel({ currentStatus, onBack }: FoldersPanelProps) {
   useEffect(() => {
     reload().catch(() => setMessage('读取文件夹数据失败。'));
   }, []);
+
+  useEffect(() => {
+    localStorage.setItem(COLLAPSED_FOLDERS_STORAGE_KEY, JSON.stringify(collapsedFolderIds));
+  }, [collapsedFolderIds]);
 
   useEffect(() => {
     if (!currentConversation) return;
@@ -107,10 +134,35 @@ export function FoldersPanel({ currentStatus, onBack }: FoldersPanelProps) {
     [conversations, conversationQuery, folderFilterId],
   );
 
+  const rootFolders = useMemo(() => folders.filter((folder) => !folder.parentId), [folders]);
+
+  const childFoldersByParentId = useMemo(
+    () =>
+      folders.reduce<Record<string, ChatGPTFolder[]>>((groups, folder) => {
+        if (!folder.parentId) return groups;
+        return {
+          ...groups,
+          [folder.parentId]: [...(groups[folder.parentId] || []), folder],
+        };
+      }, {}),
+    [folders],
+  );
+
+  const folderOptions = useMemo(
+    () =>
+      rootFolders.flatMap((folder) => [
+        { folder, label: folder.name },
+        ...(childFoldersByParentId[folder.id] || []).map((childFolder) => ({
+          folder: childFolder,
+          label: `　${childFolder.name}`,
+        })),
+      ]),
+    [childFoldersByParentId, rootFolders],
+  );
+
   const getMoveFolderOptions = (conversationId: string) => {
     const query = (folderMoveQueries[conversationId] || '').trim().toLowerCase();
-    if (!query) return folders;
-    return folders.filter((folder) => folder.name.toLowerCase().includes(query));
+    return folderOptions.filter((option) => folderMatchesQuery(option.folder, folders, query));
   };
 
   const handleCreateFolder = async () => {
@@ -120,9 +172,10 @@ export function FoldersPanel({ currentStatus, onBack }: FoldersPanelProps) {
     }
 
     try {
-      setFolders(await createChatGPTFolder(newFolderName));
+      setFolders(await createChatGPTFolder(newFolderName, newFolderParentId || null));
       setNewFolderName('');
-      setMessage('文件夹已创建。');
+      setNewFolderParentId('');
+      setMessage(newFolderParentId ? '子文件夹已创建。' : '文件夹已创建。');
     } catch {
       setMessage('创建文件夹失败。');
     }
@@ -136,7 +189,7 @@ export function FoldersPanel({ currentStatus, onBack }: FoldersPanelProps) {
 
     try {
       setConversations(await saveCurrentChatGPTConversation(currentConversation));
-      setMessage('当前对话已保存到索引。');
+      setMessage('当前对话已保存。');
     } catch {
       setMessage('保存当前对话失败。');
     }
@@ -170,7 +223,11 @@ export function FoldersPanel({ currentStatus, onBack }: FoldersPanelProps) {
   };
 
   const handleDeleteFolder = async (folder: ChatGPTFolder) => {
-    if (!window.confirm(`删除文件夹「${folder.name}」？其中对话会移回未分类。`)) return;
+    const childCount = childFoldersByParentId[folder.id]?.length || 0;
+    const message = childCount
+      ? `删除文件夹「${folder.name}」及其 ${childCount} 个子文件夹？其中对话会移回未分类。`
+      : `删除文件夹「${folder.name}」？其中对话会移回未分类。`;
+    if (!window.confirm(message)) return;
 
     try {
       const next = await deleteChatGPTFolder(folder.id);
@@ -180,6 +237,10 @@ export function FoldersPanel({ currentStatus, onBack }: FoldersPanelProps) {
     } catch {
       setMessage('删除文件夹失败。');
     }
+  };
+
+  const toggleFolderCollapsed = (folderId: string) => {
+    setCollapsedFolderIds((prev) => ({ ...prev, [folderId]: !prev[folderId] }));
   };
 
   const handleUpdateNote = async (conversationId: string, note: string) => {
@@ -203,8 +264,8 @@ export function FoldersPanel({ currentStatus, onBack }: FoldersPanelProps) {
     <div className="bg-background text-foreground w-[360px]">
       <div className="border-border/50 flex items-center justify-between border-b px-5 py-4">
         <div>
-          <h1 className="text-primary text-xl font-bold">Folders</h1>
-          <p className="text-muted-foreground text-xs">Conversation Index</p>
+          <h1 className="text-primary text-xl font-bold">对话文件夹</h1>
+          <p className="text-muted-foreground text-xs">已保存对话</p>
         </div>
         <Button type="button" variant="outline" size="sm" onClick={onBack}>
           返回
@@ -221,8 +282,20 @@ export function FoldersPanel({ currentStatus, onBack }: FoldersPanelProps) {
               placeholder="文件夹名称"
               className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
             />
+            <select
+              value={newFolderParentId}
+              onChange={(event) => setNewFolderParentId(event.target.value)}
+              className="border-border bg-background w-full rounded-md border px-2 py-1 text-xs"
+            >
+              <option value="">创建为一级文件夹</option>
+              {rootFolders.map((folder) => (
+                <option key={folder.id} value={folder.id}>
+                  上级文件夹：{folder.name}
+                </option>
+              ))}
+            </select>
             <Button type="button" size="sm" onClick={() => void handleCreateFolder()}>
-              新建一级文件夹
+              {newFolderParentId ? '新建子文件夹' : '新建一级文件夹'}
             </Button>
           </CardContent>
         </Card>
@@ -239,7 +312,7 @@ export function FoldersPanel({ currentStatus, onBack }: FoldersPanelProps) {
               disabled={!canSaveCurrent}
               onClick={() => void handleSaveCurrent()}
             >
-              保存当前 ChatGPT 对话到索引
+              保存当前 ChatGPT 对话
             </Button>
             {message && <p className="text-muted-foreground text-xs">{message}</p>}
           </CardContent>
@@ -251,7 +324,7 @@ export function FoldersPanel({ currentStatus, onBack }: FoldersPanelProps) {
             {folders.length === 0 ? (
               <p className="text-muted-foreground text-sm">暂无文件夹。</p>
             ) : (
-              folders.map((folder) => (
+              rootFolders.map((folder) => (
                 <div key={folder.id} className="border-border rounded-md border px-3 py-2 text-sm">
                   {editingFolderId === folder.id ? (
                     <div className="space-y-2">
@@ -275,26 +348,93 @@ export function FoldersPanel({ currentStatus, onBack }: FoldersPanelProps) {
                       </div>
                     </div>
                   ) : (
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="min-w-0 truncate">{folder.name}</span>
-                      <div className="flex shrink-0 gap-2">
-                        <Button
+                    <div>
+                      <div className="flex items-center justify-between gap-2">
+                        <button
                           type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleStartRename(folder)}
+                          onClick={() => toggleFolderCollapsed(folder.id)}
+                          className="text-muted-foreground shrink-0 text-xs"
+                          title={collapsedFolderIds[folder.id] ? '展开' : '折叠'}
                         >
-                          重命名
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => void handleDeleteFolder(folder)}
-                        >
-                          删除
-                        </Button>
+                          {collapsedFolderIds[folder.id] ? '▶' : '▼'}
+                        </button>
+                        <span className="min-w-0 flex-1 truncate">{folder.name}</span>
+                        <div className="flex shrink-0 gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleStartRename(folder)}
+                          >
+                            重命名
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => void handleDeleteFolder(folder)}
+                          >
+                            删除
+                          </Button>
+                        </div>
                       </div>
+
+                      {!collapsedFolderIds[folder.id] && (
+                        <div className="border-border/60 mt-2 space-y-2 border-l pl-4">
+                          {(childFoldersByParentId[folder.id] || []).map((childFolder) => (
+                            <div key={childFolder.id}>
+                              {editingFolderId === childFolder.id ? (
+                                <div className="space-y-2">
+                                  <input
+                                    value={editingFolderName}
+                                    onChange={(event) => setEditingFolderName(event.target.value)}
+                                    className="border-border bg-background w-full rounded-md border px-2 py-1 text-sm"
+                                  />
+                                  <div className="flex gap-2">
+                                    <Button
+                                      type="button"
+                                      size="sm"
+                                      onClick={() => void handleRenameFolder()}
+                                    >
+                                      保存
+                                    </Button>
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => setEditingFolderId(null)}
+                                    >
+                                      取消
+                                    </Button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="min-w-0 truncate">{childFolder.name}</span>
+                                  <div className="flex shrink-0 gap-2">
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => handleStartRename(childFolder)}
+                                    >
+                                      重命名
+                                    </Button>
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => void handleDeleteFolder(childFolder)}
+                                    >
+                                      删除
+                                    </Button>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -304,12 +444,12 @@ export function FoldersPanel({ currentStatus, onBack }: FoldersPanelProps) {
         </Card>
 
         <Card className="p-4">
-          <CardTitle className="mb-3 text-base">已索引对话</CardTitle>
+          <CardTitle className="mb-3 text-base">已保存对话</CardTitle>
           <CardContent className="space-y-3 p-0">
             <input
               value={conversationQuery}
               onChange={(event) => setConversationQuery(event.target.value)}
-              placeholder="搜索标题、备注或 URL"
+              placeholder="搜索对话标题、备注或 URL"
               className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
             />
             <select
@@ -319,15 +459,15 @@ export function FoldersPanel({ currentStatus, onBack }: FoldersPanelProps) {
             >
               <option value="">全部文件夹</option>
               <option value="__uncategorized__">未分类</option>
-              {folders.map((folder) => (
-                <option key={folder.id} value={folder.id}>
-                  {folder.name}
+              {folderOptions.map((option) => (
+                <option key={option.folder.id} value={option.folder.id}>
+                  {option.label}
                 </option>
               ))}
             </select>
 
             {filteredConversations.length === 0 ? (
-              <p className="text-muted-foreground text-sm">暂无已索引对话。</p>
+              <p className="text-muted-foreground text-sm">暂无已保存对话。</p>
             ) : (
               filteredConversations.map((conversation) => (
                 <div
@@ -388,9 +528,9 @@ export function FoldersPanel({ currentStatus, onBack }: FoldersPanelProps) {
                     className="border-border bg-background mt-2 w-full rounded-md border px-2 py-1 text-xs"
                   >
                     <option value="">未分类</option>
-                    {getMoveFolderOptions(conversation.conversationId).map((folder) => (
-                      <option key={folder.id} value={folder.id}>
-                        {folder.name}
+                    {getMoveFolderOptions(conversation.conversationId).map((option) => (
+                      <option key={option.folder.id} value={option.folder.id}>
+                        {option.label}
                       </option>
                     ))}
                   </select>

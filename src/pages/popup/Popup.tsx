@@ -371,6 +371,15 @@ const CHATGPT_DASHBOARD_ENTRIES = [
   'Diagnostics',
 ] as const;
 
+const CHATGPT_DASHBOARD_ENTRY_LABELS: Record<(typeof CHATGPT_DASHBOARD_ENTRIES)[number], string> = {
+  'Prompt Vault': '提示词库',
+  Folders: '对话文件夹',
+  Starred: '收藏消息',
+  Search: '搜索',
+  Sync: '同步',
+  Diagnostics: '诊断信息',
+};
+
 type PopupPanel = 'dashboard' | 'promptVault' | 'folders';
 
 function SectionReorderControls({
@@ -1392,7 +1401,7 @@ export default function Popup() {
 
       <div className="flex flex-col gap-4 p-5">
         <Card className="p-4">
-          <CardTitle className="mb-3">ChatGPT Dashboard</CardTitle>
+          <CardTitle className="mb-3">插件首页</CardTitle>
           <CardContent className="space-y-3 p-0">
             <div className="flex items-center justify-between gap-3">
               <div>
@@ -1401,7 +1410,7 @@ export default function Popup() {
                   {chatgptDashboard.loading
                     ? '正在读取当前标签页'
                     : chatgptStatus?.isChatGPTPage
-                      ? '已识别为 ChatGPT'
+                      ? '已识别 ChatGPT 页面'
                       : '当前页面未识别为 ChatGPT'}
                 </p>
               </div>
@@ -1427,27 +1436,27 @@ export default function Popup() {
                 <span className="font-medium">{chatgptStatus?.isChatGPTPage ? '是' : '否'}</span>
               </div>
               <div className="flex justify-between gap-3">
-                <span className="text-muted-foreground">conversationId</span>
+                <span className="text-muted-foreground">对话 ID</span>
                 <span className="max-w-[180px] truncate font-mono">
                   {chatgptStatus?.conversationId || '-'}
                 </span>
               </div>
               <div className="flex justify-between gap-3">
-                <span className="text-muted-foreground">conversationTitle</span>
+                <span className="text-muted-foreground">对话标题</span>
                 <span className="max-w-[180px] truncate font-medium">
                   {chatgptStatus?.conversationTitle || '-'}
                 </span>
               </div>
               <div className="flex justify-between gap-3">
-                <span className="text-muted-foreground">userMessageCount</span>
+                <span className="text-muted-foreground">用户消息数</span>
                 <span className="font-medium">{chatgptStatus?.userMessageCount ?? '-'}</span>
               </div>
               <div className="flex justify-between gap-3">
-                <span className="text-muted-foreground">assistantMessageCount</span>
+                <span className="text-muted-foreground">助手回复数</span>
                 <span className="font-medium">{chatgptStatus?.assistantMessageCount ?? '-'}</span>
               </div>
               <div className="flex justify-between gap-3">
-                <span className="text-muted-foreground">totalMessageCount</span>
+                <span className="text-muted-foreground">总消息数</span>
                 <span className="font-medium">{chatgptStatus?.totalMessageCount ?? '-'}</span>
               </div>
             </div>
@@ -1465,11 +1474,11 @@ export default function Popup() {
                   className="border-border bg-secondary/40 text-muted-foreground rounded-md border px-2 py-2 text-xs font-medium"
                   title={
                     label === 'Prompt Vault' || label === 'Folders'
-                      ? `打开 ${label}`
+                      ? `打开${CHATGPT_DASHBOARD_ENTRY_LABELS[label]}`
                       : '占位入口，后续阶段实现'
                   }
                 >
-                  {label}
+                  {CHATGPT_DASHBOARD_ENTRY_LABELS[label]}
                 </button>
               ))}
             </div>

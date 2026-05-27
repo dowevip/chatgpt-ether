@@ -109,7 +109,7 @@ export function PromptVaultPanel({ onBack }: PromptVaultPanelProps) {
   useEffect(() => {
     listChatGPTPrompts()
       .then(setPrompts)
-      .catch(() => setMessage('读取 Prompt Vault 失败。'));
+      .catch(() => setMessage('读取提示词库失败。'));
   }, []);
 
   const filteredPrompts = useMemo(
@@ -124,7 +124,7 @@ export function PromptVaultPanel({ onBack }: PromptVaultPanelProps) {
 
   const handleSave = async () => {
     if (!draft.content.trim()) {
-      setMessage('Prompt 内容不能为空。');
+      setMessage('提示词内容不能为空。');
       return;
     }
 
@@ -145,7 +145,7 @@ export function PromptVaultPanel({ onBack }: PromptVaultPanelProps) {
   };
 
   const handleDelete = async (prompt: ChatGPTPromptVaultItem) => {
-    if (!window.confirm(`删除 prompt「${prompt.title}」？`)) return;
+    if (!window.confirm(`删除提示词「${prompt.title}」？`)) return;
 
     try {
       const nextPrompts = await deleteChatGPTPrompt(prompt.id);
@@ -175,7 +175,7 @@ export function PromptVaultPanel({ onBack }: PromptVaultPanelProps) {
     link.download = `chatgpt-voyager-prompts-${new Date().toISOString().slice(0, 10)}.json`;
     link.click();
     URL.revokeObjectURL(url);
-    setMessage('已导出 Prompt Vault JSON。');
+    setMessage('已导出提示词库 JSON。');
   };
 
   const handleImportFile = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -197,7 +197,7 @@ export function PromptVaultPanel({ onBack }: PromptVaultPanelProps) {
     <div className="bg-background text-foreground w-[360px]">
       <div className="border-border/50 flex items-center justify-between border-b px-5 py-4">
         <div>
-          <h1 className="text-primary text-xl font-bold">Prompt Vault</h1>
+          <h1 className="text-primary text-xl font-bold">提示词库</h1>
           <p className="text-muted-foreground text-xs">ChatGPT Voyager</p>
         </div>
         <Button type="button" variant="outline" size="sm" onClick={onBack}>
@@ -208,19 +208,19 @@ export function PromptVaultPanel({ onBack }: PromptVaultPanelProps) {
       <div className="flex max-h-[560px] flex-col gap-4 overflow-y-auto p-5">
         <Card className="p-4">
           <CardTitle className="mb-3 text-base">
-            {isEditing ? '编辑 prompt' : '新建 prompt'}
+            {isEditing ? '编辑提示词' : '新建提示词'}
           </CardTitle>
           <CardContent className="space-y-3 p-0">
             <input
               value={draft.title}
               onChange={(event) => setDraft((prev) => ({ ...prev, title: event.target.value }))}
-              placeholder="标题"
+              placeholder="提示词标题"
               className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
             />
             <textarea
               value={draft.content}
               onChange={(event) => setDraft((prev) => ({ ...prev, content: event.target.value }))}
-              placeholder="Prompt 内容"
+              placeholder="提示词内容"
               rows={5}
               className="border-border bg-background w-full resize-y rounded-md border px-3 py-2 text-sm"
             />
@@ -258,7 +258,7 @@ export function PromptVaultPanel({ onBack }: PromptVaultPanelProps) {
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="搜索标题、内容或标签"
+              placeholder="搜索提示词标题、内容或标签"
               className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
             />
             <div className="flex gap-2">
@@ -287,7 +287,7 @@ export function PromptVaultPanel({ onBack }: PromptVaultPanelProps) {
 
         <div className="space-y-3">
           {filteredPrompts.length === 0 ? (
-            <p className="text-muted-foreground text-sm">暂无 prompt。</p>
+            <p className="text-muted-foreground text-sm">暂无匹配提示词。</p>
           ) : (
             filteredPrompts.map((prompt) => (
               <Card key={prompt.id} className="p-3">
