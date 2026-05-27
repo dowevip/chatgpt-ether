@@ -6,8 +6,15 @@ const CHATGPT_HOSTS = new Set(['chatgpt.com']);
 
 const CHATGPT_TURN_SELECTORS = [
   'article[data-testid^="conversation-turn-"]',
-  'article',
+  '[data-testid^="conversation-turn-"]',
+  '[data-testid*="conversation-turn"]',
+  '[data-testid*="message"]',
+  '[data-message-author-role="user"]',
+  '[data-message-author-role="assistant"]',
   '[data-message-author-role]',
+  '.markdown',
+  '.prose',
+  'article',
 ];
 
 const CHATGPT_TITLE_SELECTORS = [
@@ -28,6 +35,10 @@ const CHATGPT_INPUT_SELECTORS = [
   'div[contenteditable="true"]',
   '[role="textbox"]',
 ];
+
+const CHATGPT_MESSAGE_ANCHOR_ATTR = 'data-cg-voyager-anchor';
+const CHATGPT_MESSAGE_ID_ATTR = 'data-cg-voyager-message-id';
+const CHATGPT_MESSAGE_FINGERPRINT_ATTR = 'data-cg-voyager-fingerprint';
 
 type ChatGPTInsertMethod = 'textarea' | 'contenteditable' | 'fallback';
 
@@ -293,13 +304,35 @@ function uniqueElements(elements: HTMLElement[]): HTMLElement[] {
   return Array.from(new Set(elements));
 }
 
+function uniqueMessageElements(elements: HTMLElement[]): HTMLElement[] {
+  const unique = uniqueElements(elements);
+  return unique.filter((element, index) => {
+    const duplicateContainer = unique.some(
+      (other, otherIndex) =>
+        otherIndex !== index &&
+        other !== element &&
+        other.contains(element) &&
+        getRoleFromElement(other) === getRoleFromElement(element),
+    );
+    return !duplicateContainer;
+  });
+}
+
 function closestArticleOrSelf(element: HTMLElement): HTMLElement {
-  return element.closest<HTMLElement>('article') || element;
+  return (
+    element.closest<HTMLElement>('article[data-testid^="conversation-turn-"]') ||
+    element.closest<HTMLElement>('[data-testid^="conversation-turn-"]') ||
+    element.closest<HTMLElement>('article') ||
+    element.closest<HTMLElement>('[data-message-author-role]') ||
+    element
+  );
 }
 
 function getRoleFromElement(element: HTMLElement): MessageRole | null {
+  const closestAuthor = element.closest<HTMLElement>('[data-message-author-role]');
   const authorRole =
     element.getAttribute('data-message-author-role') ||
+    closestAuthor?.getAttribute('data-message-author-role') ||
     element
       .querySelector<HTMLElement>('[data-message-author-role]')
       ?.getAttribute('data-message-author-role');
@@ -343,7 +376,7 @@ function getTurnElementsByRole(role: MessageRole): HTMLElement[] {
     } catch {}
   }
 
-  return uniqueElements(matches);
+  return uniqueMessageElements(matches).filter((element) => normalizeSnippet(element.textContent));
 }
 
 function sortByDocumentPosition(nodes: MessageNodeRef[]): MessageNodeRef[] {
@@ -352,6 +385,58 @@ function sortByDocumentPosition(nodes: MessageNodeRef[]): MessageNodeRef[] {
     const position = left.element.compareDocumentPosition(right.element);
     return position & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1;
   });
+}
+
+function findMessageElementByAnchor(anchor: string): HTMLElement | null {
+  const doc = getSafeDocument();
+  if (!doc) return null;
+
+  return (
+    Array.from(doc.querySelectorAll<HTMLElement>(`[${CHATGPT_MESSAGE_ANCHOR_ATTR}]`)).find(
+      (element) => element.getAttribute(CHATGPT_MESSAGE_ANCHOR_ATTR) === anchor,
+    ) || null
+  );
+}
+
+function findMessageElementByAttribute(attribute: string, value: string): HTMLElement | null {
+  const doc = getSafeDocument();
+  if (!doc || !value) return null;
+
+  return (
+    Array.from(doc.querySelectorAll<HTMLElement>(`[${attribute}]`)).find(
+      (element) => element.getAttribute(attribute) === value,
+    ) || null
+  );
+}
+
+function getMessageIdFromElement(element: HTMLElement): string | undefined {
+  return (
+    element.getAttribute(CHATGPT_MESSAGE_ID_ATTR) ||
+    element.getAttribute('data-message-id') ||
+    element.getAttribute('data-turn-id') ||
+    element.querySelector<HTMLElement>('[data-message-id]')?.getAttribute('data-message-id') ||
+    element.querySelector<HTMLElement>('[data-turn-id]')?.getAttribute('data-turn-id') ||
+    undefined
+  );
+}
+
+function fingerprintText(text: string): string {
+  const normalized = normalizeSnippet(text).toLowerCase();
+  let hash = 2166136261;
+  for (let index = 0; index < normalized.length; index += 1) {
+    hash ^= normalized.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0).toString(36);
+}
+
+function parseCapturedAnchor(anchor: string): { messageId?: string; fingerprint?: string } {
+  if (!anchor.startsWith('chatgpt-captured:')) return {};
+  const [, messageId, fingerprint] = anchor.split(':');
+  return {
+    messageId: messageId && messageId !== 'no-message-id' ? messageId : undefined,
+    fingerprint,
+  };
 }
 
 export const chatgptAdapter: PageAdapter = {
@@ -398,12 +483,16 @@ export const chatgptAdapter: PageAdapter = {
       role: 'user' as const,
       anchor: this.buildMessageAnchor(element, index, 'user'),
       snippet: normalizeSnippet(element.textContent),
+      messageId: getMessageIdFromElement(element),
+      fingerprint: element.getAttribute(CHATGPT_MESSAGE_FINGERPRINT_ATTR) || undefined,
     }));
     const assistantNodes = this.getAssistantMessageNodes().map((element, index) => ({
       element,
       role: 'assistant' as const,
       anchor: this.buildMessageAnchor(element, index, 'assistant'),
       snippet: normalizeSnippet(element.textContent),
+      messageId: getMessageIdFromElement(element),
+      fingerprint: element.getAttribute(CHATGPT_MESSAGE_FINGERPRINT_ATTR) || undefined,
     }));
 
     return sortByDocumentPosition([...userNodes, ...assistantNodes]);
@@ -418,20 +507,79 @@ export const chatgptAdapter: PageAdapter = {
   },
 
   scrollToMessage(anchor: string): boolean {
-    const message = this.getMessageNodes().find((node) => node.anchor === anchor);
-    if (!message) return false;
+    const captured = parseCapturedAnchor(anchor);
+    if (captured.messageId) {
+      const messageElement = findMessageElementByAttribute(CHATGPT_MESSAGE_ID_ATTR, captured.messageId);
+      if (messageElement) {
+        messageElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        console.debug('[ChatGPT Voyager] 时间轴定位结果', { found: true, method: 'messageId' });
+        return true;
+      }
+    }
+
+    const anchoredElement = findMessageElementByAnchor(anchor);
+    if (anchoredElement) {
+      anchoredElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      console.debug('[ChatGPT Voyager] 时间轴定位结果', { found: true, method: 'anchor' });
+      return true;
+    }
+
+    const currentNodes = this.getMessageNodes();
+    const retryByMessageId = captured.messageId
+      ? findMessageElementByAttribute(CHATGPT_MESSAGE_ID_ATTR, captured.messageId)
+      : null;
+    if (retryByMessageId) {
+      retryByMessageId.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      console.debug('[ChatGPT Voyager] 时间轴定位结果', { found: true, method: 'messageIdRetry' });
+      return true;
+    }
+
+    const retryByAnchor = findMessageElementByAnchor(anchor);
+    if (retryByAnchor) {
+      retryByAnchor.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      console.debug('[ChatGPT Voyager] 时间轴定位结果', { found: true, method: 'anchorRetry' });
+      return true;
+    }
+
+    if (captured.fingerprint) {
+      const fingerprintElement = findMessageElementByAttribute(
+        CHATGPT_MESSAGE_FINGERPRINT_ATTR,
+        captured.fingerprint,
+      );
+      if (fingerprintElement) {
+        fingerprintElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        console.debug('[ChatGPT Voyager] 时间轴定位结果', { found: true, method: 'fingerprint' });
+        return true;
+      }
+    }
+
+    const message = currentNodes.find((node) => node.anchor === anchor);
+    if (!message) {
+      console.debug('[ChatGPT Voyager] 时间轴定位结果', {
+        found: false,
+        anchor,
+        messageCount: currentNodes.length,
+        url: getCurrentUrl(),
+      });
+      return false;
+    }
 
     message.element.scrollIntoView({ behavior: 'smooth', block: 'center' });
     return true;
   },
 
   buildMessageAnchor(messageElement: HTMLElement, index: number, role: MessageRole): string {
-    const explicitId =
-      messageElement.id ||
-      messageElement.getAttribute('data-testid') ||
-      messageElement.getAttribute('data-message-id') ||
-      messageElement.getAttribute('data-turn-id');
-    const basis = explicitId || normalizeSnippet(messageElement.textContent) || String(index);
-    return `chatgpt:${role}:${index}:${hashString(basis)}`;
+    const existingAnchor = messageElement.getAttribute(CHATGPT_MESSAGE_ANCHOR_ATTR);
+    if (existingAnchor) return existingAnchor;
+
+    const messageId = getMessageIdFromElement(messageElement);
+    const fingerprint = fingerprintText(messageElement.textContent || '');
+    const explicitId = messageElement.id || messageElement.getAttribute('data-testid') || messageId;
+    const basis = explicitId || fingerprint || String(index);
+    const anchor = `chatgpt:${role}:${hashString(basis)}:${index}`;
+    if (messageId) messageElement.setAttribute(CHATGPT_MESSAGE_ID_ATTR, messageId);
+    messageElement.setAttribute(CHATGPT_MESSAGE_FINGERPRINT_ATTR, fingerprint);
+    messageElement.setAttribute(CHATGPT_MESSAGE_ANCHOR_ATTR, anchor);
+    return anchor;
   },
 };

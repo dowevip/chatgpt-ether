@@ -50,6 +50,14 @@
       "matches": [
         "https://chatgpt.com/*"
       ],
+      "js": ["src/pages/content/injectedChatGPTCaptureScript.ts"],
+      "run_at": "document_start",
+      "world": "MAIN"
+    },
+    {
+      "matches": [
+        "https://chatgpt.com/*"
+      ],
       "js": ["src/pages/content/index.tsx"],
       "css": ["contentStyle.css"]
     }

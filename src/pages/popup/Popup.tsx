@@ -7,6 +7,10 @@ import {
   detectAccountPlatformFromUrl,
   getAccountIsolationStorageKey,
 } from '@/core/services/AccountIsolationService';
+import {
+  getChatGPTPageTimelineVisibility,
+  setChatGPTPageTimelineVisibility,
+} from '@/core/services/ChatGPTTimelineService';
 import { StorageKeys } from '@/core/types/common';
 import type { ConversationReference, Folder } from '@/core/types/folder';
 import { getModifierKey, isFirefox, isSafari } from '@/core/utils/browser';
@@ -365,6 +369,7 @@ const EMPTY_CHATGPT_DASHBOARD_STATE: ChatGPTDashboardState = {
 const CHATGPT_DASHBOARD_ENTRIES = [
   'Prompt Vault',
   'Folders',
+  'Timeline',
   'Starred',
   'Search',
   'Sync',
@@ -374,6 +379,7 @@ const CHATGPT_DASHBOARD_ENTRIES = [
 const CHATGPT_DASHBOARD_ENTRY_LABELS: Record<(typeof CHATGPT_DASHBOARD_ENTRIES)[number], string> = {
   'Prompt Vault': '提示词库',
   Folders: '对话文件夹',
+  Timeline: '时间轴',
   Starred: '收藏消息',
   Search: '搜索',
   Sync: '同步',
@@ -523,6 +529,8 @@ export default function Popup() {
     EMPTY_CHATGPT_DASHBOARD_STATE,
   );
   const [activePanel, setActivePanel] = useState<PopupPanel>('dashboard');
+  const [pageTimelineVisible, setPageTimelineVisible] = useState(true);
+  const [pageTimelineMessage, setPageTimelineMessage] = useState<string | null>(null);
 
   const isAIStudio = activeAccountPlatform === 'aistudio';
   const currentPlatformLabel = isAIStudio ? t('platformAIStudio') : t('platformGemini');
@@ -573,6 +581,31 @@ export default function Popup() {
     }
   }, []);
 
+  const refreshPageTimelineVisibility = useCallback(async () => {
+    try {
+      const visibility = await getChatGPTPageTimelineVisibility();
+      setPageTimelineVisible(visibility.visible);
+      setPageTimelineMessage(visibility.isChatGPTPage ? null : '当前页面未识别为 ChatGPT');
+    } catch {
+      setPageTimelineMessage('当前页面未识别为 ChatGPT');
+    }
+  }, []);
+
+  const handleTogglePageTimeline = useCallback(async () => {
+    if (!chatgptDashboard.status?.isChatGPTPage) {
+      setPageTimelineMessage('当前页面未识别为 ChatGPT');
+      return;
+    }
+
+    try {
+      const next = await setChatGPTPageTimelineVisibility(!pageTimelineVisible);
+      setPageTimelineVisible(next.visible);
+      setPageTimelineMessage(next.isChatGPTPage ? null : '当前页面未识别为 ChatGPT');
+    } catch {
+      setPageTimelineMessage('时间轴开关失败。');
+    }
+  }, [chatgptDashboard.status?.isChatGPTPage, pageTimelineVisible]);
+
   useEffect(() => {
     browser.tabs
       .query({ active: true, currentWindow: true })
@@ -585,7 +618,8 @@ export default function Popup() {
 
   useEffect(() => {
     void refreshChatGPTDashboard();
-  }, [refreshChatGPTDashboard]);
+    void refreshPageTimelineVisibility();
+  }, [refreshChatGPTDashboard, refreshPageTimelineVisibility]);
 
   const handleFormulaCopyFormatChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const format = e.target.value as 'latex' | 'unicodemath' | 'no-dollar' | 'notion';
@@ -1462,26 +1496,48 @@ export default function Popup() {
             </div>
 
             <div className="grid grid-cols-2 gap-2 pt-1">
-              {CHATGPT_DASHBOARD_ENTRIES.map((label) => (
-                <button
-                  key={label}
-                  type="button"
-                  disabled={label !== 'Prompt Vault' && label !== 'Folders'}
-                  onClick={() => {
-                    if (label === 'Prompt Vault') setActivePanel('promptVault');
-                    if (label === 'Folders') setActivePanel('folders');
-                  }}
-                  className="border-border bg-secondary/40 text-muted-foreground rounded-md border px-2 py-2 text-xs font-medium"
-                  title={
-                    label === 'Prompt Vault' || label === 'Folders'
-                      ? `打开${CHATGPT_DASHBOARD_ENTRY_LABELS[label]}`
-                      : '占位入口，后续阶段实现'
-                  }
-                >
-                  {CHATGPT_DASHBOARD_ENTRY_LABELS[label]}
-                </button>
-              ))}
+              {CHATGPT_DASHBOARD_ENTRIES.map((label) => {
+                const isTimeline = label === 'Timeline';
+                const enabled =
+                  label === 'Prompt Vault' ||
+                  label === 'Folders' ||
+                  (isTimeline && Boolean(chatgptStatus?.isChatGPTPage));
+
+                return (
+                  <button
+                    key={label}
+                    type="button"
+                    disabled={!enabled}
+                    onClick={() => {
+                      if (label === 'Prompt Vault') setActivePanel('promptVault');
+                      if (label === 'Folders') setActivePanel('folders');
+                      if (isTimeline) void handleTogglePageTimeline();
+                    }}
+                    className="border-border bg-secondary/40 text-muted-foreground enabled:text-foreground rounded-md border px-2 py-2 text-xs font-medium"
+                    title={
+                      isTimeline && !chatgptStatus?.isChatGPTPage
+                        ? '当前页面未识别为 ChatGPT'
+                        : isTimeline
+                          ? pageTimelineVisible
+                            ? '隐藏页面时间轴'
+                            : '显示页面时间轴'
+                        : enabled
+                          ? `打开${CHATGPT_DASHBOARD_ENTRY_LABELS[label]}`
+                          : '占位入口，后续阶段实现'
+                    }
+                  >
+                    {isTimeline
+                      ? pageTimelineVisible
+                        ? '隐藏页面时间轴'
+                        : '显示页面时间轴'
+                      : CHATGPT_DASHBOARD_ENTRY_LABELS[label]}
+                  </button>
+                );
+              })}
             </div>
+            {pageTimelineMessage && (
+              <p className="text-muted-foreground text-xs">{pageTimelineMessage}</p>
+            )}
           </CardContent>
         </Card>
 

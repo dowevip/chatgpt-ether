@@ -74,3 +74,24 @@ export interface SliderState {
   startClientY: number;
   startTop: number;
 }
+
+export type ChatGPTTimelineRole = 'user' | 'assistant';
+
+export type ChatGPTTimelineNode = {
+  index: number;
+  role: ChatGPTTimelineRole;
+  summary: string;
+  messageAnchor: string;
+  messageId?: string;
+  parentId?: string | null;
+  createdAt?: number | null;
+  fingerprint?: string;
+  source?: 'captured' | 'dom';
+};
+
+export type ChatGPTTimelineSnapshot = {
+  isChatGPTPage: boolean;
+  nodes: ChatGPTTimelineNode[];
+  source?: 'captured' | 'dom';
+  captured?: boolean;
+};

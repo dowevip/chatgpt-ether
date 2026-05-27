@@ -15,6 +15,12 @@ import { startChatFontSizeAdjuster } from './chatFontSize/index';
 import { startInputVimMode } from './chatInput/vimMode';
 import { startChatLineHeightAdjuster } from './chatLineHeight/index';
 import { startChatWidthAdjuster } from './chatWidth/index';
+import {
+  getCapturedChatGPTTimelineNodes,
+  hasCapturedChatGPTConversationData,
+  startChatGPTConversationCapture,
+  requestCurrentChatGPTConversationCapture,
+} from './chatgptConversationCapture';
 import { startContextSync } from './contextSync';
 import { startDeepResearchExport } from './deepResearch/index';
 import DefaultModelManager from './defaultModel/modelLocker';
@@ -43,6 +49,11 @@ import { startSendBehavior } from './sendBehavior/index';
 import { startSidebarAutoHide } from './sidebarAutoHide';
 import { startSidebarWidthAdjuster } from './sidebarWidth';
 import { startTimeline } from './timeline/index';
+import {
+  isChatGPTTimelineFloatingPanelVisible,
+  setChatGPTTimelineFloatingPanelVisible,
+  startChatGPTTimelineFloatingPanel,
+} from './timelineFloatingPanel';
 import { startTitleUpdater } from './titleUpdater';
 import { startUserLatex } from './userLatex/index';
 import { startRainEffect, startSakuraEffect, startSnowEffect } from './visualEffects';
@@ -112,6 +123,63 @@ function getChatGPTPageStatus(): ChatGPTPageStatus {
   };
 }
 
+function summarizeChatGPTTimelineMessage(snippet: string): string {
+  const normalized = String(snippet || '').replace(/\s+/g, ' ').trim();
+  return normalized.length > 60 ? `${normalized.slice(0, 57)}...` : normalized;
+}
+
+function getChatGPTTimelineSnapshot() {
+  if (!chatgptAdapter.isSupportedPage()) {
+    return {
+      isChatGPTPage: false,
+      nodes: [],
+    };
+  }
+
+  const capturedNodes = getCapturedChatGPTTimelineNodes();
+  requestCurrentChatGPTConversationCapture();
+  if (capturedNodes.length > 0) {
+    const userCount = capturedNodes.filter((node) => node.role === 'user').length;
+    const assistantCount = capturedNodes.filter((node) => node.role === 'assistant').length;
+    console.debug('[ChatGPT Voyager] Popup 时间轴使用捕获数据', {
+      total: capturedNodes.length,
+      user: userCount,
+      assistant: assistantCount,
+      hasConversationData: true,
+    });
+    return {
+      isChatGPTPage: true,
+      nodes: capturedNodes,
+      source: 'captured' as const,
+      captured: true,
+    };
+  }
+
+  const messageNodes = chatgptAdapter.getMessageNodes().filter((node) => node.role === 'user');
+  const userCount = messageNodes.filter((node) => node.role === 'user').length;
+  const assistantCount = messageNodes.filter((node) => node.role === 'assistant').length;
+  console.debug('[ChatGPT Voyager] Popup 时间轴扫描完成', {
+    total: messageNodes.length,
+    user: userCount,
+    assistant: assistantCount,
+  });
+
+  return {
+    isChatGPTPage: true,
+    nodes: messageNodes.map((node, index) => ({
+      index: index + 1,
+      role: 'user' as const,
+      summary: summarizeChatGPTTimelineMessage(node.snippet),
+      messageAnchor: node.anchor,
+      fingerprint: (node as { fingerprint?: string }).fingerprint,
+      messageId: (node as { messageId?: string }).messageId,
+      source: 'dom' as const,
+    })),
+    source: 'dom' as const,
+    captured: hasCapturedChatGPTConversationData(),
+  };
+}
+
 function registerChatGPTStatusListener(): void {
   if (chatgptStatusListenerRegistered) return;
   chatgptStatusListenerRegistered = true;
@@ -120,6 +188,45 @@ function registerChatGPTStatusListener(): void {
     if (message?.type === 'gv.chatgpt.getStatus' || message?.type === 'gv.page.getStatus') {
       sendResponse({ ok: true, data: getChatGPTPageStatus() });
       return false;
+    }
+
+    if (message?.type === 'gv.chatgpt.timeline.get') {
+      sendResponse({ ok: true, data: getChatGPTTimelineSnapshot() });
+      return false;
+    }
+
+    if (message?.type === 'gv.chatgpt.timeline.scroll') {
+      const messageAnchor =
+        typeof message?.payload?.messageAnchor === 'string' ? message.payload.messageAnchor : '';
+      sendResponse({
+        ok: true,
+        scrolled: messageAnchor ? chatgptAdapter.scrollToMessage(messageAnchor) : false,
+      });
+      return false;
+    }
+
+    if (message?.type === 'gv.chatgpt.timeline.visibility.get') {
+      sendResponse({
+        ok: true,
+        data: {
+          isChatGPTPage: chatgptAdapter.isSupportedPage(),
+          visible: isChatGPTTimelineFloatingPanelVisible(),
+        },
+      });
+      return false;
+    }
+
+    if (message?.type === 'gv.chatgpt.timeline.visibility.set') {
+      const visible = message?.payload?.visible !== false;
+      setChatGPTTimelineFloatingPanelVisible(visible)
+        .then(() =>
+          sendResponse({
+            ok: true,
+            data: { isChatGPTPage: chatgptAdapter.isSupportedPage(), visible },
+          }),
+        )
+        .catch(() => sendResponse({ ok: false }));
+      return true;
     }
 
     if (message?.type === 'gv.chatgpt.insertPrompt') {
@@ -162,6 +269,8 @@ function registerChatGPTStatusListener(): void {
 
 function initializeChatGPTStatusOnly(): void {
   registerChatGPTStatusListener();
+  startChatGPTConversationCapture();
+  startChatGPTTimelineFloatingPanel();
   console.log('[Gemini Voyager] ChatGPT page status detected:', getChatGPTPageStatus());
 }
 
