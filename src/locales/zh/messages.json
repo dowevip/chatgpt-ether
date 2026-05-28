@@ -1108,12 +1108,12 @@
     "description": "Error message when overwrite is blocked because Drive has no folders payload"
   },
   "syncUploadFailed": {
-    "message": "上传失败",
-    "description": "Error message when upload fails"
+    "message": "上传到云端失败",
+    "description": "Popup UI: syncUploadFailed"
   },
   "syncDownloadFailed": {
-    "message": "下载失败",
-    "description": "Error message when download fails"
+    "message": "从云端拉取失败",
+    "description": "Popup UI: syncDownloadFailed"
   },
   "syncAuthFailed": {
     "message": "认证失败",
@@ -1990,5 +1990,717 @@
   "floatingPanelGestureHint": {
     "message": "双击重命名 · 右键可置顶/改色/删除。",
     "description": "Floating folder panel hint explaining folder gestures and context menu actions"
+  },
+  "yes": {
+    "message": "是",
+    "description": "Popup UI: yes"
+  },
+  "no": {
+    "message": "否",
+    "description": "Popup UI: no"
+  },
+  "none": {
+    "message": "无",
+    "description": "Popup UI: none"
+  },
+  "never": {
+    "message": "从未",
+    "description": "Popup UI: never"
+  },
+  "notSet": {
+    "message": "未设置",
+    "description": "Popup UI: notSet"
+  },
+  "unknownError": {
+    "message": "未知错误",
+    "description": "Popup UI: unknownError"
+  },
+  "back": {
+    "message": "返回",
+    "description": "Popup UI: back"
+  },
+  "save": {
+    "message": "保存",
+    "description": "Popup UI: save"
+  },
+  "cancel": {
+    "message": "取消",
+    "description": "Popup UI: cancel"
+  },
+  "delete": {
+    "message": "删除",
+    "description": "Popup UI: delete"
+  },
+  "edit": {
+    "message": "编辑",
+    "description": "Popup UI: edit"
+  },
+  "insert": {
+    "message": "插入",
+    "description": "Popup UI: insert"
+  },
+  "favorite": {
+    "message": "收藏",
+    "description": "Popup UI: favorite"
+  },
+  "unfavorite": {
+    "message": "取消收藏",
+    "description": "Popup UI: unfavorite"
+  },
+  "rename": {
+    "message": "重命名",
+    "description": "Popup UI: rename"
+  },
+  "expand": {
+    "message": "展开",
+    "description": "Popup UI: expand"
+  },
+  "collapse": {
+    "message": "折叠",
+    "description": "Popup UI: collapse"
+  },
+  "refresh": {
+    "message": "刷新",
+    "description": "Popup UI: refresh"
+  },
+  "copy": {
+    "message": "复制",
+    "description": "Popup UI: copy"
+  },
+  "saved": {
+    "message": "已保存。",
+    "description": "Popup UI: saved"
+  },
+  "saveFailed": {
+    "message": "保存失败。",
+    "description": "Popup UI: saveFailed"
+  },
+  "deleted": {
+    "message": "已删除。",
+    "description": "Popup UI: deleted"
+  },
+  "deleteFailed": {
+    "message": "删除失败。",
+    "description": "Popup UI: deleteFailed"
+  },
+  "copyFailedRefresh": {
+    "message": "复制失败，请刷新后重试。",
+    "description": "Popup UI: copyFailedRefresh"
+  },
+  "emptyMessage": {
+    "message": "空消息",
+    "description": "Popup UI: emptyMessage"
+  },
+  "roleUser": {
+    "message": "用户",
+    "description": "Popup UI: roleUser"
+  },
+  "roleAssistant": {
+    "message": "助手",
+    "description": "Popup UI: roleAssistant"
+  },
+  "cgHomeTitle": {
+    "message": "插件首页",
+    "description": "Popup UI: cgHomeTitle"
+  },
+  "cgCurrentPageStatus": {
+    "message": "当前页面状态",
+    "description": "Popup UI: cgCurrentPageStatus"
+  },
+  "cgReadingCurrentTab": {
+    "message": "正在读取当前标签页",
+    "description": "Popup UI: cgReadingCurrentTab"
+  },
+  "cgStatusRecognized": {
+    "message": "已识别 ChatGPT 页面",
+    "description": "Popup UI: cgStatusRecognized"
+  },
+  "cgStatusNotChatGPT": {
+    "message": "当前页面未识别为 ChatGPT",
+    "description": "Popup UI: cgStatusNotChatGPT"
+  },
+  "cgRefreshCurrentConversation": {
+    "message": "刷新当前对话信息",
+    "description": "Popup UI: cgRefreshCurrentConversation"
+  },
+  "cgIsChatGPTPage": {
+    "message": "是否识别为 ChatGPT",
+    "description": "Popup UI: cgIsChatGPTPage"
+  },
+  "cgConversationId": {
+    "message": "对话 ID",
+    "description": "Popup UI: cgConversationId"
+  },
+  "cgConversationTitle": {
+    "message": "对话标题",
+    "description": "Popup UI: cgConversationTitle"
+  },
+  "cgUserMessageCount": {
+    "message": "用户消息数",
+    "description": "Popup UI: cgUserMessageCount"
+  },
+  "cgAssistantMessageCount": {
+    "message": "助手回复数",
+    "description": "Popup UI: cgAssistantMessageCount"
+  },
+  "cgTotalMessageCount": {
+    "message": "总消息数",
+    "description": "Popup UI: cgTotalMessageCount"
+  },
+  "cgEntryPromptVault": {
+    "message": "提示词库",
+    "description": "Popup UI: cgEntryPromptVault"
+  },
+  "cgEntryFolders": {
+    "message": "对话文件夹",
+    "description": "Popup UI: cgEntryFolders"
+  },
+  "cgEntryTimeline": {
+    "message": "时间轴",
+    "description": "Popup UI: cgEntryTimeline"
+  },
+  "cgEntryStarred": {
+    "message": "收藏消息",
+    "description": "Popup UI: cgEntryStarred"
+  },
+  "cgEntrySync": {
+    "message": "同步",
+    "description": "Popup UI: cgEntrySync"
+  },
+  "cgEntryDiagnostics": {
+    "message": "诊断信息",
+    "description": "Popup UI: cgEntryDiagnostics"
+  },
+  "cgHidePageTimeline": {
+    "message": "隐藏页面时间轴",
+    "description": "Popup UI: cgHidePageTimeline"
+  },
+  "cgShowPageTimeline": {
+    "message": "显示页面时间轴",
+    "description": "Popup UI: cgShowPageTimeline"
+  },
+  "cgOpenEntry": {
+    "message": "打开{name}",
+    "description": "Popup UI: cgOpenEntry"
+  },
+  "cgPlaceholderEntry": {
+    "message": "占位入口，后续阶段实现",
+    "description": "Popup UI: cgPlaceholderEntry"
+  },
+  "cgTimelineToggleFailed": {
+    "message": "时间轴开关失败。",
+    "description": "Popup UI: cgTimelineToggleFailed"
+  },
+  "pvLoadFailed": {
+    "message": "读取提示词库失败。",
+    "description": "Popup UI: pvLoadFailed"
+  },
+  "pvContentRequired": {
+    "message": "提示词内容不能为空。",
+    "description": "Popup UI: pvContentRequired"
+  },
+  "pvDeleteConfirm": {
+    "message": "删除提示词「{title}」？",
+    "description": "Popup UI: pvDeleteConfirm"
+  },
+  "pvNoCurrentTab": {
+    "message": "没有找到当前标签页。",
+    "description": "Popup UI: pvNoCurrentTab"
+  },
+  "pvNotChatGPTPage": {
+    "message": "当前页面不是 ChatGPT，无法插入。",
+    "description": "Popup UI: pvNotChatGPTPage"
+  },
+  "pvContentScriptNoResponse": {
+    "message": "content script 未响应，请刷新 ChatGPT 页面后重试。",
+    "description": "Popup UI: pvContentScriptNoResponse"
+  },
+  "pvInvalidInsertResult": {
+    "message": "插入失败，未收到有效结果。",
+    "description": "Popup UI: pvInvalidInsertResult"
+  },
+  "pvInsertSuccess": {
+    "message": "插入成功。",
+    "description": "Popup UI: pvInsertSuccess"
+  },
+  "pvInsertSuccessWithMethod": {
+    "message": "插入成功（{method}）。",
+    "description": "Popup UI: pvInsertSuccessWithMethod"
+  },
+  "pvInsertFailed": {
+    "message": "插入失败。",
+    "description": "Popup UI: pvInsertFailed"
+  },
+  "pvExported": {
+    "message": "已导出提示词库 JSON。",
+    "description": "Popup UI: pvExported"
+  },
+  "pvImported": {
+    "message": "导入完成。",
+    "description": "Popup UI: pvImported"
+  },
+  "pvImportFailed": {
+    "message": "导入失败。",
+    "description": "Popup UI: pvImportFailed"
+  },
+  "pvEditPrompt": {
+    "message": "编辑提示词",
+    "description": "Popup UI: pvEditPrompt"
+  },
+  "pvNewPrompt": {
+    "message": "新建提示词",
+    "description": "Popup UI: pvNewPrompt"
+  },
+  "pvTitlePlaceholder": {
+    "message": "提示词标题",
+    "description": "Popup UI: pvTitlePlaceholder"
+  },
+  "pvContentPlaceholder": {
+    "message": "提示词内容",
+    "description": "Popup UI: pvContentPlaceholder"
+  },
+  "pvTagsPlaceholder": {
+    "message": "标签，用逗号分隔",
+    "description": "Popup UI: pvTagsPlaceholder"
+  },
+  "pvFavoritePinned": {
+    "message": "收藏 / 置顶",
+    "description": "Popup UI: pvFavoritePinned"
+  },
+  "pvSearchPlaceholder": {
+    "message": "搜索提示词标题、内容或标签",
+    "description": "Popup UI: pvSearchPlaceholder"
+  },
+  "pvExportJson": {
+    "message": "导出 JSON",
+    "description": "Popup UI: pvExportJson"
+  },
+  "pvImportJson": {
+    "message": "导入 JSON",
+    "description": "Popup UI: pvImportJson"
+  },
+  "pvNoMatches": {
+    "message": "暂无匹配提示词。",
+    "description": "Popup UI: pvNoMatches"
+  },
+  "foldersUncategorized": {
+    "message": "未分类",
+    "description": "Popup UI: foldersUncategorized"
+  },
+  "foldersUnknownFolder": {
+    "message": "未知文件夹",
+    "description": "Popup UI: foldersUnknownFolder"
+  },
+  "foldersUntitledConversation": {
+    "message": "未命名对话",
+    "description": "Popup UI: foldersUntitledConversation"
+  },
+  "foldersLoadFailed": {
+    "message": "读取文件夹数据失败。",
+    "description": "Popup UI: foldersLoadFailed"
+  },
+  "foldersTitleSyncFailed": {
+    "message": "同步当前对话标题失败。",
+    "description": "Popup UI: foldersTitleSyncFailed"
+  },
+  "foldersNameRequired": {
+    "message": "请输入文件夹名称。",
+    "description": "Popup UI: foldersNameRequired"
+  },
+  "foldersChildCreated": {
+    "message": "子文件夹已创建。",
+    "description": "Popup UI: foldersChildCreated"
+  },
+  "foldersCreated": {
+    "message": "文件夹已创建。",
+    "description": "Popup UI: foldersCreated"
+  },
+  "foldersCreateFailed": {
+    "message": "创建文件夹失败。",
+    "description": "Popup UI: foldersCreateFailed"
+  },
+  "foldersCurrentNotSaveable": {
+    "message": "当前页面不是可保存的 ChatGPT 对话。",
+    "description": "Popup UI: foldersCurrentNotSaveable"
+  },
+  "foldersCurrentSaved": {
+    "message": "当前对话已保存。",
+    "description": "Popup UI: foldersCurrentSaved"
+  },
+  "foldersCurrentSaveFailed": {
+    "message": "保存当前对话失败。",
+    "description": "Popup UI: foldersCurrentSaveFailed"
+  },
+  "foldersConversationMoved": {
+    "message": "对话已移动。",
+    "description": "Popup UI: foldersConversationMoved"
+  },
+  "foldersConversationMoveFailed": {
+    "message": "移动对话失败。",
+    "description": "Popup UI: foldersConversationMoveFailed"
+  },
+  "foldersRenamed": {
+    "message": "文件夹已重命名。",
+    "description": "Popup UI: foldersRenamed"
+  },
+  "foldersRenameFailed": {
+    "message": "重命名文件夹失败。",
+    "description": "Popup UI: foldersRenameFailed"
+  },
+  "foldersDeleteWithChildrenConfirm": {
+    "message": "删除文件夹「{name}」及其 {count} 个子文件夹？其中对话会移回未分类。",
+    "description": "Popup UI: foldersDeleteWithChildrenConfirm"
+  },
+  "foldersDeleteConfirm": {
+    "message": "删除文件夹「{name}」？其中对话会移回未分类。",
+    "description": "Popup UI: foldersDeleteConfirm"
+  },
+  "foldersDeleted": {
+    "message": "文件夹已删除，对话已移回未分类。",
+    "description": "Popup UI: foldersDeleted"
+  },
+  "foldersDeleteFailed": {
+    "message": "删除文件夹失败。",
+    "description": "Popup UI: foldersDeleteFailed"
+  },
+  "foldersNoteSaved": {
+    "message": "备注已保存。",
+    "description": "Popup UI: foldersNoteSaved"
+  },
+  "foldersNoteSaveFailed": {
+    "message": "保存备注失败。",
+    "description": "Popup UI: foldersNoteSaveFailed"
+  },
+  "foldersSavedConversations": {
+    "message": "已保存对话",
+    "description": "Popup UI: foldersSavedConversations"
+  },
+  "foldersNewFolder": {
+    "message": "新建文件夹",
+    "description": "Popup UI: foldersNewFolder"
+  },
+  "foldersNamePlaceholder": {
+    "message": "文件夹名称",
+    "description": "Popup UI: foldersNamePlaceholder"
+  },
+  "foldersCreateAsRoot": {
+    "message": "创建为一级文件夹",
+    "description": "Popup UI: foldersCreateAsRoot"
+  },
+  "foldersParentFolder": {
+    "message": "上级文件夹：{name}",
+    "description": "Popup UI: foldersParentFolder"
+  },
+  "foldersCreateChild": {
+    "message": "新建子文件夹",
+    "description": "Popup UI: foldersCreateChild"
+  },
+  "foldersCreateRoot": {
+    "message": "新建一级文件夹",
+    "description": "Popup UI: foldersCreateRoot"
+  },
+  "foldersCurrentConversation": {
+    "message": "当前对话",
+    "description": "Popup UI: foldersCurrentConversation"
+  },
+  "foldersCurrentNotChatGPT": {
+    "message": "当前页面未识别为 ChatGPT 对话",
+    "description": "Popup UI: foldersCurrentNotChatGPT"
+  },
+  "foldersSaveCurrent": {
+    "message": "保存当前 ChatGPT 对话",
+    "description": "Popup UI: foldersSaveCurrent"
+  },
+  "foldersFolderList": {
+    "message": "文件夹列表",
+    "description": "Popup UI: foldersFolderList"
+  },
+  "foldersEmpty": {
+    "message": "暂无文件夹。",
+    "description": "Popup UI: foldersEmpty"
+  },
+  "foldersSearchConversationPlaceholder": {
+    "message": "搜索对话标题、备注或 URL",
+    "description": "Popup UI: foldersSearchConversationPlaceholder"
+  },
+  "foldersAllFolders": {
+    "message": "全部文件夹",
+    "description": "Popup UI: foldersAllFolders"
+  },
+  "foldersNoSavedConversations": {
+    "message": "暂无已保存对话。",
+    "description": "Popup UI: foldersNoSavedConversations"
+  },
+  "foldersCurrentFolder": {
+    "message": "当前文件夹：{name}",
+    "description": "Popup UI: foldersCurrentFolder"
+  },
+  "foldersUpdatedAt": {
+    "message": "更新时间：{time}",
+    "description": "Popup UI: foldersUpdatedAt"
+  },
+  "foldersNotePlaceholder": {
+    "message": "备注",
+    "description": "Popup UI: foldersNotePlaceholder"
+  },
+  "foldersSearchFolderPlaceholder": {
+    "message": "搜索文件夹",
+    "description": "Popup UI: foldersSearchFolderPlaceholder"
+  },
+  "starredLoadFailed": {
+    "message": "读取收藏消息失败。",
+    "description": "Popup UI: starredLoadFailed"
+  },
+  "starredRemoved": {
+    "message": "已取消收藏。",
+    "description": "Popup UI: starredRemoved"
+  },
+  "starredRemoveFailed": {
+    "message": "取消收藏失败。",
+    "description": "Popup UI: starredRemoveFailed"
+  },
+  "starredLocateFailed": {
+    "message": "未能自动定位",
+    "description": "Popup UI: starredLocateFailed"
+  },
+  "starredLocating": {
+    "message": "正在定位收藏消息...",
+    "description": "Popup UI: starredLocating"
+  },
+  "starredLocated": {
+    "message": "已定位",
+    "description": "Popup UI: starredLocated"
+  },
+  "starredOpeningConversation": {
+    "message": "正在打开对话...",
+    "description": "Popup UI: starredOpeningConversation"
+  },
+  "starredOpenedButLocateFailed": {
+    "message": "已打开对应对话，但未能自动定位收藏消息，请稍后再点一次跳转。",
+    "description": "Popup UI: starredOpenedButLocateFailed"
+  },
+  "starredJumpFailed": {
+    "message": "跳转失败，请确认当前 ChatGPT 页面已加载。",
+    "description": "Popup UI: starredJumpFailed"
+  },
+  "starredSubtitle": {
+    "message": "只保存用户发言摘要和定位信息。",
+    "description": "Popup UI: starredSubtitle"
+  },
+  "starredEmpty": {
+    "message": "暂无收藏消息。可在右侧时间轴节点上点击星标收藏。",
+    "description": "Popup UI: starredEmpty"
+  },
+  "starredCreatedAt": {
+    "message": "收藏时间：{time}",
+    "description": "Popup UI: starredCreatedAt"
+  },
+  "starredOpenJump": {
+    "message": "打开 / 跳转",
+    "description": "Popup UI: starredOpenJump"
+  },
+  "starredRemove": {
+    "message": "取消收藏",
+    "description": "Popup UI: starredRemove"
+  },
+  "diagTitle": {
+    "message": "诊断信息",
+    "description": "Popup UI: diagTitle"
+  },
+  "diagSubtitle": {
+    "message": "当前 ChatGPT以太 运行状态",
+    "description": "Popup UI: diagSubtitle"
+  },
+  "diagRuntimeStatus": {
+    "message": "运行状态",
+    "description": "Popup UI: diagRuntimeStatus"
+  },
+  "diagRefreshing": {
+    "message": "正在刷新诊断信息",
+    "description": "Popup UI: diagRefreshing"
+  },
+  "diagNoChatBody": {
+    "message": "不包含聊天正文",
+    "description": "Popup UI: diagNoChatBody"
+  },
+  "diagEmpty": {
+    "message": "暂无诊断信息。",
+    "description": "Popup UI: diagEmpty"
+  },
+  "diagLoadFailed": {
+    "message": "读取诊断信息失败。",
+    "description": "Popup UI: diagLoadFailed"
+  },
+  "diagCopied": {
+    "message": "诊断信息已复制。",
+    "description": "Popup UI: diagCopied"
+  },
+  "diagTimelineVisible": {
+    "message": "当前时间轴是否显示",
+    "description": "Popup UI: diagTimelineVisible"
+  },
+  "diagTimelineNodeCount": {
+    "message": "时间轴节点数量",
+    "description": "Popup UI: diagTimelineNodeCount"
+  },
+  "diagStarredMessageCount": {
+    "message": "收藏消息数量",
+    "description": "Popup UI: diagStarredMessageCount"
+  },
+  "diagCurrentConversationSaved": {
+    "message": "当前对话是否已保存到对话索引",
+    "description": "Popup UI: diagCurrentConversationSaved"
+  },
+  "diagExtensionVersion": {
+    "message": "插件版本号",
+    "description": "Popup UI: diagExtensionVersion"
+  },
+  "timelineLoadFailed": {
+    "message": "读取时间轴失败。",
+    "description": "Popup UI: timelineLoadFailed"
+  },
+  "timelineMessageNotFound": {
+    "message": "未找到对应消息。",
+    "description": "Popup UI: timelineMessageNotFound"
+  },
+  "timelineJumpFailed": {
+    "message": "跳转消息失败。",
+    "description": "Popup UI: timelineJumpFailed"
+  },
+  "timelineSubtitle": {
+    "message": "当前 ChatGPT 对话",
+    "description": "Popup UI: timelineSubtitle"
+  },
+  "timelineBasic": {
+    "message": "基础时间轴",
+    "description": "Popup UI: timelineBasic"
+  },
+  "timelineRefreshing": {
+    "message": "正在刷新时间轴",
+    "description": "Popup UI: timelineRefreshing"
+  },
+  "timelineMessageTotal": {
+    "message": "共 {count} 条消息",
+    "description": "Popup UI: timelineMessageTotal"
+  },
+  "timelineRefresh": {
+    "message": "刷新时间轴",
+    "description": "Popup UI: timelineRefresh"
+  },
+  "timelineNoMessages": {
+    "message": "暂未识别到消息",
+    "description": "Popup UI: timelineNoMessages"
+  },
+  "syncTitle": {
+    "message": "Google Drive 同步",
+    "description": "Popup UI: syncTitle"
+  },
+  "syncSubtitle": {
+    "message": "ChatGPT以太 手动同步",
+    "description": "Popup UI: syncSubtitle"
+  },
+  "syncStatus": {
+    "message": "同步状态",
+    "description": "Popup UI: syncStatus"
+  },
+  "syncGoogleDriveAuthStatus": {
+    "message": "Google Drive 授权状态",
+    "description": "Popup UI: syncGoogleDriveAuthStatus"
+  },
+  "syncAuthorized": {
+    "message": "已授权",
+    "description": "Popup UI: syncAuthorized"
+  },
+  "syncUnauthorized": {
+    "message": "未授权",
+    "description": "Popup UI: syncUnauthorized"
+  },
+  "syncCurrentlySyncing": {
+    "message": "当前是否正在同步",
+    "description": "Popup UI: syncCurrentlySyncing"
+  },
+  "syncLastUploadTime": {
+    "message": "上次上传时间",
+    "description": "Popup UI: syncLastUploadTime"
+  },
+  "syncLastSyncTime": {
+    "message": "上次同步时间",
+    "description": "Popup UI: syncLastSyncTime"
+  },
+  "syncRecentError": {
+    "message": "最近错误",
+    "description": "Popup UI: syncRecentError"
+  },
+  "syncUploading": {
+    "message": "正在上传…",
+    "description": "Popup UI: syncUploading"
+  },
+  "syncUploadToCloud": {
+    "message": "上传到云端",
+    "description": "Popup UI: syncUploadToCloud"
+  },
+  "syncDownloading": {
+    "message": "正在拉取…",
+    "description": "Popup UI: syncDownloading"
+  },
+  "syncDownloadMerge": {
+    "message": "从云端拉取并合并",
+    "description": "Popup UI: syncDownloadMerge"
+  },
+  "syncClearAuthReauth": {
+    "message": "清除授权缓存 / 重新授权",
+    "description": "Popup UI: syncClearAuthReauth"
+  },
+  "syncRefreshStatus": {
+    "message": "刷新状态",
+    "description": "Popup UI: syncRefreshStatus"
+  },
+  "syncPrivacyNote": {
+    "message": "仅同步提示词、文件夹、对话索引、备注、收藏消息元数据和设置，不同步完整聊天正文。",
+    "description": "Popup UI: syncPrivacyNote"
+  },
+  "syncRefreshFailed": {
+    "message": "刷新同步状态失败：{error}",
+    "description": "Popup UI: syncRefreshFailed"
+  },
+  "syncAuthCacheCleared": {
+    "message": "授权缓存已清除；下次上传或拉取时会重新授权。",
+    "description": "Popup UI: syncAuthCacheCleared"
+  },
+  "syncClearAuthFailed": {
+    "message": "清除授权缓存失败：{error}",
+    "description": "Popup UI: syncClearAuthFailed"
+  },
+  "syncUploadConfirmExistingCloud": {
+    "message": "云端已有同步数据，本次上传将更新云端数据。是否继续？",
+    "description": "Popup UI: syncUploadConfirmExistingCloud"
+  },
+  "syncUploadSuccess": {
+    "message": "ChatGPT以太 已上传到云端。",
+    "description": "Popup UI: syncUploadSuccess"
+  },
+  "syncOverwriteChatGPTConfirm": {
+    "message": "确定要用云端数据覆盖本地 ChatGPT以太 数据吗？",
+    "description": "Popup UI: syncOverwriteChatGPTConfirm"
+  },
+  "syncOverwriteSuccess": {
+    "message": "ChatGPT以太 已用云端数据覆盖本地。",
+    "description": "Popup UI: syncOverwriteSuccess"
+  },
+  "syncMergeSuccess": {
+    "message": "ChatGPT以太 已从云端合并到本地。",
+    "description": "Popup UI: syncMergeSuccess"
+  },
+  "syncFailed": {
+    "message": "同步失败",
+    "description": "Popup UI: syncFailed"
+  },
+  "syncDisabled": {
+    "message": "未启用",
+    "description": "Popup UI: syncDisabled"
+  },
+  "notSynced": {
+    "message": "未同步",
+    "description": "Popup UI: notSynced"
   }
 }

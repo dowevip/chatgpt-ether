@@ -8,6 +8,7 @@ import {
 
 import { Button } from '../../../components/ui/button';
 import { Card, CardContent, CardTitle } from '../../../components/ui/card';
+import { useLanguage } from '../../../contexts/LanguageContext';
 
 type DiagnosticsPanelProps = {
   onBack: () => void;
@@ -18,11 +19,8 @@ function valueText(value: string | number | null | undefined): string {
   return String(value);
 }
 
-function boolText(value: boolean): string {
-  return value ? '是' : '否';
-}
-
 export function DiagnosticsPanel({ onBack }: DiagnosticsPanelProps) {
+  const { t } = useLanguage();
   const [status, setStatus] = useState<ChatGPTDiagnosticsStatus | null>(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -31,24 +29,32 @@ export function DiagnosticsPanel({ onBack }: DiagnosticsPanelProps) {
     () =>
       status
         ? [
-            ['当前页面是否识别为 ChatGPT', boolText(status.isChatGPTPage)],
+            [t('cgIsChatGPTPage'), status.isChatGPTPage ? t('yes') : t('no')],
             ['conversationId', valueText(status.conversationId)],
-            ['当前对话标题', valueText(status.conversationTitle)],
-            ['当前消息节点数量', String(status.totalMessageCount)],
-            ['用户消息数量', String(status.userMessageCount)],
-            ['助手消息数量', String(status.assistantMessageCount)],
-            ['当前时间轴是否显示', boolText(status.timelineVisible)],
-            ['时间轴节点数量', String(status.timelineNodeCount)],
-            ['收藏消息数量', String(status.starredMessageCount)],
-            ['当前对话是否已保存到对话索引', boolText(status.currentConversationSaved)],
-            ['本地 schemaVersion', status.schemaVersion || '未设置'],
-            ['插件版本号', status.extensionVersion],
-            ['Google Drive 授权状态', status.googleDriveAuthStatus],
-            ['上次同步时间', status.lastSyncTime],
-            ['最近同步错误', status.recentSyncError],
+            [t('cgConversationTitle'), valueText(status.conversationTitle)],
+            [t('cgTotalMessageCount'), String(status.totalMessageCount)],
+            [t('cgUserMessageCount'), String(status.userMessageCount)],
+            [t('cgAssistantMessageCount'), String(status.assistantMessageCount)],
+            [t('diagTimelineVisible'), status.timelineVisible ? t('yes') : t('no')],
+            [t('diagTimelineNodeCount'), String(status.timelineNodeCount)],
+            [t('diagStarredMessageCount'), String(status.starredMessageCount)],
+            [t('diagCurrentConversationSaved'), status.currentConversationSaved ? t('yes') : t('no')],
+            ['schemaVersion', status.schemaVersion || t('notSet')],
+            [t('diagExtensionVersion'), status.extensionVersion],
+            [
+              t('syncGoogleDriveAuthStatus'),
+              status.googleDriveAuthStatus === '未启用'
+                ? t('syncDisabled')
+                : status.googleDriveAuthStatus,
+            ],
+            [
+              t('syncLastSyncTime'),
+              status.lastSyncTime === '未同步' ? t('notSynced') : status.lastSyncTime,
+            ],
+            [t('syncRecentError'), status.recentSyncError === '无' ? t('none') : status.recentSyncError],
           ]
         : [],
-    [status],
+    [status, t],
   );
 
   const refreshDiagnostics = async () => {
@@ -57,7 +63,7 @@ export function DiagnosticsPanel({ onBack }: DiagnosticsPanelProps) {
     try {
       setStatus(await getChatGPTDiagnosticsStatus());
     } catch {
-      setMessage('读取诊断信息失败。');
+      setMessage(t('diagLoadFailed'));
     } finally {
       setLoading(false);
     }
@@ -66,10 +72,14 @@ export function DiagnosticsPanel({ onBack }: DiagnosticsPanelProps) {
   const copyDiagnostics = async () => {
     if (!status) return;
     try {
-      await navigator.clipboard.writeText(formatChatGPTDiagnosticsText(status));
-      setMessage('诊断信息已复制。');
+      const text =
+        t('diagTitle') +
+        '\n' +
+        rows.map(([label, value]) => `${label}: ${value}`).join('\n');
+      await navigator.clipboard.writeText(text || formatChatGPTDiagnosticsText(status));
+      setMessage(t('diagCopied'));
     } catch {
-      setMessage('复制失败，请刷新后重试。');
+      setMessage(t('copyFailedRefresh'));
     }
   };
 
@@ -81,11 +91,11 @@ export function DiagnosticsPanel({ onBack }: DiagnosticsPanelProps) {
     <div className="bg-background text-foreground w-[360px]">
       <div className="border-border/50 flex items-center justify-between border-b px-5 py-4">
         <div>
-          <h1 className="text-primary text-xl font-bold">诊断信息</h1>
-          <p className="text-muted-foreground text-xs">当前 ChatGPT以太 运行状态</p>
+          <h1 className="text-primary text-xl font-bold">{t('cgEntryDiagnostics')}</h1>
+          <p className="text-muted-foreground text-xs">{t('diagSubtitle')}</p>
         </div>
         <Button type="button" variant="outline" size="sm" onClick={onBack}>
-          返回
+          {t('back')}
         </Button>
       </div>
 
@@ -93,9 +103,9 @@ export function DiagnosticsPanel({ onBack }: DiagnosticsPanelProps) {
         <Card className="p-4">
           <CardContent className="flex items-center justify-between gap-3 p-0">
             <div>
-              <CardTitle className="text-base">运行状态</CardTitle>
+              <CardTitle className="text-base">{t('diagRuntimeStatus')}</CardTitle>
               <p className="text-muted-foreground mt-1 text-xs">
-                {loading ? '正在刷新诊断信息' : '不包含聊天正文'}
+                {loading ? t('diagRefreshing') : t('diagNoChatBody')}
               </p>
             </div>
             <div className="flex shrink-0 gap-2">
@@ -106,7 +116,7 @@ export function DiagnosticsPanel({ onBack }: DiagnosticsPanelProps) {
                 disabled={loading}
                 onClick={() => void refreshDiagnostics()}
               >
-                刷新
+                {t('refresh')}
               </Button>
               <Button
                 type="button"
@@ -114,7 +124,7 @@ export function DiagnosticsPanel({ onBack }: DiagnosticsPanelProps) {
                 disabled={!status || loading}
                 onClick={() => void copyDiagnostics()}
               >
-                复制
+                {t('copy')}
               </Button>
             </div>
           </CardContent>
@@ -125,7 +135,7 @@ export function DiagnosticsPanel({ onBack }: DiagnosticsPanelProps) {
         <Card className="p-4">
           <CardContent className="space-y-2 p-0">
             {rows.length === 0 && (
-              <p className="text-muted-foreground text-sm">暂无诊断信息。</p>
+              <p className="text-muted-foreground text-sm">{t('diagEmpty')}</p>
             )}
             {rows.map(([label, value]) => (
               <div key={label} className="flex justify-between gap-3 text-xs">

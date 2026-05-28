@@ -10,6 +10,7 @@ import type { ChatGPTStarredMessage } from '@/core/types/starred';
 
 import { Button } from '../../../components/ui/button';
 import { Card, CardContent, CardTitle } from '../../../components/ui/card';
+import { useLanguage } from '../../../contexts/LanguageContext';
 
 type StarredPanelProps = {
   onBack: () => void;
@@ -25,6 +26,7 @@ function isSameConversation(url: string | undefined, conversationId: string): bo
 }
 
 export function StarredPanel({ onBack }: StarredPanelProps) {
+  const { t } = useLanguage();
   const [messages, setMessages] = useState<ChatGPTStarredMessage[]>([]);
   const [status, setStatus] = useState<string | null>(null);
   const [messageStatuses, setMessageStatuses] = useState<Record<string, string>>({});
@@ -38,15 +40,15 @@ export function StarredPanel({ onBack }: StarredPanelProps) {
   };
 
   useEffect(() => {
-    reload().catch(() => setStatus('读取收藏消息失败。'));
-  }, []);
+    reload().catch(() => setStatus(t('starredLoadFailed')));
+  }, [t]);
 
   const handleRemove = async (id: string) => {
     try {
       setMessages(await removeChatGPTStarredMessage(id));
-      setStatus('已取消收藏。');
+      setStatus(t('starredRemoved'));
     } catch {
-      setStatus('取消收藏失败。');
+      setStatus(t('starredRemoveFailed'));
     }
   };
 
@@ -89,7 +91,7 @@ export function StarredPanel({ onBack }: StarredPanelProps) {
       await new Promise((resolve) => window.setTimeout(resolve, 500));
     }
 
-    return { located: false, error: lastError || '未能自动定位' };
+    return { located: false, error: lastError || t('starredLocateFailed') };
   };
 
   const handleOpen = async (message: ChatGPTStarredMessage) => {
@@ -97,28 +99,28 @@ export function StarredPanel({ onBack }: StarredPanelProps) {
       const tabs = await browser.tabs.query({ active: true, currentWindow: true });
       const tab = tabs[0];
       if (!tab?.id) {
-        setStatus('未找到当前标签页。');
+        setStatus(t('pvNoCurrentTab'));
         return;
       }
 
       if (isSameConversation(tab.url, message.conversationId)) {
-        setMessageStatus(message.id, '正在定位收藏消息...');
+        setMessageStatus(message.id, t('starredLocating'));
         const result = await locateMessageWithRetries(tab.id, message);
-        setMessageStatus(message.id, result.located ? '已定位' : result.error || '未能自动定位');
+        setMessageStatus(message.id, result.located ? t('starredLocated') : result.error || t('starredLocateFailed'));
         return;
       }
 
-      setMessageStatus(message.id, '正在打开对话...');
+      setMessageStatus(message.id, t('starredOpeningConversation'));
       await browser.tabs.update(tab.id, { url: message.url });
       await waitForTabComplete(tab.id);
-      setMessageStatus(message.id, '正在定位收藏消息...');
+      setMessageStatus(message.id, t('starredLocating'));
       const result = await locateMessageWithRetries(tab.id, message);
       setMessageStatus(
         message.id,
-        result.located ? '已定位' : '已打开对应对话，但未能自动定位收藏消息，请稍后再点一次跳转。',
+        result.located ? t('starredLocated') : t('starredOpenedButLocateFailed'),
       );
     } catch {
-      setMessageStatus(message.id, '跳转失败，请确认当前 ChatGPT 页面已加载。');
+      setMessageStatus(message.id, t('starredJumpFailed'));
     }
   };
 
@@ -126,11 +128,11 @@ export function StarredPanel({ onBack }: StarredPanelProps) {
     <div className="w-[360px] p-4">
       <div className="mb-3 flex items-center justify-between gap-3">
         <div>
-          <h1 className="text-base font-semibold">收藏消息</h1>
-          <p className="text-muted-foreground text-xs">只保存用户发言摘要和定位信息。</p>
+          <h1 className="text-base font-semibold">{t('cgEntryStarred')}</h1>
+          <p className="text-muted-foreground text-xs">{t('starredSubtitle')}</p>
         </div>
         <Button type="button" onClick={onBack} variant="outline" className="px-3 py-1.5 text-xs">
-          返回
+          {t('back')}
         </Button>
       </div>
 
@@ -140,7 +142,7 @@ export function StarredPanel({ onBack }: StarredPanelProps) {
         {messages.length === 0 ? (
           <Card>
             <CardContent className="text-muted-foreground p-4 text-sm">
-              暂无收藏消息。可在右侧时间轴节点上点击星标收藏。
+              {t('starredEmpty')}
             </CardContent>
           </Card>
         ) : (
@@ -152,7 +154,7 @@ export function StarredPanel({ onBack }: StarredPanelProps) {
                   <p className="text-muted-foreground mt-1 text-xs">{message.snippet || '-'}</p>
                 </div>
                 <p className="text-muted-foreground text-[11px]">
-                  收藏时间：{formatTime(message.createdAt)}
+                  {t('starredCreatedAt').replace('{time}', formatTime(message.createdAt))}
                 </p>
                 {messageStatuses[message.id] && (
                   <p className="text-muted-foreground text-[11px]">{messageStatuses[message.id]}</p>
@@ -163,7 +165,7 @@ export function StarredPanel({ onBack }: StarredPanelProps) {
                     onClick={() => void handleOpen(message)}
                     className="px-3 py-1.5 text-xs"
                   >
-                    打开 / 跳转
+                    {t('starredOpenJump')}
                   </Button>
                   <Button
                     type="button"
@@ -171,7 +173,7 @@ export function StarredPanel({ onBack }: StarredPanelProps) {
                     onClick={() => void handleRemove(message.id)}
                     className="px-3 py-1.5 text-xs"
                   >
-                    取消收藏
+                    {t('starredRemove')}
                   </Button>
                 </div>
               </CardContent>

@@ -17,6 +17,7 @@ import { getModifierKey, isFirefox, isSafari } from '@/core/utils/browser';
 import { resolveWatermarkSettings } from '@/core/utils/watermarkSettings';
 
 import { DarkModeToggle } from '../../components/DarkModeToggle';
+import { LanguageSwitcher } from '../../components/LanguageSwitcher';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardTitle } from '../../components/ui/card';
 import { Label } from '../../components/ui/label';
@@ -377,15 +378,6 @@ const CHATGPT_DASHBOARD_ENTRIES = [
   'Diagnostics',
 ] as const;
 
-const CHATGPT_DASHBOARD_ENTRY_LABELS: Record<(typeof CHATGPT_DASHBOARD_ENTRIES)[number], string> = {
-  'Prompt Vault': '提示词库',
-  Folders: '对话文件夹',
-  Timeline: '时间轴',
-  Starred: '收藏消息',
-  Sync: '同步',
-  Diagnostics: '诊断信息',
-};
-
 type PopupPanel = 'dashboard' | 'promptVault' | 'folders' | 'starred' | 'sync' | 'diagnostics';
 
 function SectionReorderControls({
@@ -468,7 +460,7 @@ function SectionReorderControls({
 }
 
 export default function Popup() {
-  const { t, language } = useLanguage();
+  const { t, language, setLanguage } = useLanguage();
   const [mode, setMode] = useState<ScrollMode>('flow');
   const [hideContainer, setHideContainer] = useState<boolean>(false);
   const [draggableTimeline, setDraggableTimeline] = useState<boolean>(false);
@@ -585,26 +577,26 @@ export default function Popup() {
     try {
       const visibility = await getChatGPTPageTimelineVisibility();
       setPageTimelineVisible(visibility.visible);
-      setPageTimelineMessage(visibility.isChatGPTPage ? null : '当前页面未识别为 ChatGPT');
+      setPageTimelineMessage(visibility.isChatGPTPage ? null : t('cgStatusNotChatGPT'));
     } catch {
-      setPageTimelineMessage('当前页面未识别为 ChatGPT');
+      setPageTimelineMessage(t('cgStatusNotChatGPT'));
     }
-  }, []);
+  }, [t]);
 
   const handleTogglePageTimeline = useCallback(async () => {
     if (!chatgptDashboard.status?.isChatGPTPage) {
-      setPageTimelineMessage('当前页面未识别为 ChatGPT');
+      setPageTimelineMessage(t('cgStatusNotChatGPT'));
       return;
     }
 
     try {
       const next = await setChatGPTPageTimelineVisibility(!pageTimelineVisible);
       setPageTimelineVisible(next.visible);
-      setPageTimelineMessage(next.isChatGPTPage ? null : '当前页面未识别为 ChatGPT');
+      setPageTimelineMessage(next.isChatGPTPage ? null : t('cgStatusNotChatGPT'));
     } catch {
-      setPageTimelineMessage('时间轴开关失败。');
+      setPageTimelineMessage(t('cgTimelineToggleFailed'));
     }
-  }, [chatgptDashboard.status?.isChatGPTPage, pageTimelineVisible]);
+  }, [chatgptDashboard.status?.isChatGPTPage, pageTimelineVisible, t]);
 
   useEffect(() => {
     browser.tabs
@@ -615,6 +607,12 @@ export default function Popup() {
       })
       .catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (language !== 'zh' && language !== 'en') {
+      void setLanguage('en');
+    }
+  }, [language, setLanguage]);
 
   useEffect(() => {
     void refreshChatGPTDashboard();
@@ -1438,25 +1436,26 @@ export default function Popup() {
     <div className="bg-background text-foreground w-[360px]">
       {/* Header */}
       <div className="border-border/50 flex items-center justify-between border-b px-5 py-5">
-        <h1 className="text-primary text-2xl font-extrabold tracking-tight">ChatGPT以太</h1>
+        <h1 className="text-primary text-2xl font-extrabold tracking-tight">{t('extName')}</h1>
         <div className="flex items-center gap-1">
+          <LanguageSwitcher />
           <DarkModeToggle />
         </div>
       </div>
 
       <div className="flex flex-col gap-4 p-5">
         <Card className="p-4">
-          <CardTitle className="mb-3">插件首页</CardTitle>
+          <CardTitle className="mb-3">{t('cgHomeTitle')}</CardTitle>
           <CardContent className="space-y-3 p-0">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-sm font-semibold">当前页面状态</p>
+                <p className="text-sm font-semibold">{t('cgCurrentPageStatus')}</p>
                 <p className="text-muted-foreground text-xs">
                   {chatgptDashboard.loading
-                    ? '正在读取当前标签页'
+                    ? t('cgReadingCurrentTab')
                     : chatgptStatus?.isChatGPTPage
-                      ? '已识别 ChatGPT 页面'
-                      : '当前页面未识别为 ChatGPT'}
+                      ? t('cgStatusRecognized')
+                      : t('cgStatusNotChatGPT')}
                 </p>
               </div>
               <Button
@@ -1465,7 +1464,7 @@ export default function Popup() {
                 disabled={chatgptDashboard.loading}
                 className="shrink-0 px-3 py-1.5 text-xs"
               >
-                刷新当前对话信息
+                {t('cgRefreshCurrentConversation')}
               </Button>
             </div>
 
@@ -1477,31 +1476,33 @@ export default function Popup() {
 
             <div className="grid gap-2 text-xs">
               <div className="flex justify-between gap-3">
-                <span className="text-muted-foreground">是否识别为 ChatGPT</span>
-                <span className="font-medium">{chatgptStatus?.isChatGPTPage ? '是' : '否'}</span>
+                <span className="text-muted-foreground">{t('cgIsChatGPTPage')}</span>
+                <span className="font-medium">
+                  {chatgptStatus?.isChatGPTPage ? t('yes') : t('no')}
+                </span>
               </div>
               <div className="flex justify-between gap-3">
-                <span className="text-muted-foreground">对话 ID</span>
+                <span className="text-muted-foreground">{t('cgConversationId')}</span>
                 <span className="max-w-[180px] truncate font-mono">
                   {chatgptStatus?.conversationId || '-'}
                 </span>
               </div>
               <div className="flex justify-between gap-3">
-                <span className="text-muted-foreground">对话标题</span>
+                <span className="text-muted-foreground">{t('cgConversationTitle')}</span>
                 <span className="max-w-[180px] truncate font-medium">
                   {chatgptStatus?.conversationTitle || '-'}
                 </span>
               </div>
               <div className="flex justify-between gap-3">
-                <span className="text-muted-foreground">用户消息数</span>
+                <span className="text-muted-foreground">{t('cgUserMessageCount')}</span>
                 <span className="font-medium">{chatgptStatus?.userMessageCount ?? '-'}</span>
               </div>
               <div className="flex justify-between gap-3">
-                <span className="text-muted-foreground">助手回复数</span>
+                <span className="text-muted-foreground">{t('cgAssistantMessageCount')}</span>
                 <span className="font-medium">{chatgptStatus?.assistantMessageCount ?? '-'}</span>
               </div>
               <div className="flex justify-between gap-3">
-                <span className="text-muted-foreground">总消息数</span>
+                <span className="text-muted-foreground">{t('cgTotalMessageCount')}</span>
                 <span className="font-medium">{chatgptStatus?.totalMessageCount ?? '-'}</span>
               </div>
             </div>
@@ -1533,21 +1534,44 @@ export default function Popup() {
                     className="border-border bg-secondary/40 text-muted-foreground enabled:text-foreground rounded-md border px-2 py-2 text-xs font-medium"
                     title={
                       isTimeline && !chatgptStatus?.isChatGPTPage
-                        ? '当前页面未识别为 ChatGPT'
+                        ? t('cgStatusNotChatGPT')
                         : isTimeline
                           ? pageTimelineVisible
-                            ? '隐藏页面时间轴'
-                            : '显示页面时间轴'
+                            ? t('cgHidePageTimeline')
+                            : t('cgShowPageTimeline')
                           : enabled
-                            ? `打开${CHATGPT_DASHBOARD_ENTRY_LABELS[label]}`
-                            : '占位入口，后续阶段实现'
+                            ? t('cgOpenEntry').replace(
+                                '{name}',
+                                t(
+                                  label === 'Prompt Vault'
+                                    ? 'cgEntryPromptVault'
+                                    : label === 'Folders'
+                                      ? 'cgEntryFolders'
+                                      : label === 'Starred'
+                                        ? 'cgEntryStarred'
+                                        : label === 'Sync'
+                                          ? 'cgEntrySync'
+                                          : 'cgEntryDiagnostics',
+                                ),
+                              )
+                            : t('cgPlaceholderEntry')
                     }
                   >
                     {isTimeline
                       ? pageTimelineVisible
-                        ? '隐藏页面时间轴'
-                        : '显示页面时间轴'
-                      : CHATGPT_DASHBOARD_ENTRY_LABELS[label]}
+                        ? t('cgHidePageTimeline')
+                        : t('cgShowPageTimeline')
+                      : t(
+                          label === 'Prompt Vault'
+                            ? 'cgEntryPromptVault'
+                            : label === 'Folders'
+                              ? 'cgEntryFolders'
+                              : label === 'Starred'
+                                ? 'cgEntryStarred'
+                                : label === 'Sync'
+                                  ? 'cgEntrySync'
+                                  : 'cgEntryDiagnostics',
+                        )}
                   </button>
                 );
               })}

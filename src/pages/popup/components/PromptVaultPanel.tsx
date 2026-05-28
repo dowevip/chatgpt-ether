@@ -13,6 +13,7 @@ import type { ChatGPTPromptVaultItem } from '@/core/types/prompt';
 
 import { Button } from '../../../components/ui/button';
 import { Card, CardContent, CardTitle } from '../../../components/ui/card';
+import { useLanguage } from '../../../contexts/LanguageContext';
 
 type PromptVaultPanelProps = {
   onBack: () => void;
@@ -71,14 +72,24 @@ type InsertPromptResponse = {
   error?: string;
 };
 
-async function insertPromptIntoActiveChatGPTTab(content: string): Promise<InsertPromptResponse> {
+type InsertPromptMessages = {
+  noCurrentTab: string;
+  notChatGPTPage: string;
+  contentScriptNoResponse: string;
+  invalidInsertResult: string;
+};
+
+async function insertPromptIntoActiveChatGPTTab(
+  content: string,
+  messages: InsertPromptMessages,
+): Promise<InsertPromptResponse> {
   const tabs = await browser.tabs.query({ active: true, currentWindow: true });
   const activeTab = tabs[0];
   const tabId = activeTab?.id;
-  if (!tabId) throw new Error('没有找到当前标签页。');
+  if (!tabId) throw new Error(messages.noCurrentTab);
 
   if (!activeTab.url?.startsWith('https://chatgpt.com/')) {
-    throw new Error('当前页面不是 ChatGPT，无法插入。');
+    throw new Error(messages.notChatGPTPage);
   }
 
   let response: InsertPromptResponse | undefined;
@@ -88,17 +99,18 @@ async function insertPromptIntoActiveChatGPTTab(content: string): Promise<Insert
       payload: { content },
     })) as InsertPromptResponse | undefined;
   } catch {
-    throw new Error('content script 未响应，请刷新 ChatGPT 页面后重试。');
+    throw new Error(messages.contentScriptNoResponse);
   }
 
   if (!response?.ok) {
-    throw new Error(response?.error || '插入失败，未收到有效结果。');
+    throw new Error(response?.error || messages.invalidInsertResult);
   }
 
   return response;
 }
 
 export function PromptVaultPanel({ onBack }: PromptVaultPanelProps) {
+  const { t } = useLanguage();
   const [prompts, setPrompts] = useState<ChatGPTPromptVaultItem[]>([]);
   const [query, setQuery] = useState('');
   const [draft, setDraft] = useState<DraftState>(EMPTY_DRAFT);
@@ -109,8 +121,8 @@ export function PromptVaultPanel({ onBack }: PromptVaultPanelProps) {
   useEffect(() => {
     listChatGPTPrompts()
       .then(setPrompts)
-      .catch(() => setMessage('读取提示词库失败。'));
-  }, []);
+      .catch(() => setMessage(t('pvLoadFailed')));
+  }, [t]);
 
   const filteredPrompts = useMemo(
     () => prompts.filter((prompt) => matchesQuery(prompt, query)),
@@ -124,7 +136,7 @@ export function PromptVaultPanel({ onBack }: PromptVaultPanelProps) {
 
   const handleSave = async () => {
     if (!draft.content.trim()) {
-      setMessage('提示词内容不能为空。');
+      setMessage(t('pvContentRequired'));
       return;
     }
 
@@ -138,31 +150,40 @@ export function PromptVaultPanel({ onBack }: PromptVaultPanelProps) {
       });
       setPrompts(nextPrompts);
       resetDraft();
-      setMessage('已保存。');
+      setMessage(t('saved'));
     } catch {
-      setMessage('保存失败。');
+      setMessage(t('saveFailed'));
     }
   };
 
   const handleDelete = async (prompt: ChatGPTPromptVaultItem) => {
-    if (!window.confirm(`删除提示词「${prompt.title}」？`)) return;
+    if (!window.confirm(t('pvDeleteConfirm').replace('{title}', prompt.title))) return;
 
     try {
       const nextPrompts = await deleteChatGPTPrompt(prompt.id);
       setPrompts(nextPrompts);
       if (draft.id === prompt.id) resetDraft();
-      setMessage('已删除。');
+      setMessage(t('deleted'));
     } catch {
-      setMessage('删除失败。');
+      setMessage(t('deleteFailed'));
     }
   };
 
   const handleInsert = async (prompt: ChatGPTPromptVaultItem) => {
     try {
-      const result = await insertPromptIntoActiveChatGPTTab(prompt.content);
-      setMessage(`插入成功${result.method ? `（${result.method}）` : ''}。`);
+      const result = await insertPromptIntoActiveChatGPTTab(prompt.content, {
+        noCurrentTab: t('pvNoCurrentTab'),
+        notChatGPTPage: t('pvNotChatGPTPage'),
+        contentScriptNoResponse: t('pvContentScriptNoResponse'),
+        invalidInsertResult: t('pvInvalidInsertResult'),
+      });
+      setMessage(
+        result.method
+          ? t('pvInsertSuccessWithMethod').replace('{method}', result.method)
+          : t('pvInsertSuccess'),
+      );
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : '插入失败。');
+      setMessage(error instanceof Error ? error.message : t('pvInsertFailed'));
     }
   };
 
@@ -175,7 +196,7 @@ export function PromptVaultPanel({ onBack }: PromptVaultPanelProps) {
     link.download = `chatgpt-voyager-prompts-${new Date().toISOString().slice(0, 10)}.json`;
     link.click();
     URL.revokeObjectURL(url);
-    setMessage('已导出提示词库 JSON。');
+    setMessage(t('pvExported'));
   };
 
   const handleImportFile = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -187,9 +208,9 @@ export function PromptVaultPanel({ onBack }: PromptVaultPanelProps) {
       const text = await file.text();
       const nextPrompts = await importChatGPTPromptsFromJson(text);
       setPrompts(nextPrompts);
-      setMessage('导入完成。');
+      setMessage(t('pvImported'));
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : '导入失败。');
+      setMessage(error instanceof Error ? error.message : t('pvImportFailed'));
     }
   };
 
@@ -197,37 +218,37 @@ export function PromptVaultPanel({ onBack }: PromptVaultPanelProps) {
     <div className="bg-background text-foreground w-[360px]">
       <div className="border-border/50 flex items-center justify-between border-b px-5 py-4">
         <div>
-          <h1 className="text-primary text-xl font-bold">提示词库</h1>
-          <p className="text-muted-foreground text-xs">ChatGPT以太</p>
+          <h1 className="text-primary text-xl font-bold">{t('cgEntryPromptVault')}</h1>
+          <p className="text-muted-foreground text-xs">{t('extName')}</p>
         </div>
         <Button type="button" variant="outline" size="sm" onClick={onBack}>
-          返回
+          {t('back')}
         </Button>
       </div>
 
       <div className="flex max-h-[560px] flex-col gap-4 overflow-y-auto p-5">
         <Card className="p-4">
           <CardTitle className="mb-3 text-base">
-            {isEditing ? '编辑提示词' : '新建提示词'}
+            {isEditing ? t('pvEditPrompt') : t('pvNewPrompt')}
           </CardTitle>
           <CardContent className="space-y-3 p-0">
             <input
               value={draft.title}
               onChange={(event) => setDraft((prev) => ({ ...prev, title: event.target.value }))}
-              placeholder="提示词标题"
+              placeholder={t('pvTitlePlaceholder')}
               className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
             />
             <textarea
               value={draft.content}
               onChange={(event) => setDraft((prev) => ({ ...prev, content: event.target.value }))}
-              placeholder="提示词内容"
+              placeholder={t('pvContentPlaceholder')}
               rows={5}
               className="border-border bg-background w-full resize-y rounded-md border px-3 py-2 text-sm"
             />
             <input
               value={draft.tagsText}
               onChange={(event) => setDraft((prev) => ({ ...prev, tagsText: event.target.value }))}
-              placeholder="标签，用逗号分隔"
+              placeholder={t('pvTagsPlaceholder')}
               className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
             />
             <label className="flex items-center gap-2 text-sm">
@@ -238,15 +259,15 @@ export function PromptVaultPanel({ onBack }: PromptVaultPanelProps) {
                   setDraft((prev) => ({ ...prev, favorite: event.target.checked }))
                 }
               />
-              收藏 / 置顶
+              {t('pvFavoritePinned')}
             </label>
             <div className="flex gap-2">
               <Button type="button" size="sm" onClick={() => void handleSave()}>
-                保存
+                {t('save')}
               </Button>
               {isEditing && (
                 <Button type="button" variant="outline" size="sm" onClick={resetDraft}>
-                  取消
+                  {t('cancel')}
                 </Button>
               )}
             </div>
@@ -258,12 +279,12 @@ export function PromptVaultPanel({ onBack }: PromptVaultPanelProps) {
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="搜索提示词标题、内容或标签"
+              placeholder={t('pvSearchPlaceholder')}
               className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
             />
             <div className="flex gap-2">
               <Button type="button" variant="outline" size="sm" onClick={handleExport}>
-                导出 JSON
+                {t('pvExportJson')}
               </Button>
               <Button
                 type="button"
@@ -271,7 +292,7 @@ export function PromptVaultPanel({ onBack }: PromptVaultPanelProps) {
                 size="sm"
                 onClick={() => fileInputRef.current?.click()}
               >
-                导入 JSON
+                {t('pvImportJson')}
               </Button>
               <input
                 ref={fileInputRef}
@@ -287,7 +308,7 @@ export function PromptVaultPanel({ onBack }: PromptVaultPanelProps) {
 
         <div className="space-y-3">
           {filteredPrompts.length === 0 ? (
-            <p className="text-muted-foreground text-sm">暂无匹配提示词。</p>
+            <p className="text-muted-foreground text-sm">{t('pvNoMatches')}</p>
           ) : (
             filteredPrompts.map((prompt) => (
               <Card key={prompt.id} className="p-3">
@@ -315,7 +336,7 @@ export function PromptVaultPanel({ onBack }: PromptVaultPanelProps) {
                   )}
                   <div className="flex flex-wrap gap-2">
                     <Button type="button" size="sm" onClick={() => void handleInsert(prompt)}>
-                      插入
+                      {t('insert')}
                     </Button>
                     <Button
                       type="button"
@@ -326,7 +347,7 @@ export function PromptVaultPanel({ onBack }: PromptVaultPanelProps) {
                         setIsEditing(true);
                       }}
                     >
-                      编辑
+                      {t('edit')}
                     </Button>
                     <Button
                       type="button"
@@ -339,7 +360,7 @@ export function PromptVaultPanel({ onBack }: PromptVaultPanelProps) {
                         }).then(setPrompts)
                       }
                     >
-                      {prompt.favorite ? '取消收藏' : '收藏'}
+                      {prompt.favorite ? t('unfavorite') : t('favorite')}
                     </Button>
                     <Button
                       type="button"
@@ -347,7 +368,7 @@ export function PromptVaultPanel({ onBack }: PromptVaultPanelProps) {
                       size="sm"
                       onClick={() => void handleDelete(prompt)}
                     >
-                      删除
+                      {t('delete')}
                     </Button>
                   </div>
                 </CardContent>

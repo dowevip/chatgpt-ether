@@ -8,16 +8,14 @@ import type { ChatGPTTimelineNode, ChatGPTTimelineSnapshot } from '@/core/types/
 
 import { Button } from '../../../components/ui/button';
 import { Card, CardContent, CardTitle } from '../../../components/ui/card';
+import { useLanguage } from '../../../contexts/LanguageContext';
 
 type TimelinePanelProps = {
   onBack: () => void;
 };
 
-function roleLabel(role: ChatGPTTimelineNode['role']): string {
-  return role === 'user' ? '用户' : '助手';
-}
-
 export function TimelinePanel({ onBack }: TimelinePanelProps) {
+  const { t } = useLanguage();
   const [timeline, setTimeline] = useState<ChatGPTTimelineSnapshot | null>(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -30,7 +28,7 @@ export function TimelinePanel({ onBack }: TimelinePanelProps) {
       setTimeline(await getCurrentChatGPTTimeline());
     } catch {
       setTimeline({ isChatGPTPage: false, nodes: [] });
-      setMessage('读取时间轴失败。');
+      setMessage(t('timelineLoadFailed'));
     } finally {
       setLoading(false);
     }
@@ -43,9 +41,9 @@ export function TimelinePanel({ onBack }: TimelinePanelProps) {
   const handleScrollToNode = async (node: ChatGPTTimelineNode) => {
     try {
       const scrolled = await scrollToChatGPTTimelineMessage(node.messageAnchor);
-      setMessage(scrolled ? null : '未找到对应消息。');
+      setMessage(scrolled ? null : t('timelineMessageNotFound'));
     } catch {
-      setMessage('跳转消息失败。');
+      setMessage(t('timelineJumpFailed'));
     }
   };
 
@@ -53,11 +51,11 @@ export function TimelinePanel({ onBack }: TimelinePanelProps) {
     <div className="bg-background text-foreground w-[360px]">
       <div className="border-border/50 flex items-center justify-between border-b px-5 py-4">
         <div>
-          <h1 className="text-primary text-xl font-bold">时间轴</h1>
-          <p className="text-muted-foreground text-xs">当前 ChatGPT 对话</p>
+          <h1 className="text-primary text-xl font-bold">{t('cgEntryTimeline')}</h1>
+          <p className="text-muted-foreground text-xs">{t('timelineSubtitle')}</p>
         </div>
         <Button type="button" variant="outline" size="sm" onClick={onBack}>
-          返回
+          {t('back')}
         </Button>
       </div>
 
@@ -65,13 +63,15 @@ export function TimelinePanel({ onBack }: TimelinePanelProps) {
         <Card className="p-4">
           <CardContent className="flex items-center justify-between gap-3 p-0">
             <div>
-              <CardTitle className="text-base">基础时间轴</CardTitle>
+              <CardTitle className="text-base">{t('timelineBasic')}</CardTitle>
               <p className="text-muted-foreground mt-1 text-xs">
-                {loading ? '正在刷新时间轴' : `共 ${timeline?.nodes.length || 0} 条消息`}
+                {loading
+                  ? t('timelineRefreshing')
+                  : t('timelineMessageTotal').replace('{count}', String(timeline?.nodes.length || 0))}
               </p>
             </div>
             <Button type="button" size="sm" disabled={loading} onClick={() => void refreshTimeline()}>
-              刷新时间轴
+              {t('timelineRefresh')}
             </Button>
           </CardContent>
         </Card>
@@ -79,11 +79,11 @@ export function TimelinePanel({ onBack }: TimelinePanelProps) {
         {message && <p className="text-muted-foreground text-xs">{message}</p>}
 
         {timeline && !timeline.isChatGPTPage && (
-          <p className="text-muted-foreground text-sm">当前页面未识别为 ChatGPT</p>
+          <p className="text-muted-foreground text-sm">{t('cgStatusNotChatGPT')}</p>
         )}
 
         {timeline?.isChatGPTPage && timeline.nodes.length === 0 && (
-          <p className="text-muted-foreground text-sm">暂未识别到消息</p>
+          <p className="text-muted-foreground text-sm">{t('timelineNoMessages')}</p>
         )}
 
         {timeline?.isChatGPTPage && timeline.nodes.length > 0 && (
@@ -98,10 +98,10 @@ export function TimelinePanel({ onBack }: TimelinePanelProps) {
                 <div className="flex items-center justify-between gap-3">
                   <span className="text-primary font-semibold">#{node.index}</span>
                   <span className="text-muted-foreground shrink-0 text-xs">
-                    {roleLabel(node.role)}
+                    {node.role === 'user' ? t('roleUser') : t('roleAssistant')}
                   </span>
                 </div>
-                <p className="mt-1 line-clamp-2 text-xs">{node.summary || '空消息'}</p>
+                <p className="mt-1 line-clamp-2 text-xs">{node.summary || t('emptyMessage')}</p>
               </button>
             ))}
           </div>

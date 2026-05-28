@@ -1108,12 +1108,12 @@
     "description": "Error message when overwrite is blocked because Drive has no folders payload"
   },
   "syncUploadFailed": {
-    "message": "Upload failed",
-    "description": "Error message when upload fails"
+    "message": "Upload to cloud failed",
+    "description": "Popup UI: syncUploadFailed"
   },
   "syncDownloadFailed": {
-    "message": "Download failed",
-    "description": "Error message when download fails"
+    "message": "Download from cloud failed",
+    "description": "Popup UI: syncDownloadFailed"
   },
   "syncAuthFailed": {
     "message": "Authentication failed",
@@ -1990,5 +1990,717 @@
   "floatingPanelGestureHint": {
     "message": "Double-click to rename • Right-click for pin, color, delete.",
     "description": "Floating folder panel hint explaining folder gestures and context menu actions"
+  },
+  "yes": {
+    "message": "Yes",
+    "description": "Popup UI: yes"
+  },
+  "no": {
+    "message": "No",
+    "description": "Popup UI: no"
+  },
+  "none": {
+    "message": "None",
+    "description": "Popup UI: none"
+  },
+  "never": {
+    "message": "Never",
+    "description": "Popup UI: never"
+  },
+  "notSet": {
+    "message": "Not set",
+    "description": "Popup UI: notSet"
+  },
+  "unknownError": {
+    "message": "Unknown error",
+    "description": "Popup UI: unknownError"
+  },
+  "back": {
+    "message": "Back",
+    "description": "Popup UI: back"
+  },
+  "save": {
+    "message": "Save",
+    "description": "Popup UI: save"
+  },
+  "cancel": {
+    "message": "Cancel",
+    "description": "Popup UI: cancel"
+  },
+  "delete": {
+    "message": "Delete",
+    "description": "Popup UI: delete"
+  },
+  "edit": {
+    "message": "Edit",
+    "description": "Popup UI: edit"
+  },
+  "insert": {
+    "message": "Insert",
+    "description": "Popup UI: insert"
+  },
+  "favorite": {
+    "message": "Favorite",
+    "description": "Popup UI: favorite"
+  },
+  "unfavorite": {
+    "message": "Unfavorite",
+    "description": "Popup UI: unfavorite"
+  },
+  "rename": {
+    "message": "Rename",
+    "description": "Popup UI: rename"
+  },
+  "expand": {
+    "message": "Expand",
+    "description": "Popup UI: expand"
+  },
+  "collapse": {
+    "message": "Collapse",
+    "description": "Popup UI: collapse"
+  },
+  "refresh": {
+    "message": "Refresh",
+    "description": "Popup UI: refresh"
+  },
+  "copy": {
+    "message": "Copy",
+    "description": "Popup UI: copy"
+  },
+  "saved": {
+    "message": "Saved.",
+    "description": "Popup UI: saved"
+  },
+  "saveFailed": {
+    "message": "Save failed.",
+    "description": "Popup UI: saveFailed"
+  },
+  "deleted": {
+    "message": "Deleted.",
+    "description": "Popup UI: deleted"
+  },
+  "deleteFailed": {
+    "message": "Delete failed.",
+    "description": "Popup UI: deleteFailed"
+  },
+  "copyFailedRefresh": {
+    "message": "Copy failed. Refresh and try again.",
+    "description": "Popup UI: copyFailedRefresh"
+  },
+  "emptyMessage": {
+    "message": "Empty message",
+    "description": "Popup UI: emptyMessage"
+  },
+  "roleUser": {
+    "message": "User",
+    "description": "Popup UI: roleUser"
+  },
+  "roleAssistant": {
+    "message": "Assistant",
+    "description": "Popup UI: roleAssistant"
+  },
+  "cgHomeTitle": {
+    "message": "Home",
+    "description": "Popup UI: cgHomeTitle"
+  },
+  "cgCurrentPageStatus": {
+    "message": "Current page status",
+    "description": "Popup UI: cgCurrentPageStatus"
+  },
+  "cgReadingCurrentTab": {
+    "message": "Reading current tab",
+    "description": "Popup UI: cgReadingCurrentTab"
+  },
+  "cgStatusRecognized": {
+    "message": "ChatGPT page detected",
+    "description": "Popup UI: cgStatusRecognized"
+  },
+  "cgStatusNotChatGPT": {
+    "message": "Current page is not recognized as ChatGPT",
+    "description": "Popup UI: cgStatusNotChatGPT"
+  },
+  "cgRefreshCurrentConversation": {
+    "message": "Refresh conversation info",
+    "description": "Popup UI: cgRefreshCurrentConversation"
+  },
+  "cgIsChatGPTPage": {
+    "message": "Recognized as ChatGPT",
+    "description": "Popup UI: cgIsChatGPTPage"
+  },
+  "cgConversationId": {
+    "message": "Conversation ID",
+    "description": "Popup UI: cgConversationId"
+  },
+  "cgConversationTitle": {
+    "message": "Conversation title",
+    "description": "Popup UI: cgConversationTitle"
+  },
+  "cgUserMessageCount": {
+    "message": "User messages",
+    "description": "Popup UI: cgUserMessageCount"
+  },
+  "cgAssistantMessageCount": {
+    "message": "Assistant replies",
+    "description": "Popup UI: cgAssistantMessageCount"
+  },
+  "cgTotalMessageCount": {
+    "message": "Total messages",
+    "description": "Popup UI: cgTotalMessageCount"
+  },
+  "cgEntryPromptVault": {
+    "message": "Prompt Vault",
+    "description": "Popup UI: cgEntryPromptVault"
+  },
+  "cgEntryFolders": {
+    "message": "Folders",
+    "description": "Popup UI: cgEntryFolders"
+  },
+  "cgEntryTimeline": {
+    "message": "Timeline",
+    "description": "Popup UI: cgEntryTimeline"
+  },
+  "cgEntryStarred": {
+    "message": "Starred Messages",
+    "description": "Popup UI: cgEntryStarred"
+  },
+  "cgEntrySync": {
+    "message": "Sync",
+    "description": "Popup UI: cgEntrySync"
+  },
+  "cgEntryDiagnostics": {
+    "message": "Diagnostics",
+    "description": "Popup UI: cgEntryDiagnostics"
+  },
+  "cgHidePageTimeline": {
+    "message": "Hide page timeline",
+    "description": "Popup UI: cgHidePageTimeline"
+  },
+  "cgShowPageTimeline": {
+    "message": "Show page timeline",
+    "description": "Popup UI: cgShowPageTimeline"
+  },
+  "cgOpenEntry": {
+    "message": "Open {name}",
+    "description": "Popup UI: cgOpenEntry"
+  },
+  "cgPlaceholderEntry": {
+    "message": "Placeholder entry for a later phase",
+    "description": "Popup UI: cgPlaceholderEntry"
+  },
+  "cgTimelineToggleFailed": {
+    "message": "Timeline toggle failed.",
+    "description": "Popup UI: cgTimelineToggleFailed"
+  },
+  "pvLoadFailed": {
+    "message": "Failed to load Prompt Vault.",
+    "description": "Popup UI: pvLoadFailed"
+  },
+  "pvContentRequired": {
+    "message": "Prompt content cannot be empty.",
+    "description": "Popup UI: pvContentRequired"
+  },
+  "pvDeleteConfirm": {
+    "message": "Delete prompt \"{title}\"?",
+    "description": "Popup UI: pvDeleteConfirm"
+  },
+  "pvNoCurrentTab": {
+    "message": "No current tab found.",
+    "description": "Popup UI: pvNoCurrentTab"
+  },
+  "pvNotChatGPTPage": {
+    "message": "Current page is not ChatGPT, so the prompt cannot be inserted.",
+    "description": "Popup UI: pvNotChatGPTPage"
+  },
+  "pvContentScriptNoResponse": {
+    "message": "Content script did not respond. Refresh the ChatGPT page and try again.",
+    "description": "Popup UI: pvContentScriptNoResponse"
+  },
+  "pvInvalidInsertResult": {
+    "message": "Insert failed: no valid result received.",
+    "description": "Popup UI: pvInvalidInsertResult"
+  },
+  "pvInsertSuccess": {
+    "message": "Inserted.",
+    "description": "Popup UI: pvInsertSuccess"
+  },
+  "pvInsertSuccessWithMethod": {
+    "message": "Inserted ({method}).",
+    "description": "Popup UI: pvInsertSuccessWithMethod"
+  },
+  "pvInsertFailed": {
+    "message": "Insert failed.",
+    "description": "Popup UI: pvInsertFailed"
+  },
+  "pvExported": {
+    "message": "Prompt Vault JSON exported.",
+    "description": "Popup UI: pvExported"
+  },
+  "pvImported": {
+    "message": "Import complete.",
+    "description": "Popup UI: pvImported"
+  },
+  "pvImportFailed": {
+    "message": "Import failed.",
+    "description": "Popup UI: pvImportFailed"
+  },
+  "pvEditPrompt": {
+    "message": "Edit prompt",
+    "description": "Popup UI: pvEditPrompt"
+  },
+  "pvNewPrompt": {
+    "message": "New prompt",
+    "description": "Popup UI: pvNewPrompt"
+  },
+  "pvTitlePlaceholder": {
+    "message": "Prompt title",
+    "description": "Popup UI: pvTitlePlaceholder"
+  },
+  "pvContentPlaceholder": {
+    "message": "Prompt content",
+    "description": "Popup UI: pvContentPlaceholder"
+  },
+  "pvTagsPlaceholder": {
+    "message": "Tags, separated by commas",
+    "description": "Popup UI: pvTagsPlaceholder"
+  },
+  "pvFavoritePinned": {
+    "message": "Favorite / pin",
+    "description": "Popup UI: pvFavoritePinned"
+  },
+  "pvSearchPlaceholder": {
+    "message": "Search prompt titles, content, or tags",
+    "description": "Popup UI: pvSearchPlaceholder"
+  },
+  "pvExportJson": {
+    "message": "Export JSON",
+    "description": "Popup UI: pvExportJson"
+  },
+  "pvImportJson": {
+    "message": "Import JSON",
+    "description": "Popup UI: pvImportJson"
+  },
+  "pvNoMatches": {
+    "message": "No matching prompts.",
+    "description": "Popup UI: pvNoMatches"
+  },
+  "foldersUncategorized": {
+    "message": "Uncategorized",
+    "description": "Popup UI: foldersUncategorized"
+  },
+  "foldersUnknownFolder": {
+    "message": "Unknown folder",
+    "description": "Popup UI: foldersUnknownFolder"
+  },
+  "foldersUntitledConversation": {
+    "message": "Untitled conversation",
+    "description": "Popup UI: foldersUntitledConversation"
+  },
+  "foldersLoadFailed": {
+    "message": "Failed to load folder data.",
+    "description": "Popup UI: foldersLoadFailed"
+  },
+  "foldersTitleSyncFailed": {
+    "message": "Failed to sync current conversation title.",
+    "description": "Popup UI: foldersTitleSyncFailed"
+  },
+  "foldersNameRequired": {
+    "message": "Enter a folder name.",
+    "description": "Popup UI: foldersNameRequired"
+  },
+  "foldersChildCreated": {
+    "message": "Child folder created.",
+    "description": "Popup UI: foldersChildCreated"
+  },
+  "foldersCreated": {
+    "message": "Folder created.",
+    "description": "Popup UI: foldersCreated"
+  },
+  "foldersCreateFailed": {
+    "message": "Failed to create folder.",
+    "description": "Popup UI: foldersCreateFailed"
+  },
+  "foldersCurrentNotSaveable": {
+    "message": "Current page is not a saveable ChatGPT conversation.",
+    "description": "Popup UI: foldersCurrentNotSaveable"
+  },
+  "foldersCurrentSaved": {
+    "message": "Current conversation saved.",
+    "description": "Popup UI: foldersCurrentSaved"
+  },
+  "foldersCurrentSaveFailed": {
+    "message": "Failed to save current conversation.",
+    "description": "Popup UI: foldersCurrentSaveFailed"
+  },
+  "foldersConversationMoved": {
+    "message": "Conversation moved.",
+    "description": "Popup UI: foldersConversationMoved"
+  },
+  "foldersConversationMoveFailed": {
+    "message": "Failed to move conversation.",
+    "description": "Popup UI: foldersConversationMoveFailed"
+  },
+  "foldersRenamed": {
+    "message": "Folder renamed.",
+    "description": "Popup UI: foldersRenamed"
+  },
+  "foldersRenameFailed": {
+    "message": "Failed to rename folder.",
+    "description": "Popup UI: foldersRenameFailed"
+  },
+  "foldersDeleteWithChildrenConfirm": {
+    "message": "Delete folder \"{name}\" and its {count} child folders? Conversations inside will move to Uncategorized.",
+    "description": "Popup UI: foldersDeleteWithChildrenConfirm"
+  },
+  "foldersDeleteConfirm": {
+    "message": "Delete folder \"{name}\"? Conversations inside will move to Uncategorized.",
+    "description": "Popup UI: foldersDeleteConfirm"
+  },
+  "foldersDeleted": {
+    "message": "Folder deleted. Conversations moved to Uncategorized.",
+    "description": "Popup UI: foldersDeleted"
+  },
+  "foldersDeleteFailed": {
+    "message": "Failed to delete folder.",
+    "description": "Popup UI: foldersDeleteFailed"
+  },
+  "foldersNoteSaved": {
+    "message": "Note saved.",
+    "description": "Popup UI: foldersNoteSaved"
+  },
+  "foldersNoteSaveFailed": {
+    "message": "Failed to save note.",
+    "description": "Popup UI: foldersNoteSaveFailed"
+  },
+  "foldersSavedConversations": {
+    "message": "Saved conversations",
+    "description": "Popup UI: foldersSavedConversations"
+  },
+  "foldersNewFolder": {
+    "message": "New folder",
+    "description": "Popup UI: foldersNewFolder"
+  },
+  "foldersNamePlaceholder": {
+    "message": "Folder name",
+    "description": "Popup UI: foldersNamePlaceholder"
+  },
+  "foldersCreateAsRoot": {
+    "message": "Create as top-level folder",
+    "description": "Popup UI: foldersCreateAsRoot"
+  },
+  "foldersParentFolder": {
+    "message": "Parent folder: {name}",
+    "description": "Popup UI: foldersParentFolder"
+  },
+  "foldersCreateChild": {
+    "message": "Create child folder",
+    "description": "Popup UI: foldersCreateChild"
+  },
+  "foldersCreateRoot": {
+    "message": "Create top-level folder",
+    "description": "Popup UI: foldersCreateRoot"
+  },
+  "foldersCurrentConversation": {
+    "message": "Current conversation",
+    "description": "Popup UI: foldersCurrentConversation"
+  },
+  "foldersCurrentNotChatGPT": {
+    "message": "Current page is not recognized as a ChatGPT conversation",
+    "description": "Popup UI: foldersCurrentNotChatGPT"
+  },
+  "foldersSaveCurrent": {
+    "message": "Save current ChatGPT conversation",
+    "description": "Popup UI: foldersSaveCurrent"
+  },
+  "foldersFolderList": {
+    "message": "Folder list",
+    "description": "Popup UI: foldersFolderList"
+  },
+  "foldersEmpty": {
+    "message": "No folders yet.",
+    "description": "Popup UI: foldersEmpty"
+  },
+  "foldersSearchConversationPlaceholder": {
+    "message": "Search conversation title, note, or URL",
+    "description": "Popup UI: foldersSearchConversationPlaceholder"
+  },
+  "foldersAllFolders": {
+    "message": "All folders",
+    "description": "Popup UI: foldersAllFolders"
+  },
+  "foldersNoSavedConversations": {
+    "message": "No saved conversations yet.",
+    "description": "Popup UI: foldersNoSavedConversations"
+  },
+  "foldersCurrentFolder": {
+    "message": "Current folder: {name}",
+    "description": "Popup UI: foldersCurrentFolder"
+  },
+  "foldersUpdatedAt": {
+    "message": "Updated: {time}",
+    "description": "Popup UI: foldersUpdatedAt"
+  },
+  "foldersNotePlaceholder": {
+    "message": "Note",
+    "description": "Popup UI: foldersNotePlaceholder"
+  },
+  "foldersSearchFolderPlaceholder": {
+    "message": "Search folders",
+    "description": "Popup UI: foldersSearchFolderPlaceholder"
+  },
+  "starredLoadFailed": {
+    "message": "Failed to load starred messages.",
+    "description": "Popup UI: starredLoadFailed"
+  },
+  "starredRemoved": {
+    "message": "Removed from starred.",
+    "description": "Popup UI: starredRemoved"
+  },
+  "starredRemoveFailed": {
+    "message": "Failed to remove starred message.",
+    "description": "Popup UI: starredRemoveFailed"
+  },
+  "starredLocateFailed": {
+    "message": "Could not locate automatically",
+    "description": "Popup UI: starredLocateFailed"
+  },
+  "starredLocating": {
+    "message": "Locating starred message...",
+    "description": "Popup UI: starredLocating"
+  },
+  "starredLocated": {
+    "message": "Located",
+    "description": "Popup UI: starredLocated"
+  },
+  "starredOpeningConversation": {
+    "message": "Opening conversation...",
+    "description": "Popup UI: starredOpeningConversation"
+  },
+  "starredOpenedButLocateFailed": {
+    "message": "Opened the conversation, but could not automatically locate the starred message. Try jumping again later.",
+    "description": "Popup UI: starredOpenedButLocateFailed"
+  },
+  "starredJumpFailed": {
+    "message": "Jump failed. Make sure the ChatGPT page has loaded.",
+    "description": "Popup UI: starredJumpFailed"
+  },
+  "starredSubtitle": {
+    "message": "Only stores user message snippets and locator metadata.",
+    "description": "Popup UI: starredSubtitle"
+  },
+  "starredEmpty": {
+    "message": "No starred messages yet. Click the star on a right-side timeline node to save one.",
+    "description": "Popup UI: starredEmpty"
+  },
+  "starredCreatedAt": {
+    "message": "Starred: {time}",
+    "description": "Popup UI: starredCreatedAt"
+  },
+  "starredOpenJump": {
+    "message": "Open / Jump",
+    "description": "Popup UI: starredOpenJump"
+  },
+  "starredRemove": {
+    "message": "Remove star",
+    "description": "Popup UI: starredRemove"
+  },
+  "diagTitle": {
+    "message": "Diagnostics",
+    "description": "Popup UI: diagTitle"
+  },
+  "diagSubtitle": {
+    "message": "Current ChatGPT Ether runtime status",
+    "description": "Popup UI: diagSubtitle"
+  },
+  "diagRuntimeStatus": {
+    "message": "Runtime status",
+    "description": "Popup UI: diagRuntimeStatus"
+  },
+  "diagRefreshing": {
+    "message": "Refreshing diagnostics",
+    "description": "Popup UI: diagRefreshing"
+  },
+  "diagNoChatBody": {
+    "message": "Does not include chat content",
+    "description": "Popup UI: diagNoChatBody"
+  },
+  "diagEmpty": {
+    "message": "No diagnostics yet.",
+    "description": "Popup UI: diagEmpty"
+  },
+  "diagLoadFailed": {
+    "message": "Failed to load diagnostics.",
+    "description": "Popup UI: diagLoadFailed"
+  },
+  "diagCopied": {
+    "message": "Diagnostics copied.",
+    "description": "Popup UI: diagCopied"
+  },
+  "diagTimelineVisible": {
+    "message": "Timeline visible",
+    "description": "Popup UI: diagTimelineVisible"
+  },
+  "diagTimelineNodeCount": {
+    "message": "Timeline node count",
+    "description": "Popup UI: diagTimelineNodeCount"
+  },
+  "diagStarredMessageCount": {
+    "message": "Starred message count",
+    "description": "Popup UI: diagStarredMessageCount"
+  },
+  "diagCurrentConversationSaved": {
+    "message": "Current conversation saved in index",
+    "description": "Popup UI: diagCurrentConversationSaved"
+  },
+  "diagExtensionVersion": {
+    "message": "Extension version",
+    "description": "Popup UI: diagExtensionVersion"
+  },
+  "timelineLoadFailed": {
+    "message": "Failed to load timeline.",
+    "description": "Popup UI: timelineLoadFailed"
+  },
+  "timelineMessageNotFound": {
+    "message": "Message not found.",
+    "description": "Popup UI: timelineMessageNotFound"
+  },
+  "timelineJumpFailed": {
+    "message": "Failed to jump to message.",
+    "description": "Popup UI: timelineJumpFailed"
+  },
+  "timelineSubtitle": {
+    "message": "Current ChatGPT conversation",
+    "description": "Popup UI: timelineSubtitle"
+  },
+  "timelineBasic": {
+    "message": "Basic timeline",
+    "description": "Popup UI: timelineBasic"
+  },
+  "timelineRefreshing": {
+    "message": "Refreshing timeline",
+    "description": "Popup UI: timelineRefreshing"
+  },
+  "timelineMessageTotal": {
+    "message": "{count} messages",
+    "description": "Popup UI: timelineMessageTotal"
+  },
+  "timelineRefresh": {
+    "message": "Refresh timeline",
+    "description": "Popup UI: timelineRefresh"
+  },
+  "timelineNoMessages": {
+    "message": "No messages detected yet",
+    "description": "Popup UI: timelineNoMessages"
+  },
+  "syncTitle": {
+    "message": "Google Drive Sync",
+    "description": "Popup UI: syncTitle"
+  },
+  "syncSubtitle": {
+    "message": "ChatGPT Ether manual sync",
+    "description": "Popup UI: syncSubtitle"
+  },
+  "syncStatus": {
+    "message": "Sync status",
+    "description": "Popup UI: syncStatus"
+  },
+  "syncGoogleDriveAuthStatus": {
+    "message": "Google Drive authorization",
+    "description": "Popup UI: syncGoogleDriveAuthStatus"
+  },
+  "syncAuthorized": {
+    "message": "Authorized",
+    "description": "Popup UI: syncAuthorized"
+  },
+  "syncUnauthorized": {
+    "message": "Not authorized",
+    "description": "Popup UI: syncUnauthorized"
+  },
+  "syncCurrentlySyncing": {
+    "message": "Currently syncing",
+    "description": "Popup UI: syncCurrentlySyncing"
+  },
+  "syncLastUploadTime": {
+    "message": "Last upload",
+    "description": "Popup UI: syncLastUploadTime"
+  },
+  "syncLastSyncTime": {
+    "message": "Last sync",
+    "description": "Popup UI: syncLastSyncTime"
+  },
+  "syncRecentError": {
+    "message": "Recent error",
+    "description": "Popup UI: syncRecentError"
+  },
+  "syncUploading": {
+    "message": "Uploading...",
+    "description": "Popup UI: syncUploading"
+  },
+  "syncUploadToCloud": {
+    "message": "Upload to cloud",
+    "description": "Popup UI: syncUploadToCloud"
+  },
+  "syncDownloading": {
+    "message": "Downloading...",
+    "description": "Popup UI: syncDownloading"
+  },
+  "syncDownloadMerge": {
+    "message": "Download and merge",
+    "description": "Popup UI: syncDownloadMerge"
+  },
+  "syncClearAuthReauth": {
+    "message": "Clear auth cache / reauthorize",
+    "description": "Popup UI: syncClearAuthReauth"
+  },
+  "syncRefreshStatus": {
+    "message": "Refresh status",
+    "description": "Popup UI: syncRefreshStatus"
+  },
+  "syncPrivacyNote": {
+    "message": "Only syncs prompts, folders, conversation index, notes, starred message metadata, and settings. Full chat content is not synced.",
+    "description": "Popup UI: syncPrivacyNote"
+  },
+  "syncRefreshFailed": {
+    "message": "Failed to refresh sync status: {error}",
+    "description": "Popup UI: syncRefreshFailed"
+  },
+  "syncAuthCacheCleared": {
+    "message": "Authorization cache cleared. The next upload or download will reauthorize.",
+    "description": "Popup UI: syncAuthCacheCleared"
+  },
+  "syncClearAuthFailed": {
+    "message": "Failed to clear authorization cache: {error}",
+    "description": "Popup UI: syncClearAuthFailed"
+  },
+  "syncUploadConfirmExistingCloud": {
+    "message": "Cloud sync data already exists. This upload will update the cloud data. Continue?",
+    "description": "Popup UI: syncUploadConfirmExistingCloud"
+  },
+  "syncUploadSuccess": {
+    "message": "ChatGPT Ether uploaded to cloud.",
+    "description": "Popup UI: syncUploadSuccess"
+  },
+  "syncOverwriteChatGPTConfirm": {
+    "message": "Overwrite local ChatGPT Ether data with cloud data?",
+    "description": "Popup UI: syncOverwriteChatGPTConfirm"
+  },
+  "syncOverwriteSuccess": {
+    "message": "ChatGPT Ether local data overwritten from cloud.",
+    "description": "Popup UI: syncOverwriteSuccess"
+  },
+  "syncMergeSuccess": {
+    "message": "ChatGPT Ether cloud data merged into local data.",
+    "description": "Popup UI: syncMergeSuccess"
+  },
+  "syncFailed": {
+    "message": "Sync failed",
+    "description": "Popup UI: syncFailed"
+  },
+  "syncDisabled": {
+    "message": "Disabled",
+    "description": "Popup UI: syncDisabled"
+  },
+  "notSynced": {
+    "message": "Not synced",
+    "description": "Popup UI: notSynced"
   }
 }

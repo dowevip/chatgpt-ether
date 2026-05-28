@@ -260,13 +260,16 @@ export function CloudSyncSettings({ chatgptOnly = false, onBack }: CloudSyncSett
       })) as { ok?: boolean; state?: SyncState; error?: string } | undefined;
       if (response?.state) setSyncState(response.state);
       if (!response?.ok && response?.error) {
-        setStatusMessage({ text: `刷新同步状态失败：${response.error}`, kind: 'err' });
+        setStatusMessage({
+          text: t('syncRefreshFailed').replace('{error}', response.error),
+          kind: 'err',
+        });
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : '未知错误';
-      setStatusMessage({ text: `刷新同步状态失败：${message}`, kind: 'err' });
+      const message = error instanceof Error ? error.message : t('unknownError');
+      setStatusMessage({ text: t('syncRefreshFailed').replace('{error}', message), kind: 'err' });
     }
-  }, []);
+  }, [t]);
 
   // Format timestamp for display
   const formatLastSync = useCallback(
@@ -350,25 +353,28 @@ export function CloudSyncSettings({ chatgptOnly = false, onBack }: CloudSyncSett
       }
       if (platform === 'chatgpt') {
         setStatusMessage({
-          text: '授权缓存已清除；下次上传或拉取时会重新授权。',
+          text: t('syncAuthCacheCleared'),
           kind: 'ok',
         });
       }
     } catch (error) {
       console.error('[CloudSyncSettings] Sign out failed:', error);
       if (platform === 'chatgpt') {
-        const message = error instanceof Error ? error.message : '未知错误';
-        setStatusMessage({ text: `清除授权缓存失败：${message}`, kind: 'err' });
+        const message = error instanceof Error ? error.message : t('unknownError');
+        setStatusMessage({
+          text: t('syncClearAuthFailed').replace('{error}', message),
+          kind: 'err',
+        });
       }
     }
-  }, [platform]);
+  }, [platform, t]);
 
   // Handle sync now (upload current data)
   const handleSyncNow = useCallback(async () => {
     if (
       platform === 'chatgpt' &&
       (syncState.lastUploadTimeChatGPT || syncState.lastSyncTimeChatGPT) &&
-      !window.confirm('云端已有同步数据，本次上传将更新云端数据。是否继续？')
+      !window.confirm(t('syncUploadConfirmExistingCloud'))
     ) {
       return;
     }
@@ -385,9 +391,9 @@ export function CloudSyncSettings({ chatgptOnly = false, onBack }: CloudSyncSett
 
         if (response?.state) setSyncState(response.state);
         if (!response?.ok) {
-          throw new Error(response?.error || response?.state?.error || '上传到云端失败');
+          throw new Error(response?.error || response?.state?.error || t('syncUploadFailed'));
         }
-        setStatusMessage({ text: 'ChatGPT以太 已上传到云端。', kind: 'ok' });
+        setStatusMessage({ text: t('syncUploadSuccess'), kind: 'ok' });
         return;
       }
 
@@ -481,7 +487,7 @@ export function CloudSyncSettings({ chatgptOnly = false, onBack }: CloudSyncSett
         throw new Error(response?.error || response?.state?.error || t('syncUploadFailed'));
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Sync failed';
+      const errorMessage = error instanceof Error ? error.message : t('syncFailed');
       console.error('[CloudSyncSettings] Sync failed:', error);
       setStatusMessage({ text: t('syncError').replace('{error}', errorMessage), kind: 'err' });
     } finally {
@@ -504,7 +510,7 @@ export function CloudSyncSettings({ chatgptOnly = false, onBack }: CloudSyncSett
         mode === 'overwrite' &&
         !window.confirm(
           platform === 'chatgpt'
-            ? '确定要用云端数据覆盖本地 ChatGPT以太 数据吗？'
+            ? t('syncOverwriteChatGPTConfirm')
             : t('syncOverwriteConfirm'),
         )
       ) {
@@ -525,13 +531,13 @@ export function CloudSyncSettings({ chatgptOnly = false, onBack }: CloudSyncSett
 
           if (response?.state) setSyncState(response.state);
           if (!response?.ok) {
-            throw new Error(response?.error || response?.state?.error || '从云端拉取失败');
+            throw new Error(response?.error || response?.state?.error || t('syncDownloadFailed'));
           }
           setStatusMessage({
             text:
               mode === 'overwrite'
-                ? 'ChatGPT以太 已用云端数据覆盖本地。'
-                : 'ChatGPT以太 已从云端合并到本地。',
+                ? t('syncOverwriteSuccess')
+                : t('syncMergeSuccess'),
             kind: 'ok',
           });
           return;
@@ -770,7 +776,7 @@ export function CloudSyncSettings({ chatgptOnly = false, onBack }: CloudSyncSett
 
         setStatusMessage({ text: t('syncSuccess'), kind: 'ok' });
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Download failed';
+        const errorMessage = error instanceof Error ? error.message : t('syncDownloadFailed');
         console.error('[CloudSyncSettings] Download failed:', error);
         setStatusMessage({ text: t('syncError').replace('{error}', errorMessage), kind: 'err' });
       } finally {
@@ -796,14 +802,14 @@ export function CloudSyncSettings({ chatgptOnly = false, onBack }: CloudSyncSett
   }, [statusMessage]);
 
   const formatChatGPTTime = useCallback((timestamp: number | null): string => {
-    if (!timestamp) return '从未';
-    return new Date(timestamp).toLocaleString('zh-CN', {
+    if (!timestamp) return t('never');
+    return new Date(timestamp).toLocaleString(undefined, {
       month: '2-digit',
       day: '2-digit',
       hour: '2-digit',
       minute: '2-digit',
     });
-  }, []);
+  }, [t]);
 
   // Don't render on Safari
   if (isSafariBrowser) return null;
@@ -815,47 +821,47 @@ export function CloudSyncSettings({ chatgptOnly = false, onBack }: CloudSyncSett
       <div className="bg-background text-foreground w-[360px]">
         <div className="border-border/50 flex items-center justify-between border-b px-5 py-4">
           <div>
-            <h1 className="text-lg font-bold">Google Drive 同步</h1>
-            <p className="text-muted-foreground text-xs">ChatGPT以太 手动同步</p>
+            <h1 className="text-lg font-bold">{t('syncTitle')}</h1>
+            <p className="text-muted-foreground text-xs">{t('syncSubtitle')}</p>
           </div>
           {onBack && (
             <Button type="button" variant="ghost" size="sm" onClick={onBack}>
-              返回
+              {t('back')}
             </Button>
           )}
         </div>
 
         <div className="p-5">
           <Card className="p-4">
-            <CardTitle className="mb-3">同步状态</CardTitle>
+            <CardTitle className="mb-3">{t('syncStatus')}</CardTitle>
             <CardContent className="space-y-4 p-0">
               <div className="grid gap-2 text-xs">
                 <div className="flex justify-between gap-3">
-                  <span className="text-muted-foreground">Google Drive 授权状态</span>
+                  <span className="text-muted-foreground">{t('syncGoogleDriveAuthStatus')}</span>
                   <span className="font-medium">
-                    {syncState.isAuthenticated ? '已授权' : '未授权'}
+                    {syncState.isAuthenticated ? t('syncAuthorized') : t('syncUnauthorized')}
                   </span>
                 </div>
                 <div className="flex justify-between gap-3">
-                  <span className="text-muted-foreground">当前是否正在同步</span>
-                  <span className="font-medium">{syncState.isSyncing ? '是' : '否'}</span>
+                  <span className="text-muted-foreground">{t('syncCurrentlySyncing')}</span>
+                  <span className="font-medium">{syncState.isSyncing ? t('yes') : t('no')}</span>
                 </div>
                 <div className="flex justify-between gap-3">
-                  <span className="text-muted-foreground">上次上传时间</span>
+                  <span className="text-muted-foreground">{t('syncLastUploadTime')}</span>
                   <span className="font-medium">
                     {formatChatGPTTime(syncState.lastUploadTimeChatGPT)}
                   </span>
                 </div>
                 <div className="flex justify-between gap-3">
-                  <span className="text-muted-foreground">上次同步时间</span>
+                  <span className="text-muted-foreground">{t('syncLastSyncTime')}</span>
                   <span className="font-medium">
                     {formatChatGPTTime(syncState.lastSyncTimeChatGPT)}
                   </span>
                 </div>
                 <div className="flex justify-between gap-3">
-                  <span className="text-muted-foreground">最近错误</span>
+                  <span className="text-muted-foreground">{t('syncRecentError')}</span>
                   <span className="max-w-[180px] truncate font-medium">
-                    {syncState.error || '无'}
+                    {syncState.error || t('none')}
                   </span>
                 </div>
               </div>
@@ -868,7 +874,7 @@ export function CloudSyncSettings({ chatgptOnly = false, onBack }: CloudSyncSett
                   disabled={busy}
                   className="w-full"
                 >
-                  {isUploading ? '正在上传…' : '上传到云端'}
+                  {isUploading ? t('syncUploading') : t('syncUploadToCloud')}
                 </Button>
                 <Button
                   type="button"
@@ -878,7 +884,7 @@ export function CloudSyncSettings({ chatgptOnly = false, onBack }: CloudSyncSett
                   disabled={busy}
                   className="w-full"
                 >
-                  {downloadMode === 'merge' ? '正在拉取…' : '从云端拉取并合并'}
+                  {downloadMode === 'merge' ? t('syncDownloading') : t('syncDownloadMerge')}
                 </Button>
                 <div className="grid grid-cols-2 gap-2">
                   <Button
@@ -889,7 +895,7 @@ export function CloudSyncSettings({ chatgptOnly = false, onBack }: CloudSyncSett
                     disabled={busy}
                     className="text-xs"
                   >
-                    清除授权缓存 / 重新授权
+                    {t('syncClearAuthReauth')}
                   </Button>
                   <Button
                     type="button"
@@ -899,13 +905,13 @@ export function CloudSyncSettings({ chatgptOnly = false, onBack }: CloudSyncSett
                     disabled={busy}
                     className="text-xs"
                   >
-                    刷新状态
+                    {t('syncRefreshStatus')}
                   </Button>
                 </div>
               </div>
 
               <p className="text-muted-foreground text-xs">
-                仅同步提示词、文件夹、对话索引、备注、收藏消息元数据和设置，不同步完整聊天正文。
+                {t('syncPrivacyNote')}
               </p>
 
               {statusMessage && (
