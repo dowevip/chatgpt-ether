@@ -193,7 +193,7 @@ export function PromptVaultPanel({ onBack }: PromptVaultPanelProps) {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `chatgpt-voyager-prompts-${new Date().toISOString().slice(0, 10)}.json`;
+    link.download = `chatgpt-ether-prompts-${new Date().toISOString().slice(0, 10)}.json`;
     link.click();
     URL.revokeObjectURL(url);
     setMessage(t('pvExported'));
@@ -316,7 +316,7 @@ export function PromptVaultPanel({ onBack }: PromptVaultPanelProps) {
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <p className="truncate text-sm font-semibold">
-                        {prompt.favorite ? 'â˜… ' : ''}
+                        {prompt.favorite ? 'â˜?' : ''}
                         {prompt.title}
                       </p>
                       <p className="text-muted-foreground line-clamp-2 text-xs">{prompt.content}</p>
