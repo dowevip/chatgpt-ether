@@ -11,6 +11,7 @@
  */
 import type { FolderData } from '@/core/types/folder';
 import type {
+  ChatGPTSyncPayload,
   FolderExportPayload,
   ForkExportPayload,
   ForkNodesDataSync,
@@ -38,6 +39,7 @@ const SETTINGS_FILE_NAME = 'gemini-voyager-settings.json';
 const STARRED_FILE_NAME = 'gemini-voyager-starred.json';
 const FORKS_FILE_NAME = 'gemini-voyager-forks.json';
 const TIMELINE_HIERARCHY_FILE_NAME = 'gemini-voyager-timeline-hierarchy.json';
+const CHATGPT_SYNC_FILE_NAME = 'chatgpt-voyager-sync.json';
 const BACKUP_FOLDER_NAME = 'Gemini Voyager Data';
 const DRIVE_API_BASE = 'https://www.googleapis.com/drive/v3';
 const DRIVE_UPLOAD_BASE = 'https://www.googleapis.com/upload/drive/v3';
@@ -140,8 +142,83 @@ export class GoogleDriveSyncService {
     this.timelineHierarchyFileId = null;
     this.backupFolderId = null;
     this.fileIdByName = {};
-    this.updateState({ isAuthenticated: false, lastSyncTime: null, error: null });
+    this.updateState({
+      isAuthenticated: false,
+      lastSyncTime: null,
+      lastSyncTimeChatGPT: null,
+      error: null,
+    });
     await this.saveState();
+  }
+
+  async uploadChatGPTPayload(
+    payload: ChatGPTSyncPayload,
+    interactive: boolean = true,
+  ): Promise<boolean> {
+    try {
+      this.updateState({ isSyncing: true, error: null });
+      const token = await this.getAuthToken(interactive);
+      if (!token) {
+        if (!interactive) {
+          this.updateState({ isSyncing: false, isAuthenticated: false });
+          return false;
+        }
+        throw new Error('Not authenticated');
+      }
+
+      const fileId = await this.ensureAppDataFileId(token, CHATGPT_SYNC_FILE_NAME);
+      await this.uploadFileWithRetry(token, fileId, payload);
+      const syncTime = Date.now();
+      this.updateState({
+        isSyncing: false,
+        isAuthenticated: true,
+        lastUploadTimeChatGPT: syncTime,
+        error: null,
+      });
+      await this.saveState();
+      return true;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'ChatGPT upload failed';
+      console.error('[GoogleDriveSyncService] ChatGPT upload failed:', error);
+      this.updateState({ isSyncing: false, error: errorMessage });
+      return false;
+    }
+  }
+
+  async downloadChatGPTPayload(interactive: boolean = true): Promise<ChatGPTSyncPayload | null> {
+    try {
+      this.updateState({ isSyncing: true, error: null });
+      const token = await this.getAuthToken(interactive);
+      if (!token) {
+        if (!interactive) {
+          this.updateState({ isSyncing: false, isAuthenticated: false });
+          return null;
+        }
+        throw new Error('Not authenticated');
+      }
+
+      const fileId = await this.findAppDataFile(token, CHATGPT_SYNC_FILE_NAME);
+      if (!fileId) {
+        this.updateState({ isSyncing: false, isAuthenticated: true });
+        return null;
+      }
+
+      const payload = await this.downloadFileWithRetry<ChatGPTSyncPayload>(token, fileId);
+      const syncTime = Date.now();
+      this.updateState({
+        isSyncing: false,
+        isAuthenticated: true,
+        lastSyncTimeChatGPT: syncTime,
+        error: null,
+      });
+      await this.saveState();
+      return payload;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'ChatGPT download failed';
+      console.error('[GoogleDriveSyncService] ChatGPT download failed:', error);
+      this.updateState({ isSyncing: false, error: errorMessage });
+      return null;
+    }
   }
 
   /**
@@ -674,6 +751,37 @@ export class GoogleDriveSyncService {
     return result.files?.[0]?.id || null;
   }
 
+  private async findAppDataFile(token: string, fileName: string): Promise<string | null> {
+    const query = encodeURIComponent(`name='${fileName}' and trashed=false`);
+    const url = `${DRIVE_API_BASE}/files?q=${query}&spaces=appDataFolder&fields=files(id,name)`;
+    const response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+    if (!response.ok) {
+      throw new Error(`Failed to search appDataFolder files: ${response.status}`);
+    }
+    const result = await response.json();
+    return result.files?.[0]?.id || null;
+  }
+
+  private async ensureAppDataFileId(token: string, fileName: string): Promise<string> {
+    const existingId = await this.findAppDataFile(token, fileName);
+    if (existingId) return existingId;
+
+    const response = await fetch(`${DRIVE_API_BASE}/files`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: fileName,
+        mimeType: 'application/json',
+        parents: ['appDataFolder'],
+      }),
+    });
+    if (!response.ok) {
+      throw new Error(`Failed to create appDataFolder file: ${response.status}`);
+    }
+    const result = await response.json();
+    return result.id;
+  }
+
   private getFileNameForScope(baseFileName: string, accountScope: SyncAccountScope | null): string {
     if (!accountScope) return baseFileName;
 
@@ -958,6 +1066,8 @@ export class GoogleDriveSyncService {
         'gvLastUploadTime',
         'gvLastSyncTimeAIStudio',
         'gvLastUploadTimeAIStudio',
+        'gvLastSyncTimeChatGPT',
+        'gvLastUploadTimeChatGPT',
         'gvSyncError',
       ]);
       this.state = {
@@ -966,6 +1076,8 @@ export class GoogleDriveSyncService {
         lastUploadTime: getNumberValue(result.gvLastUploadTime),
         lastSyncTimeAIStudio: getNumberValue(result.gvLastSyncTimeAIStudio),
         lastUploadTimeAIStudio: getNumberValue(result.gvLastUploadTimeAIStudio),
+        lastSyncTimeChatGPT: getNumberValue(result.gvLastSyncTimeChatGPT),
+        lastUploadTimeChatGPT: getNumberValue(result.gvLastUploadTimeChatGPT),
         error: getStringValue(result.gvSyncError),
         isSyncing: false,
         isAuthenticated: false,
@@ -987,6 +1099,8 @@ export class GoogleDriveSyncService {
         gvLastUploadTime: this.state.lastUploadTime,
         gvLastSyncTimeAIStudio: this.state.lastSyncTimeAIStudio,
         gvLastUploadTimeAIStudio: this.state.lastUploadTimeAIStudio,
+        gvLastSyncTimeChatGPT: this.state.lastSyncTimeChatGPT,
+        gvLastUploadTimeChatGPT: this.state.lastUploadTimeChatGPT,
         gvSyncError: this.state.error,
       });
     } catch (error) {

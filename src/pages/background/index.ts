@@ -2,6 +2,11 @@
 import browser from 'webextension-polyfill';
 
 import {
+  exportChatGPTSyncPayload,
+  importChatGPTSyncPayload,
+  validateChatGPTSyncPayload,
+} from '@/core/services/ChatGPTSyncPayloadService';
+import {
   type AccountPlatform,
   type AccountScope,
   accountIsolationService,
@@ -750,6 +755,48 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           case 'gv.fork.getGroup': {
             const nodes = await forkNodesManager.getGroup(message.payload.forkGroupId);
             sendResponse({ ok: true, nodes });
+            return;
+          }
+        }
+      }
+
+      // Handle sync operations
+      if (message && message.type && message.type.startsWith('gv.chatgpt.sync.')) {
+        switch (message.type) {
+          case 'gv.chatgpt.sync.upload': {
+            const interactive = message.payload?.interactive !== false;
+            const payload = await exportChatGPTSyncPayload();
+            validateChatGPTSyncPayload(payload);
+            const success = await googleDriveSyncService.uploadChatGPTPayload(
+              payload,
+              interactive,
+            );
+            sendResponse({ ok: success, state: await googleDriveSyncService.getState() });
+            return;
+          }
+          case 'gv.chatgpt.sync.download': {
+            const interactive = message.payload?.interactive !== false;
+            const mode = message.payload?.mode === 'overwrite' ? 'overwrite' : 'merge';
+            const payload = await googleDriveSyncService.downloadChatGPTPayload(interactive);
+            if (!payload) {
+              sendResponse({
+                ok: false,
+                state: await googleDriveSyncService.getState(),
+                error: '云端没有找到 ChatGPT Voyager 同步数据',
+              });
+              return;
+            }
+            validateChatGPTSyncPayload(payload);
+            const result = await importChatGPTSyncPayload(payload, { mode });
+            sendResponse({
+              ok: result.ok,
+              data: result,
+              state: await googleDriveSyncService.getState(),
+            });
+            return;
+          }
+          case 'gv.chatgpt.sync.getState': {
+            sendResponse({ ok: true, state: await googleDriveSyncService.getState() });
             return;
           }
         }

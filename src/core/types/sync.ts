@@ -4,7 +4,10 @@
  */
 import type { StarredMessagesData } from '@/pages/content/timeline/starredTypes';
 
+import type { ChatGPTConversationIndex, ChatGPTFolder } from './conversation';
 import type { FolderData } from './folder';
+import type { ChatGPTPromptVaultItem } from './prompt';
+import type { ChatGPTStarredMessage } from './starred';
 
 /**
  * Sync mode configuration
@@ -19,7 +22,7 @@ export type SyncMode = 'disabled' | 'manual' | 'auto';
  * - gemini: Main Gemini website (gemini.google.com)
  * - aistudio: AI Studio website (aistudio.google.com, aistudio.google.cn)
  */
-export type SyncPlatform = 'gemini' | 'aistudio';
+export type SyncPlatform = 'gemini' | 'aistudio' | 'chatgpt';
 
 export interface SyncAccountScope {
   accountKey: string;
@@ -41,6 +44,10 @@ export interface SyncState {
   lastSyncTimeAIStudio: number | null;
   /** Timestamp of last successful upload for AI Studio */
   lastUploadTimeAIStudio: number | null;
+  /** Timestamp of last successful ChatGPT Voyager cloud download */
+  lastSyncTimeChatGPT: number | null;
+  /** Timestamp of last successful ChatGPT Voyager cloud upload */
+  lastUploadTimeChatGPT: number | null;
   /** Whether a sync operation is currently in progress */
   isSyncing: boolean;
   /** Last error message (null if no error) */
@@ -183,6 +190,8 @@ export const DEFAULT_SYNC_STATE: SyncState = {
   lastUploadTime: null,
   lastSyncTimeAIStudio: null,
   lastUploadTimeAIStudio: null,
+  lastSyncTimeChatGPT: null,
+  lastUploadTimeChatGPT: null,
   isSyncing: false,
   error: null,
   isAuthenticated: false,
@@ -222,4 +231,47 @@ export interface SyncResponse {
   error?: string;
   state?: SyncState;
   data?: SyncData;
+}
+
+export type ChatGPTSyncSource = 'chatgpt-voyager';
+
+export type ChatGPTSyncSettings = {
+  timelineVisible?: boolean;
+  timelineWidth?: number;
+  timelineHeight?: number;
+  collapsedFolderIds?: string[];
+};
+
+export type ChatGPTSyncTimeMetadata = Record<string, never>;
+
+export interface ChatGPTSyncPayload {
+  schemaVersion: number;
+  exportedAt: string;
+  source: ChatGPTSyncSource;
+  data: {
+    prompts: ChatGPTPromptVaultItem[];
+    folders: ChatGPTFolder[];
+    conversations: ChatGPTConversationIndex[];
+    starredMessages: ChatGPTStarredMessage[];
+    settings: ChatGPTSyncSettings;
+    timeMetadata: ChatGPTSyncTimeMetadata;
+  };
+}
+
+export type ChatGPTSyncImportMode = 'merge' | 'overwrite';
+
+export interface ChatGPTSyncImportOptions {
+  mode: ChatGPTSyncImportMode;
+}
+
+export interface ChatGPTSyncImportResult {
+  ok: boolean;
+  mode: ChatGPTSyncImportMode;
+  backupKey?: string;
+  restoredCounts: {
+    prompts: number;
+    folders: number;
+    conversations: number;
+    starredMessages: number;
+  };
 }

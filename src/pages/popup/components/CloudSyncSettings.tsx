@@ -81,6 +81,14 @@ function isTimelineHierarchyData(value: unknown): value is TimelineHierarchyData
 
 type DownloadMode = 'merge' | 'overwrite';
 
+function isChatGPTUrl(url: string | null | undefined): boolean {
+  try {
+    return new URL(url || '').hostname.toLowerCase() === 'chatgpt.com';
+  } catch {
+    return false;
+  }
+}
+
 /**
  * CloudSyncSettings component for popup
  * Allows users to configure Google Drive sync settings
@@ -108,6 +116,7 @@ export function CloudSyncSettings() {
   const detectPlatform = useCallback(async (): Promise<SyncPlatform> => {
     try {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (isChatGPTUrl(tab?.url)) return 'chatgpt';
       return detectAccountPlatformFromUrl(tab?.url ?? null);
     } catch (e) {
       console.warn('[CloudSyncSettings] Failed to detect platform:', e);
@@ -118,6 +127,7 @@ export function CloudSyncSettings() {
   const resolveCurrentPageSyncScope = useCallback(
     async (respectIsolationSetting: boolean): Promise<SyncAccountScope | null> => {
       if (respectIsolationSetting) {
+        if (platform === 'chatgpt') return null;
         const isolationEnabled = await accountIsolationService.isIsolationEnabled({ platform });
         if (!isolationEnabled) {
           return null;
@@ -323,6 +333,20 @@ export function CloudSyncSettings() {
     setIsUploading(true);
 
     try {
+      if (platform === 'chatgpt') {
+        const response = (await chrome.runtime.sendMessage({
+          type: 'gv.chatgpt.sync.upload',
+          payload: { interactive: true },
+        })) as { ok?: boolean; error?: string; state?: SyncState } | undefined;
+
+        if (response?.state) setSyncState(response.state);
+        if (!response?.ok) {
+          throw new Error(response?.error || response?.state?.error || '上传到云端失败');
+        }
+        setStatusMessage({ text: 'ChatGPT Voyager 已上传到云端。', kind: 'ok' });
+        return;
+      }
+
       const accountContext = await resolveAccountSyncContext();
       const timelineHierarchyContext = await resolveTimelineHierarchySyncContext();
       let accountScope = accountContext.accountScope;
@@ -440,6 +464,26 @@ export function CloudSyncSettings() {
 
       try {
         const accountContext = await resolveAccountSyncContext();
+        if (platform === 'chatgpt') {
+          const response = (await chrome.runtime.sendMessage({
+            type: 'gv.chatgpt.sync.download',
+            payload: { interactive: true, mode },
+          })) as { ok?: boolean; error?: string; state?: SyncState } | undefined;
+
+          if (response?.state) setSyncState(response.state);
+          if (!response?.ok) {
+            throw new Error(response?.error || response?.state?.error || '从云端拉取失败');
+          }
+          setStatusMessage({
+            text:
+              mode === 'overwrite'
+                ? 'ChatGPT Voyager 已用云端数据覆盖本地。'
+                : 'ChatGPT Voyager 已从云端合并到本地。',
+            kind: 'ok',
+          });
+          return;
+        }
+
         const timelineHierarchyContext = await resolveTimelineHierarchySyncContext();
         let accountScope = accountContext.accountScope;
         let folderStorageKey = accountContext.folderStorageKey;
@@ -877,20 +921,30 @@ export function CloudSyncSettings() {
             {/* Platform Indicator & Sync Times */}
             <div className="text-muted-foreground space-y-0.5 text-center text-xs">
               <p className="text-foreground/70 font-medium">
-                {platform === 'aistudio' ? '📊 AI Studio' : '✨ Gemini'}
+                {platform === 'chatgpt'
+                  ? 'ChatGPT Voyager'
+                  : platform === 'aistudio'
+                    ? '📊 AI Studio'
+                    : '✨ Gemini'}
               </p>
               <p>
                 ↑{' '}
                 {formatLastUpload(
-                  platform === 'aistudio'
-                    ? syncState.lastUploadTimeAIStudio
-                    : syncState.lastUploadTime,
+                  platform === 'chatgpt'
+                    ? syncState.lastUploadTimeChatGPT
+                    : platform === 'aistudio'
+                      ? syncState.lastUploadTimeAIStudio
+                      : syncState.lastUploadTime,
                 )}
               </p>
               <p>
                 ↓{' '}
                 {formatLastSync(
-                  platform === 'aistudio' ? syncState.lastSyncTimeAIStudio : syncState.lastSyncTime,
+                  platform === 'chatgpt'
+                    ? syncState.lastSyncTimeChatGPT
+                    : platform === 'aistudio'
+                      ? syncState.lastSyncTimeAIStudio
+                      : syncState.lastSyncTime,
                 )}
               </p>
             </div>
