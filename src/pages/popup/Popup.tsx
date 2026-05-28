@@ -29,6 +29,7 @@ import { FoldersPanel } from './components/FoldersPanel';
 import { KeyboardShortcutSettings } from './components/KeyboardShortcutSettings';
 import { PromptVaultPanel } from './components/PromptVaultPanel';
 import { StarredHistory } from './components/StarredHistory';
+import { StarredPanel } from './components/StarredPanel';
 import {
   IconChatGPT,
   IconClaude,
@@ -386,7 +387,7 @@ const CHATGPT_DASHBOARD_ENTRY_LABELS: Record<(typeof CHATGPT_DASHBOARD_ENTRIES)[
   Diagnostics: '诊断信息',
 };
 
-type PopupPanel = 'dashboard' | 'promptVault' | 'folders';
+type PopupPanel = 'dashboard' | 'promptVault' | 'folders' | 'starred';
 
 function SectionReorderControls({
   isFirst,
@@ -1422,6 +1423,10 @@ export default function Popup() {
     );
   }
 
+  if (activePanel === 'starred') {
+    return <StarredPanel onBack={() => setActivePanel('dashboard')} />;
+  }
+
   return (
     <div className="bg-background text-foreground w-[360px]">
       {/* Header */}
@@ -1501,6 +1506,7 @@ export default function Popup() {
                 const enabled =
                   label === 'Prompt Vault' ||
                   label === 'Folders' ||
+                  label === 'Starred' ||
                   (isTimeline && Boolean(chatgptStatus?.isChatGPTPage));
 
                 return (
@@ -1511,6 +1517,7 @@ export default function Popup() {
                     onClick={() => {
                       if (label === 'Prompt Vault') setActivePanel('promptVault');
                       if (label === 'Folders') setActivePanel('folders');
+                      if (label === 'Starred') setActivePanel('starred');
                       if (isTimeline) void handleTogglePageTimeline();
                     }}
                     className="border-border bg-secondary/40 text-muted-foreground enabled:text-foreground rounded-md border px-2 py-2 text-xs font-medium"
@@ -1521,9 +1528,9 @@ export default function Popup() {
                           ? pageTimelineVisible
                             ? '隐藏页面时间轴'
                             : '显示页面时间轴'
-                        : enabled
-                          ? `打开${CHATGPT_DASHBOARD_ENTRY_LABELS[label]}`
-                          : '占位入口，后续阶段实现'
+                          : enabled
+                            ? `打开${CHATGPT_DASHBOARD_ENTRY_LABELS[label]}`
+                            : '占位入口，后续阶段实现'
                     }
                   >
                     {isTimeline

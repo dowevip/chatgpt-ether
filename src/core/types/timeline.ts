@@ -81,6 +81,7 @@ export type ChatGPTTimelineNode = {
   index: number;
   role: ChatGPTTimelineRole;
   summary: string;
+  turnId?: string;
   messageAnchor: string;
   messageId?: string;
   parentId?: string | null;

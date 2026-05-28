@@ -9,6 +9,10 @@ import {
   scrollChatGPTContainerToTop,
   scrollChatGPTMessageIntoView,
 } from '@/core/adapters/chatgptAdapter';
+import {
+  listChatGPTStarredMessages,
+  toggleChatGPTStarredMessage,
+} from '@/core/services/ChatGPTStarredService';
 import type { ChatGPTTimelineNode } from '@/core/types/timeline';
 
 import {
@@ -40,8 +44,18 @@ let hintEl: HTMLParagraphElement | null = null;
 let activeAnchor: string | null = null;
 let locatingAnchor: string | null = null;
 let locatingText = '正在定位...';
+let starredMessageKeys = new Set<string>();
 let panelWidth = DEFAULT_WIDTH;
 let panelHeight = Math.round(globalThis.innerHeight * 0.7);
+
+type ChatGPTTimelineLocateRequest = {
+  conversationId?: string;
+  turnId?: string;
+  messageId?: string;
+  messageAnchor?: string;
+  snippet?: string;
+  fingerprint?: string;
+};
 
 function summarize(text: string): string {
   const normalized = String(text || '')
@@ -54,6 +68,16 @@ function summarize(text: string): string {
 
 function roleLabel(role: ChatGPTTimelineNode['role']): string {
   return role === 'user' ? '用户' : '助手';
+}
+
+function getStarredKey(conversationId: string, locatorId: string): string {
+  return `${conversationId}:${locatorId}`;
+}
+
+function getNodeStarredKey(node: ChatGPTTimelineNode): string | null {
+  const conversationId = chatgptAdapter.getConversationId();
+  if (!conversationId || !node.messageAnchor) return null;
+  return getStarredKey(conversationId, node.turnId || node.messageAnchor);
 }
 
 function clampHeight(height: number): number {
@@ -115,7 +139,26 @@ function applyPanelSize(): void {
 
 function reconcileDomMessageIds(capturedNodes: ChatGPTTimelineNode[]): void {
   const indexed = indexChatGPTUserMessageDom(capturedNodes);
-  const matched = indexed.filter((entry) => entry.messageId).length;
+  const byTurnId = new Map(
+    indexed.filter((entry) => entry.turnId).map((entry) => [entry.turnId, entry]),
+  );
+  const byMessageId = new Map(
+    indexed.filter((entry) => entry.messageId).map((entry) => [entry.messageId, entry]),
+  );
+  const byFingerprint = new Map(indexed.map((entry) => [entry.fingerprint, entry]));
+
+  for (const node of capturedNodes) {
+    const matched =
+      (node.turnId ? byTurnId.get(node.turnId) : undefined) ||
+      (node.messageId ? byMessageId.get(node.messageId) : undefined) ||
+      (node.fingerprint ? byFingerprint.get(node.fingerprint) : undefined);
+    if (!matched) continue;
+    node.turnId = node.turnId || matched.turnId;
+    node.messageId = node.messageId || matched.messageId;
+    node.messageAnchor = matched.anchor || node.messageAnchor;
+  }
+
+  const matched = indexed.filter((entry) => entry.turnId || entry.messageId).length;
   console.debug('[ChatGPT Voyager] 时间轴 DOM 映射完成', {
     matched,
     captured: capturedNodes.length,
@@ -127,6 +170,9 @@ function wait(ms: number): Promise<void> {
 }
 
 function findRenderedIndexRange(): { min: number; max: number } | null {
+  const byTurnId = new Map(
+    nodes.filter((node) => node.turnId).map((node) => [node.turnId, node.index]),
+  );
   const byMessageId = new Map(
     nodes.filter((node) => node.messageId).map((node) => [node.messageId, node.index]),
   );
@@ -137,6 +183,7 @@ function findRenderedIndexRange(): { min: number; max: number } | null {
 
   for (const domNode of indexChatGPTUserMessageDom(nodes)) {
     const index =
+      (domNode.turnId && byTurnId.get(domNode.turnId)) ||
       (domNode.messageId && byMessageId.get(domNode.messageId)) ||
       (domNode.fingerprint && byFingerprint.get(domNode.fingerprint));
     if (typeof index === 'number') indices.push(index);
@@ -151,14 +198,14 @@ async function progressiveScrollToNode(node: ChatGPTTimelineNode): Promise<boole
   let container = getChatGPTMainScrollContainer(indexed);
   let locateResult = locateChatGPTUserTimelineTarget(node, nodes);
   if (locateResult.found && locateResult.element) {
-    scrollChatGPTMessageIntoView(locateResult.element);
+    await scrollChatGPTMessageIntoView(locateResult.element);
     highlightChatGPTMessageElement(locateResult.element);
     return true;
   }
 
   const visibleRange = findRenderedIndexRange();
   let direction: -1 | 1 | null = null;
-  if (visibleRange) {
+  if (visibleRange && node.index > 0) {
     if (node.index < visibleRange.min) direction = -1;
     if (node.index > visibleRange.max) direction = 1;
   }
@@ -181,7 +228,7 @@ async function progressiveScrollToNode(node: ChatGPTTimelineNode): Promise<boole
     container = getChatGPTMainScrollContainer(indexed);
     locateResult = locateChatGPTUserTimelineTarget(node, nodes);
     if (locateResult.found && locateResult.element) {
-      scrollChatGPTMessageIntoView(locateResult.element);
+      await scrollChatGPTMessageIntoView(locateResult.element);
       highlightChatGPTMessageElement(locateResult.element);
       console.debug('[ChatGPT Voyager] 时间轴渐进定位完成', {
         success: true,
@@ -205,7 +252,7 @@ async function progressiveScrollToNode(node: ChatGPTTimelineNode): Promise<boole
     container = getChatGPTMainScrollContainer(indexed);
     locateResult = locateChatGPTUserTimelineTarget(node, nodes);
     if (locateResult.found && locateResult.element) {
-      scrollChatGPTMessageIntoView(locateResult.element);
+      await scrollChatGPTMessageIntoView(locateResult.element);
       highlightChatGPTMessageElement(locateResult.element);
       return true;
     }
@@ -257,11 +304,68 @@ function readTimelineNodes(): ChatGPTTimelineNode[] {
     index: index + 1,
     role: node.role,
     summary: summarize(node.snippet),
+    turnId: (node as { turnId?: string }).turnId,
     messageAnchor: node.anchor,
     messageId: (node as { messageId?: string }).messageId,
     fingerprint: (node as { fingerprint?: string }).fingerprint,
     source: 'dom',
   }));
+}
+
+async function refreshStarredState(): Promise<void> {
+  const conversationId = chatgptAdapter.getConversationId();
+  if (!conversationId) {
+    starredMessageKeys = new Set();
+    return;
+  }
+
+  try {
+    const messages = await listChatGPTStarredMessages();
+    starredMessageKeys = new Set(
+      messages
+        .filter((message) => message.conversationId === conversationId)
+        .map((message) =>
+          getStarredKey(message.conversationId, message.turnId || message.messageAnchor),
+        ),
+    );
+  } catch {
+    starredMessageKeys = new Set();
+  }
+}
+
+async function handleStarClick(node: ChatGPTTimelineNode): Promise<void> {
+  if (node.role !== 'user') return;
+
+  const conversationId = chatgptAdapter.getConversationId();
+  if (!conversationId) {
+    if (statusEl) statusEl.textContent = '当前对话无法收藏';
+    return;
+  }
+
+  try {
+    const result = await toggleChatGPTStarredMessage({
+      conversationId,
+      conversationTitle: chatgptAdapter.getConversationTitle() || '未命名对话',
+      url: globalThis.location.href,
+      turnId: node.turnId,
+      messageId: node.messageId,
+      messageAnchor: node.messageAnchor,
+      role: 'user',
+      snippet: node.summary,
+      fingerprint: node.fingerprint,
+    });
+    starredMessageKeys = new Set(
+      result.messages
+        .filter((message) => message.conversationId === conversationId)
+        .map((message) =>
+          getStarredKey(message.conversationId, message.turnId || message.messageAnchor),
+        ),
+    );
+    renderList();
+    if (statusEl) statusEl.textContent = result.starred ? '已收藏' : '已取消收藏';
+  } catch {
+    if (statusEl) statusEl.textContent = '收藏操作失败';
+  }
 }
 
 function injectStyles(): void {
@@ -498,6 +602,21 @@ function injectStyles(): void {
     .cg-voyager-timeline-node-role {
       color: #6b7280;
     }
+    .cg-voyager-timeline-star {
+      border: 0;
+      border-radius: 6px;
+      background: transparent;
+      color: #9ca3af;
+      cursor: pointer;
+      font-size: 14px;
+      line-height: 1;
+      padding: 2px 4px;
+    }
+    .cg-voyager-timeline-star:hover,
+    .cg-voyager-timeline-star-active {
+      background: rgba(245, 158, 11, 0.12);
+      color: #d97706;
+    }
     .cg-voyager-timeline-node-summary {
       display: -webkit-box;
       margin: 0;
@@ -544,6 +663,13 @@ function injectStyles(): void {
       .cg-voyager-timeline-node-role {
         color: #94a3b8;
       }
+      .cg-voyager-timeline-star {
+        color: #94a3b8;
+      }
+      .cg-voyager-timeline-star:hover,
+      .cg-voyager-timeline-star-active {
+        color: #fbbf24;
+      }
     }
   `;
   document.documentElement.appendChild(style);
@@ -588,15 +714,21 @@ function renderList(): void {
     marker.addEventListener('click', () => void handleNodeClick(node));
     markerEl.appendChild(marker);
 
-    const item = document.createElement('button');
-    item.type = 'button';
+    const item = document.createElement('div');
     item.className = [
       'cg-voyager-timeline-node',
       node.messageAnchor === activeAnchor ? 'cg-voyager-timeline-node-active' : '',
     ]
       .filter(Boolean)
       .join(' ');
+    item.tabIndex = 0;
+    item.setAttribute('role', 'button');
     item.addEventListener('click', () => void handleNodeClick(node));
+    item.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      event.preventDefault();
+      void handleNodeClick(node);
+    });
 
     const meta = document.createElement('div');
     meta.className = 'cg-voyager-timeline-node-meta';
@@ -615,6 +747,27 @@ function renderList(): void {
       node.messageAnchor === locatingAnchor ? locatingText : node.summary || '未识别内容';
 
     meta.append(index, role);
+    if (node.role === 'user') {
+      const starKey = getNodeStarredKey(node);
+      const isStarred = Boolean(starKey && starredMessageKeys.has(starKey));
+      const star = document.createElement('button');
+      star.type = 'button';
+      star.className = [
+        'cg-voyager-timeline-star',
+        isStarred ? 'cg-voyager-timeline-star-active' : '',
+      ]
+        .filter(Boolean)
+        .join(' ');
+      star.title = isStarred ? '取消收藏' : '收藏消息';
+      star.setAttribute('aria-label', isStarred ? '取消收藏' : '收藏消息');
+      star.textContent = isStarred ? '★' : '☆';
+      star.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        void handleStarClick(node);
+      });
+      meta.appendChild(star);
+    }
     item.append(meta, summary);
     listEl.appendChild(item);
   }
@@ -642,12 +795,64 @@ async function handleNodeClick(node: ChatGPTTimelineNode): Promise<void> {
   if (statusEl) statusEl.textContent = '已定位';
 }
 
+export async function scrollChatGPTTimelineToMessage(
+  request: string | ChatGPTTimelineLocateRequest,
+): Promise<boolean> {
+  const target =
+    typeof request === 'string'
+      ? { messageAnchor: request }
+      : {
+          ...request,
+          summary: request.snippet,
+        };
+
+  if (!chatgptAdapter.isSupportedPage() || (!target.turnId && !target.messageAnchor)) return false;
+  if (target.conversationId && target.conversationId !== chatgptAdapter.getConversationId()) {
+    return false;
+  }
+
+  if (nodes.length === 0) {
+    requestCurrentChatGPTConversationCapture();
+    await wait(250);
+    nodes = readTimelineNodes();
+    await refreshStarredState();
+  }
+
+  const node =
+    nodes.find((item) => target.turnId && item.turnId === target.turnId) ||
+    nodes.find((item) => target.messageId && item.messageId === target.messageId) ||
+    nodes.find((item) => target.messageAnchor && item.messageAnchor === target.messageAnchor) ||
+    nodes.find((item) => target.fingerprint && item.fingerprint === target.fingerprint) ||
+    ({
+      index: 0,
+      role: 'user',
+      summary: target.snippet || '',
+      turnId: target.turnId,
+      messageAnchor: target.messageAnchor || (target.turnId ? `chatgpt-turn:${target.turnId}` : ''),
+      messageId: target.messageId,
+      fingerprint: target.fingerprint,
+      source: 'captured',
+    } satisfies ChatGPTTimelineNode);
+
+  if (node.role !== 'user') return false;
+
+  const scrolled = await progressiveScrollToNode(node);
+  if (scrolled) {
+    activeAnchor = node.messageAnchor;
+    locatingAnchor = null;
+    locatingText = '正在定位...';
+    renderList();
+  }
+  return scrolled;
+}
+
 async function refreshTimeline(requestCapture = true): Promise<void> {
   if (requestCapture) {
     requestCurrentChatGPTConversationCapture();
     await wait(250);
   }
   nodes = readTimelineNodes();
+  await refreshStarredState();
   renderList();
 }
 

@@ -5,6 +5,8 @@ import type { ConversationInfo, MessageNodeRef, MessageRole, PageAdapter } from 
 const CHATGPT_HOSTS = new Set(['chatgpt.com']);
 
 const CHATGPT_TURN_SELECTORS = [
+  '[data-turn="user"][data-turn-id]',
+  '[data-turn="assistant"][data-turn-id]',
   'article[data-testid^="conversation-turn-"]',
   '[data-testid^="conversation-turn-"]',
   '[data-testid*="conversation-turn"]',
@@ -37,6 +39,7 @@ const CHATGPT_INPUT_SELECTORS = [
 ];
 
 const CHATGPT_MESSAGE_ANCHOR_ATTR = 'data-cg-voyager-anchor';
+const CHATGPT_TURN_ID_ATTR = 'data-cg-voyager-turn-id';
 const CHATGPT_MESSAGE_ID_ATTR = 'data-cg-voyager-message-id';
 const CHATGPT_MESSAGE_FINGERPRINT_ATTR = 'data-cg-voyager-fingerprint';
 const CHATGPT_MESSAGE_INDEX_ATTR = 'data-cg-voyager-index';
@@ -62,7 +65,8 @@ export type ChatGPTInsertPromptResult = {
 
 export type ChatGPTTimelineTarget = {
   index?: number;
-  messageAnchor: string;
+  turnId?: string;
+  messageAnchor?: string;
   messageId?: string;
   fingerprint?: string;
   summary?: string;
@@ -70,6 +74,7 @@ export type ChatGPTTimelineTarget = {
 
 export type ChatGPTDomUserMessageIndexEntry = {
   element: HTMLElement;
+  turnId?: string;
   anchor: string;
   messageId?: string;
   fingerprint: string;
@@ -91,10 +96,46 @@ export type ChatGPTScrollContainerInfo = {
 
 export type ChatGPTLocateResult = {
   found: boolean;
-  method?: 'messageId' | 'anchor' | 'fingerprint' | 'text' | 'index';
+  method?: ChatGPTUserTurnLocateMethod;
   element?: HTMLElement;
   domIndexCount: number;
   matchedCount: number;
+};
+
+export type ChatGPTUserTurnLocateMethod =
+  | 'turnId'
+  | 'cgTurnId'
+  | 'messageId'
+  | 'anchor'
+  | 'fingerprint'
+  | 'text'
+  | 'index';
+
+export type ChatGPTUserTurnLocateRequest = {
+  turnId?: string;
+  messageId?: string;
+  anchor?: string;
+  messageAnchor?: string;
+  fingerprint?: string;
+  snippet?: string;
+  summary?: string;
+  index?: number;
+};
+
+export type ChatGPTUserTurnLocateResult = {
+  ok: boolean;
+  reason: string;
+  targetElement?: HTMLElement;
+  method?: ChatGPTUserTurnLocateMethod;
+  debug: {
+    domIndexCount: number;
+    matchedCount: number;
+    hasTurnId: boolean;
+    hasMessageId: boolean;
+    hasAnchor: boolean;
+    hasFingerprint: boolean;
+    hasSnippet: boolean;
+  };
 };
 
 function getCurrentUrl(): string {
@@ -369,6 +410,7 @@ function uniqueMessageElements(elements: HTMLElement[]): HTMLElement[] {
 
 function closestArticleOrSelf(element: HTMLElement): HTMLElement {
   return (
+    element.closest<HTMLElement>('[data-turn][data-turn-id]') ||
     element.closest<HTMLElement>('article[data-testid^="conversation-turn-"]') ||
     element.closest<HTMLElement>('[data-testid^="conversation-turn-"]') ||
     element.closest<HTMLElement>('article') ||
@@ -377,7 +419,48 @@ function closestArticleOrSelf(element: HTMLElement): HTMLElement {
   );
 }
 
+function getTurnIdFromElement(element: HTMLElement): string | undefined {
+  const turnElement = element.matches('[data-turn-id]')
+    ? element
+    : element.closest<HTMLElement>('[data-turn-id]');
+  return turnElement?.getAttribute('data-turn-id') || undefined;
+}
+
+function extractReactFiberUserText(element: HTMLElement): string {
+  try {
+    const fiberKey = Object.keys(element).find((key) => key.startsWith('__reactFiber'));
+    const turn = fiberKey
+      ? ((element as unknown as Record<string, unknown>)[fiberKey] as {
+          return?: {
+            memoizedProps?: {
+              turn?: {
+                messages?: Array<{ content?: { parts?: unknown[] } }>;
+              };
+            };
+          };
+        })
+      : null;
+    const parts = turn?.return?.memoizedProps?.turn?.messages?.[0]?.content?.parts;
+    if (!Array.isArray(parts)) return '';
+    return normalizeMessageText(parts.filter((part) => typeof part === 'string').join(' '));
+  } catch {
+    return '';
+  }
+}
+
+function getUserTurnText(element: HTMLElement): string {
+  const domText = normalizeMessageText(element.textContent);
+  if (domText) return domText;
+  return extractReactFiberUserText(element);
+}
+
 function getRoleFromElement(element: HTMLElement): MessageRole | null {
+  const turnRole =
+    element.getAttribute('data-turn') ||
+    element.closest<HTMLElement>('[data-turn]')?.getAttribute('data-turn');
+  if (turnRole === 'user') return 'user';
+  if (turnRole === 'assistant') return 'assistant';
+
   const closestAuthor = element.closest<HTMLElement>('[data-message-author-role]');
   const authorRole =
     element.getAttribute('data-message-author-role') ||
@@ -410,11 +493,28 @@ function getRoleFromElement(element: HTMLElement): MessageRole | null {
   return null;
 }
 
+function getNativeTurnElementsByRole(role: MessageRole): HTMLElement[] {
+  const doc = getSafeDocument();
+  if (!doc) return [];
+
+  return sortByDocumentPosition(
+    Array.from(doc.querySelectorAll<HTMLElement>(`[data-turn="${role}"][data-turn-id]`)).map(
+      (element) => ({
+        element,
+        role,
+        anchor: element.getAttribute(CHATGPT_MESSAGE_ANCHOR_ATTR) || '',
+        snippet: normalizeSnippet(role === 'user' ? getUserTurnText(element) : element.textContent),
+      }),
+    ),
+  ).map((node) => node.element);
+}
+
 function getTurnElementsByRole(role: MessageRole): HTMLElement[] {
   const doc = getSafeDocument();
   if (!doc) return [];
 
   const matches: HTMLElement[] = [];
+  matches.push(...getNativeTurnElementsByRole(role));
 
   for (const selector of CHATGPT_TURN_SELECTORS) {
     try {
@@ -425,7 +525,11 @@ function getTurnElementsByRole(role: MessageRole): HTMLElement[] {
     } catch {}
   }
 
-  return uniqueMessageElements(matches).filter((element) => normalizeSnippet(element.textContent));
+  return uniqueMessageElements(matches).filter((element) =>
+    role === 'user'
+      ? Boolean(getTurnIdFromElement(element) || getUserTurnText(element))
+      : Boolean(normalizeSnippet(element.textContent)),
+  );
 }
 
 function sortByDocumentPosition(nodes: MessageNodeRef[]): MessageNodeRef[] {
@@ -489,54 +593,65 @@ function parseCapturedAnchor(anchor: string): { messageId?: string; fingerprint?
 }
 
 function getCapturedNodeLookup(capturedNodes: ChatGPTTimelineTarget[] = []): {
+  byTurnId: Map<string, ChatGPTTimelineTarget>;
   byFingerprint: Map<string, ChatGPTTimelineTarget>;
   byMessageId: Map<string, ChatGPTTimelineTarget>;
 } {
+  const byTurnId = new Map<string, ChatGPTTimelineTarget>();
   const byFingerprint = new Map<string, ChatGPTTimelineTarget>();
   const byMessageId = new Map<string, ChatGPTTimelineTarget>();
 
   for (const node of capturedNodes) {
+    if (node.turnId) byTurnId.set(node.turnId, node);
     if (node.fingerprint) byFingerprint.set(node.fingerprint, node);
     if (node.messageId) byMessageId.set(node.messageId, node);
   }
 
-  return { byFingerprint, byMessageId };
+  return { byTurnId, byFingerprint, byMessageId };
 }
 
 export function indexChatGPTUserMessageDom(
   capturedNodes: ChatGPTTimelineTarget[] = [],
 ): ChatGPTDomUserMessageIndexEntry[] {
-  const { byFingerprint, byMessageId } = getCapturedNodeLookup(capturedNodes);
+  const { byTurnId, byFingerprint, byMessageId } = getCapturedNodeLookup(capturedNodes);
   const entries = sortByDocumentPosition(
     getTurnElementsByRole('user').map((element, index) => ({
       element,
       role: 'user' as const,
       anchor: '',
-      snippet: normalizeSnippet(element.textContent),
+      snippet: normalizeSnippet(getUserTurnText(element)),
       index,
     })),
   );
 
   const indexed = entries
     .map((node, index) => {
-      const normalizedText = normalizeMessageText(node.element.textContent);
+      const normalizedText = getUserTurnText(node.element);
       const fingerprint = fingerprintText(normalizedText);
+      const turnId = getTurnIdFromElement(node.element);
       const messageId = getMessageIdFromElement(node.element);
       const captured =
-        (messageId ? byMessageId.get(messageId) : undefined) || byFingerprint.get(fingerprint);
+        (turnId ? byTurnId.get(turnId) : undefined) ||
+        (messageId ? byMessageId.get(messageId) : undefined) ||
+        byFingerprint.get(fingerprint);
       const anchor =
         captured?.messageAnchor || node.element.getAttribute(CHATGPT_MESSAGE_ANCHOR_ATTR) || '';
       const finalAnchor =
-        anchor || `chatgpt:user:${hashString(messageId || fingerprint || String(index))}:${index}`;
+        anchor ||
+        (turnId
+          ? `chatgpt-turn:${turnId}`
+          : `chatgpt:user:${hashString(messageId || fingerprint || String(index))}:${index}`);
       const finalMessageId = messageId || captured?.messageId;
 
       node.element.setAttribute(CHATGPT_MESSAGE_INDEX_ATTR, String(index + 1));
+      if (turnId) node.element.setAttribute(CHATGPT_TURN_ID_ATTR, turnId);
       node.element.setAttribute(CHATGPT_MESSAGE_FINGERPRINT_ATTR, fingerprint);
       node.element.setAttribute(CHATGPT_MESSAGE_ANCHOR_ATTR, finalAnchor);
       if (finalMessageId) node.element.setAttribute(CHATGPT_MESSAGE_ID_ATTR, finalMessageId);
 
       return {
         element: node.element,
+        turnId,
         anchor: finalAnchor,
         messageId: finalMessageId,
         fingerprint,
@@ -545,12 +660,16 @@ export function indexChatGPTUserMessageDom(
         snippet: normalizeSnippet(normalizedText),
       };
     })
-    .filter((entry) => entry.normalizedText);
+    .filter((entry) => entry.normalizedText || entry.turnId);
 
   console.debug('[ChatGPT Voyager] DOM 用户消息索引完成', {
     domUserMessages: indexed.length,
-    matched: indexed.filter((entry) => entry.messageId || byFingerprint.has(entry.fingerprint))
-      .length,
+    matched: indexed.filter(
+      (entry) =>
+        (entry.turnId && byTurnId.has(entry.turnId)) ||
+        entry.messageId ||
+        byFingerprint.has(entry.fingerprint),
+    ).length,
   });
 
   return indexed;
@@ -579,7 +698,7 @@ function scrollContainerDebug(element: HTMLElement): ChatGPTScrollContainerInfo[
   return {
     tagName: element.tagName.toLowerCase(),
     className: classNameSummary(element),
-    scrollTop: Math.round(element.scrollTop),
+    scrollTop: Math.round(getContainerScrollTop(element)),
     scrollHeight: Math.round(element.scrollHeight),
     clientHeight: Math.round(element.clientHeight),
   };
@@ -633,7 +752,7 @@ export function getChatGPTScrollMetrics(container: ChatGPTScrollContainerInfo): 
   atBottom: boolean;
 } {
   const { element } = container;
-  const scrollTop = element.scrollTop;
+  const scrollTop = getContainerScrollTop(element);
   const scrollHeight = element.scrollHeight;
   const clientHeight = element.clientHeight || window.innerHeight;
   return {
@@ -649,11 +768,106 @@ export function scrollChatGPTContainerBy(
   container: ChatGPTScrollContainerInfo,
   delta: number,
 ): void {
-  container.element.scrollBy({ top: delta, behavior: 'auto' });
+  scrollContainerTo(container.element, getContainerScrollTop(container.element) + delta, 'auto');
 }
 
 export function scrollChatGPTContainerToTop(container: ChatGPTScrollContainerInfo): void {
-  container.element.scrollTo({ top: 0, behavior: 'auto' });
+  scrollContainerTo(container.element, 0, 'auto');
+}
+
+function isDocumentScrollElement(element: HTMLElement): boolean {
+  const doc = getSafeDocument();
+  return Boolean(
+    doc &&
+      (element === doc.scrollingElement || element === doc.documentElement || element === doc.body),
+  );
+}
+
+function getContainerScrollTop(element: HTMLElement): number {
+  if (isDocumentScrollElement(element)) {
+    return window.scrollY || element.scrollTop || document.documentElement.scrollTop || 0;
+  }
+  return element.scrollTop;
+}
+
+function scrollContainerTo(
+  element: HTMLElement,
+  top: number,
+  behavior: ScrollBehavior = 'smooth',
+): void {
+  const nextTop = Math.max(0, top);
+  if (isDocumentScrollElement(element)) {
+    window.scrollTo({ top: nextTop, behavior });
+    return;
+  }
+  element.scrollTo({ top: nextTop, behavior });
+}
+
+function getContainerViewportTop(element: HTMLElement): number {
+  return isDocumentScrollElement(element) ? 0 : element.getBoundingClientRect().top;
+}
+
+function getFocusOffset(container: HTMLElement): number {
+  const scrollPaddingTop = Number.parseFloat(window.getComputedStyle(container).scrollPaddingTop);
+  let stickyOffset = Number.isFinite(scrollPaddingTop) ? scrollPaddingTop : 0;
+
+  try {
+    for (const element of Array.from(
+      document.querySelectorAll<HTMLElement>('header, [role="banner"], [data-testid*="header"]'),
+    )) {
+      const style = window.getComputedStyle(element);
+      if (style.position !== 'fixed' && style.position !== 'sticky') continue;
+      const rect = element.getBoundingClientRect();
+      if (rect.top <= 8 && rect.bottom > 0 && rect.bottom < window.innerHeight / 2) {
+        stickyOffset = Math.max(stickyOffset, rect.bottom + 12);
+      }
+    }
+  } catch {}
+
+  return Math.max(stickyOffset, 72);
+}
+
+function getPreciseTargetTop(target: HTMLElement, container: HTMLElement): number {
+  const targetRect = target.getBoundingClientRect();
+  const containerTop = getContainerViewportTop(container);
+  return (
+    targetRect.top - containerTop + getContainerScrollTop(container) - getFocusOffset(container)
+  );
+}
+
+function waitForAnimationFrame(): Promise<void> {
+  return new Promise((resolve) => requestAnimationFrame(() => resolve()));
+}
+
+async function waitForStableTurnLayout(
+  target: HTMLElement,
+  container: HTMLElement,
+  timeout = 1600,
+): Promise<void> {
+  const startedAt = performance.now();
+  let stableFrames = 0;
+  let previous: {
+    scrollTop: number;
+    scrollHeight: number;
+    targetTop: number;
+  } | null = null;
+
+  while (performance.now() - startedAt < timeout) {
+    await waitForAnimationFrame();
+    const current = {
+      scrollTop: Math.round(getContainerScrollTop(container)),
+      scrollHeight: Math.round(container.scrollHeight),
+      targetTop: Math.round(getPreciseTargetTop(target, container)),
+    };
+    const stable =
+      previous &&
+      Math.abs(previous.scrollTop - current.scrollTop) <= 1 &&
+      Math.abs(previous.scrollHeight - current.scrollHeight) <= 1 &&
+      Math.abs(previous.targetTop - current.targetTop) <= 2;
+    stableFrames = stable ? stableFrames + 1 : 0;
+    if (stableFrames >= 3) return;
+    previous = current;
+  }
 }
 
 function textSimilarity(left: string, right: string): number {
@@ -682,48 +896,77 @@ function targetText(target: ChatGPTTimelineTarget): string {
   return normalizeMessageText(target.summary || '').replace(/\.\.\.$/, '');
 }
 
-export function locateChatGPTUserTimelineTarget(
-  target: ChatGPTTimelineTarget,
+function locateDebug(
+  request: ChatGPTUserTurnLocateRequest,
+  entries: ChatGPTDomUserMessageIndexEntry[],
+  matchedCount: number,
+): ChatGPTUserTurnLocateResult['debug'] {
+  return {
+    domIndexCount: entries.length,
+    matchedCount,
+    hasTurnId: Boolean(request.turnId),
+    hasMessageId: Boolean(request.messageId),
+    hasAnchor: Boolean(request.anchor || request.messageAnchor),
+    hasFingerprint: Boolean(request.fingerprint),
+    hasSnippet: Boolean(request.snippet || request.summary),
+  };
+}
+
+function foundUserTurn(
+  request: ChatGPTUserTurnLocateRequest,
+  entries: ChatGPTDomUserMessageIndexEntry[],
+  targetElement: HTMLElement,
+  method: ChatGPTUserTurnLocateMethod,
+  matchedCount = 1,
+): ChatGPTUserTurnLocateResult {
+  return {
+    ok: true,
+    reason: '已定位',
+    targetElement,
+    method,
+    debug: locateDebug(request, entries, matchedCount),
+  };
+}
+
+export function locateUserTurn(
+  request: ChatGPTUserTurnLocateRequest,
   capturedNodes: ChatGPTTimelineTarget[] = [],
-): ChatGPTLocateResult {
+): ChatGPTUserTurnLocateResult {
   const entries = indexChatGPTUserMessageDom(capturedNodes);
-  const targetNormalized = targetText(target);
+  const anchor = request.anchor || request.messageAnchor || '';
+  const targetNormalized = normalizeMessageText(request.snippet || request.summary || '').replace(
+    /\.\.\.$/,
+    '',
+  );
   const targetFingerprint =
-    target.fingerprint || (targetNormalized ? fingerprintText(targetNormalized) : '');
+    request.fingerprint || (targetNormalized ? fingerprintText(targetNormalized) : '');
   let matchedCount = 0;
 
-  if (target.messageId) {
-    const found = entries.find((entry) => entry.messageId === target.messageId);
-    if (found)
-      return {
-        found: true,
-        method: 'messageId',
-        element: found.element,
-        domIndexCount: entries.length,
-        matchedCount: 1,
-      };
+  if (request.turnId) {
+    const nativeByTurnId = Array.from(
+      getSafeDocument()?.querySelectorAll<HTMLElement>('[data-turn="user"][data-turn-id]') || [],
+    ).find((element) => element.getAttribute('data-turn-id') === request.turnId);
+    if (nativeByTurnId) return foundUserTurn(request, entries, nativeByTurnId, 'turnId');
+
+    const byTurnId = entries.find((entry) => entry.turnId === request.turnId);
+    if (byTurnId) return foundUserTurn(request, entries, byTurnId.element, 'turnId');
+
+    const byCgTurnId = findMessageElementByAttribute(CHATGPT_TURN_ID_ATTR, request.turnId);
+    if (byCgTurnId) return foundUserTurn(request, entries, byCgTurnId, 'cgTurnId');
   }
 
-  const byAnchor = entries.find((entry) => entry.anchor === target.messageAnchor);
-  if (byAnchor)
-    return {
-      found: true,
-      method: 'anchor',
-      element: byAnchor.element,
-      domIndexCount: entries.length,
-      matchedCount: 1,
-    };
+  if (request.messageId) {
+    const found = entries.find((entry) => entry.messageId === request.messageId);
+    if (found) return foundUserTurn(request, entries, found.element, 'messageId');
+  }
+
+  const byAnchor = entries.find((entry) => entry.anchor === anchor);
+  if (byAnchor) return foundUserTurn(request, entries, byAnchor.element, 'anchor');
 
   if (targetFingerprint) {
     const byFingerprint = entries.find((entry) => entry.fingerprint === targetFingerprint);
     if (byFingerprint) {
-      return {
-        found: true,
-        method: 'fingerprint',
-        element: byFingerprint.element,
-        domIndexCount: entries.length,
-        matchedCount: 1,
-      };
+      return foundUserTurn(request, entries, byFingerprint.element, 'fingerprint');
     }
   }
 
@@ -740,30 +983,51 @@ export function locateChatGPTUserTimelineTarget(
       .sort((left, right) => right.score - left.score);
     matchedCount = textMatches.length;
     if (textMatches[0]) {
-      return {
-        found: true,
-        method: textMatches[0].score === 1 ? 'text' : 'fingerprint',
-        element: textMatches[0].entry.element,
-        domIndexCount: entries.length,
+      return foundUserTurn(
+        request,
+        entries,
+        textMatches[0].entry.element,
+        textMatches[0].score === 1 ? 'text' : 'fingerprint',
         matchedCount,
-      };
+      );
     }
   }
 
-  if (typeof target.index === 'number') {
-    const byIndex = entries.find((entry) => entry.index === target.index);
-    if (byIndex) {
-      return {
-        found: true,
-        method: 'index',
-        element: byIndex.element,
-        domIndexCount: entries.length,
-        matchedCount: 1,
-      };
-    }
+  if (typeof request.index === 'number' && request.index > 0) {
+    const byIndex = entries.find((entry) => entry.index === request.index);
+    if (byIndex) return foundUserTurn(request, entries, byIndex.element, 'index');
   }
 
-  return { found: false, domIndexCount: entries.length, matchedCount };
+  return {
+    ok: false,
+    reason: '未找到匹配的用户消息',
+    debug: locateDebug(request, entries, matchedCount),
+  };
+}
+
+export function locateChatGPTUserTimelineTarget(
+  target: ChatGPTTimelineTarget,
+  capturedNodes: ChatGPTTimelineTarget[] = [],
+): ChatGPTLocateResult {
+  const result = locateUserTurn(
+    {
+      turnId: target.turnId,
+      messageId: target.messageId,
+      anchor: target.messageAnchor,
+      fingerprint: target.fingerprint,
+      summary: targetText(target),
+      index: target.index,
+    },
+    capturedNodes,
+  );
+
+  return {
+    found: result.ok,
+    method: result.method,
+    element: result.targetElement,
+    domIndexCount: result.debug.domIndexCount,
+    matchedCount: result.debug.matchedCount,
+  };
 }
 
 export function highlightChatGPTMessageElement(element: HTMLElement): void {
@@ -771,8 +1035,20 @@ export function highlightChatGPTMessageElement(element: HTMLElement): void {
   window.setTimeout(() => element.classList.remove('cg-voyager-message-highlight'), 1500);
 }
 
-export function scrollChatGPTMessageIntoView(element: HTMLElement): void {
-  element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+export async function scrollChatGPTMessageIntoView(element: HTMLElement): Promise<void> {
+  const entries = indexChatGPTUserMessageDom();
+  const container = getChatGPTMainScrollContainer(entries);
+  await waitForStableTurnLayout(element, container.element);
+
+  const targetTop = getPreciseTargetTop(element, container.element);
+  scrollContainerTo(container.element, targetTop, 'smooth');
+
+  window.setTimeout(() => {
+    const correctionTop = getPreciseTargetTop(element, container.element);
+    if (Math.abs(correctionTop - getContainerScrollTop(container.element)) > 12) {
+      scrollContainerTo(container.element, correctionTop, 'auto');
+    }
+  }, 420);
 }
 
 export const chatgptAdapter: PageAdapter = {
@@ -819,6 +1095,7 @@ export const chatgptAdapter: PageAdapter = {
       role: 'user' as const,
       anchor: entry.anchor,
       snippet: entry.snippet,
+      turnId: entry.turnId,
       messageId: entry.messageId,
       fingerprint: entry.fingerprint,
     }));
@@ -827,6 +1104,7 @@ export const chatgptAdapter: PageAdapter = {
       role: 'assistant' as const,
       anchor: this.buildMessageAnchor(element, index, 'assistant'),
       snippet: normalizeSnippet(element.textContent),
+      turnId: getTurnIdFromElement(element),
       messageId: getMessageIdFromElement(element),
       fingerprint: element.getAttribute(CHATGPT_MESSAGE_FINGERPRINT_ATTR) || undefined,
     }));
@@ -859,7 +1137,7 @@ export const chatgptAdapter: PageAdapter = {
       return false;
     }
 
-    scrollChatGPTMessageIntoView(result.element);
+    void scrollChatGPTMessageIntoView(result.element);
     highlightChatGPTMessageElement(result.element);
     console.debug('[ChatGPT Voyager] 时间轴定位结果', {
       found: true,
@@ -874,11 +1152,17 @@ export const chatgptAdapter: PageAdapter = {
     const existingAnchor = messageElement.getAttribute(CHATGPT_MESSAGE_ANCHOR_ATTR);
     if (existingAnchor) return existingAnchor;
 
+    const turnId = getTurnIdFromElement(messageElement);
     const messageId = getMessageIdFromElement(messageElement);
-    const fingerprint = fingerprintText(messageElement.textContent || '');
+    const fingerprint = fingerprintText(
+      role === 'user' ? getUserTurnText(messageElement) : messageElement.textContent || '',
+    );
     const explicitId = messageElement.id || messageElement.getAttribute('data-testid') || messageId;
-    const basis = explicitId || fingerprint || String(index);
-    const anchor = `chatgpt:${role}:${hashString(basis)}:${index}`;
+    const basis = turnId || explicitId || fingerprint || String(index);
+    const anchor = turnId
+      ? `chatgpt-turn:${turnId}`
+      : `chatgpt:${role}:${hashString(basis)}:${index}`;
+    if (turnId) messageElement.setAttribute(CHATGPT_TURN_ID_ATTR, turnId);
     if (messageId) messageElement.setAttribute(CHATGPT_MESSAGE_ID_ATTR, messageId);
     messageElement.setAttribute(CHATGPT_MESSAGE_FINGERPRINT_ATTR, fingerprint);
     messageElement.setAttribute(CHATGPT_MESSAGE_ANCHOR_ATTR, anchor);

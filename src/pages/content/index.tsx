@@ -18,8 +18,8 @@ import { startChatWidthAdjuster } from './chatWidth/index';
 import {
   getCapturedChatGPTTimelineNodes,
   hasCapturedChatGPTConversationData,
-  startChatGPTConversationCapture,
   requestCurrentChatGPTConversationCapture,
+  startChatGPTConversationCapture,
 } from './chatgptConversationCapture';
 import { startContextSync } from './contextSync';
 import { startDeepResearchExport } from './deepResearch/index';
@@ -51,6 +51,7 @@ import { startSidebarWidthAdjuster } from './sidebarWidth';
 import { startTimeline } from './timeline/index';
 import {
   isChatGPTTimelineFloatingPanelVisible,
+  scrollChatGPTTimelineToMessage,
   setChatGPTTimelineFloatingPanelVisible,
   startChatGPTTimelineFloatingPanel,
 } from './timelineFloatingPanel';
@@ -124,7 +125,9 @@ function getChatGPTPageStatus(): ChatGPTPageStatus {
 }
 
 function summarizeChatGPTTimelineMessage(snippet: string): string {
-  const normalized = String(snippet || '').replace(/\s+/g, ' ').trim();
+  const normalized = String(snippet || '')
+    .replace(/\s+/g, ' ')
+    .trim();
   return normalized.length > 60 ? `${normalized.slice(0, 57)}...` : normalized;
 }
 
@@ -196,13 +199,26 @@ function registerChatGPTStatusListener(): void {
     }
 
     if (message?.type === 'gv.chatgpt.timeline.scroll') {
-      const messageAnchor =
-        typeof message?.payload?.messageAnchor === 'string' ? message.payload.messageAnchor : '';
-      sendResponse({
-        ok: true,
-        scrolled: messageAnchor ? chatgptAdapter.scrollToMessage(messageAnchor) : false,
-      });
-      return false;
+      const payload = message?.payload || {};
+      const messageAnchor = typeof payload.messageAnchor === 'string' ? payload.messageAnchor : '';
+      const locateRequest = {
+        conversationId: typeof payload.conversationId === 'string' ? payload.conversationId : '',
+        turnId: typeof payload.turnId === 'string' ? payload.turnId : undefined,
+        messageId: typeof payload.messageId === 'string' ? payload.messageId : undefined,
+        messageAnchor,
+        snippet: typeof payload.snippet === 'string' ? payload.snippet : undefined,
+        fingerprint: typeof payload.fingerprint === 'string' ? payload.fingerprint : undefined,
+      };
+      void scrollChatGPTTimelineToMessage(locateRequest)
+        .then((scrolled) =>
+          sendResponse({
+            ok: true,
+            scrolled,
+            error: scrolled ? undefined : '未能自动定位收藏消息',
+          }),
+        )
+        .catch(() => sendResponse({ ok: false, scrolled: false, error: '定位请求处理失败' }));
+      return true;
     }
 
     if (message?.type === 'gv.chatgpt.timeline.visibility.get') {

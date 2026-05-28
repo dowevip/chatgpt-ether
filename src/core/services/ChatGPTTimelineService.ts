@@ -15,6 +15,15 @@ type TimelineVisibilityResponse = {
   };
 };
 
+type ChatGPTTimelineLocatePayload = {
+  conversationId?: string;
+  turnId?: string;
+  messageId?: string;
+  messageAnchor: string;
+  snippet?: string;
+  fingerprint?: string;
+};
+
 const EMPTY_TIMELINE: ChatGPTTimelineSnapshot = {
   isChatGPTPage: false,
   nodes: [],
@@ -37,13 +46,16 @@ export async function getCurrentChatGPTTimeline(): Promise<ChatGPTTimelineSnapsh
   return response.data;
 }
 
-export async function scrollToChatGPTTimelineMessage(messageAnchor: string): Promise<boolean> {
+export async function scrollToChatGPTTimelineMessage(
+  target: string | ChatGPTTimelineLocatePayload,
+): Promise<boolean> {
   const tabId = await getActiveTabId();
   if (!tabId) return false;
+  const payload = typeof target === 'string' ? { messageAnchor: target } : target;
 
   const response = (await browser.tabs.sendMessage(tabId, {
     type: 'gv.chatgpt.timeline.scroll',
-    payload: { messageAnchor },
+    payload,
   })) as { ok?: boolean; scrolled?: boolean } | undefined;
 
   return Boolean(response?.ok && response.scrolled);
