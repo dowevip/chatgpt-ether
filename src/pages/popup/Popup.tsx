@@ -17,7 +17,6 @@ import { getModifierKey, isFirefox, isSafari } from '@/core/utils/browser';
 import { resolveWatermarkSettings } from '@/core/utils/watermarkSettings';
 
 import { DarkModeToggle } from '../../components/DarkModeToggle';
-import { LanguageSwitcher } from '../../components/LanguageSwitcher';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardTitle } from '../../components/ui/card';
 import { Label } from '../../components/ui/label';
@@ -1442,7 +1441,6 @@ export default function Popup() {
         <h1 className="text-primary text-2xl font-extrabold tracking-tight">{t('extName')}</h1>
         <div className="flex items-center gap-1">
           <DarkModeToggle />
-          <LanguageSwitcher />
         </div>
       </div>
 
