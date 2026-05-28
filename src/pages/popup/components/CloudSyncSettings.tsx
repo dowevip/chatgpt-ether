@@ -81,6 +81,11 @@ function isTimelineHierarchyData(value: unknown): value is TimelineHierarchyData
 
 type DownloadMode = 'merge' | 'overwrite';
 
+type CloudSyncSettingsProps = {
+  chatgptOnly?: boolean;
+  onBack?: () => void;
+};
+
 function isChatGPTUrl(url: string | null | undefined): boolean {
   try {
     return new URL(url || '').hostname.toLowerCase() === 'chatgpt.com';
@@ -93,7 +98,7 @@ function isChatGPTUrl(url: string | null | undefined): boolean {
  * CloudSyncSettings component for popup
  * Allows users to configure Google Drive sync settings
  */
-export function CloudSyncSettings() {
+export function CloudSyncSettings({ chatgptOnly = false, onBack }: CloudSyncSettingsProps = {}) {
   const { t } = useLanguage();
   const isSafariBrowser = isSafari();
 
@@ -225,7 +230,9 @@ export function CloudSyncSettings() {
   useEffect(() => {
     const fetchState = async () => {
       try {
-        const response = await chrome.runtime.sendMessage({ type: 'gv.sync.getState' });
+        const response = await chrome.runtime.sendMessage({
+          type: chatgptOnly ? 'gv.chatgpt.sync.getState' : 'gv.sync.getState',
+        });
         if (response?.ok && response.state) {
           setSyncState(response.state);
         }
@@ -234,13 +241,32 @@ export function CloudSyncSettings() {
       }
     };
     const initPlatform = async () => {
+      if (chatgptOnly) {
+        setPlatform('chatgpt');
+        return;
+      }
       const detected = await detectPlatform();
       setPlatform(detected);
       console.log('[CloudSyncSettings] Detected platform:', detected);
     };
     fetchState();
     initPlatform();
-  }, [detectPlatform]);
+  }, [chatgptOnly, detectPlatform]);
+
+  const refreshChatGPTSyncState = useCallback(async () => {
+    try {
+      const response = (await chrome.runtime.sendMessage({
+        type: 'gv.chatgpt.sync.getState',
+      })) as { ok?: boolean; state?: SyncState; error?: string } | undefined;
+      if (response?.state) setSyncState(response.state);
+      if (!response?.ok && response?.error) {
+        setStatusMessage({ text: `刷新同步状态失败：${response.error}`, kind: 'err' });
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '未知错误';
+      setStatusMessage({ text: `刷新同步状态失败：${message}`, kind: 'err' });
+    }
+  }, []);
 
   // Format timestamp for display
   const formatLastSync = useCallback(
@@ -322,10 +348,20 @@ export function CloudSyncSettings() {
       if (response?.ok && response.state) {
         setSyncState(response.state);
       }
+      if (platform === 'chatgpt') {
+        setStatusMessage({
+          text: '授权缓存已清除；下次上传或拉取时会重新授权。',
+          kind: 'ok',
+        });
+      }
     } catch (error) {
       console.error('[CloudSyncSettings] Sign out failed:', error);
+      if (platform === 'chatgpt') {
+        const message = error instanceof Error ? error.message : '未知错误';
+        setStatusMessage({ text: `清除授权缓存失败：${message}`, kind: 'err' });
+      }
     }
-  }, []);
+  }, [platform]);
 
   // Handle sync now (upload current data)
   const handleSyncNow = useCallback(async () => {
@@ -454,7 +490,14 @@ export function CloudSyncSettings() {
   // Handle download from Drive (restore data) with merge as the default safe path.
   const handleDownloadFromDrive = useCallback(
     async (mode: DownloadMode = 'merge') => {
-      if (mode === 'overwrite' && !window.confirm(t('syncOverwriteConfirm'))) {
+      if (
+        mode === 'overwrite' &&
+        !window.confirm(
+          platform === 'chatgpt'
+            ? '确定要用云端数据覆盖本地 ChatGPT Voyager 数据吗？'
+            : t('syncOverwriteConfirm'),
+        )
+      ) {
         return;
       }
 
@@ -742,8 +785,149 @@ export function CloudSyncSettings() {
     }
   }, [statusMessage]);
 
+  const formatChatGPTTime = useCallback((timestamp: number | null): string => {
+    if (!timestamp) return '从未';
+    return new Date(timestamp).toLocaleString('zh-CN', {
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  }, []);
+
+  const handleOverwriteChatGPTCloud = useCallback(async () => {
+    if (!window.confirm('确定要用本地 ChatGPT Voyager 数据覆盖云端数据吗？')) return;
+    await handleSyncNow();
+  }, [handleSyncNow]);
+
   // Don't render on Safari
   if (isSafariBrowser) return null;
+
+  if (chatgptOnly) {
+    const busy = isUploading || isDownloading || syncState.isSyncing;
+
+    return (
+      <div className="bg-background text-foreground w-[360px]">
+        <div className="border-border/50 flex items-center justify-between border-b px-5 py-4">
+          <div>
+            <h1 className="text-lg font-bold">Google Drive 同步</h1>
+            <p className="text-muted-foreground text-xs">ChatGPT Voyager 手动同步</p>
+          </div>
+          {onBack && (
+            <Button type="button" variant="ghost" size="sm" onClick={onBack}>
+              返回
+            </Button>
+          )}
+        </div>
+
+        <div className="p-5">
+          <Card className="p-4">
+            <CardTitle className="mb-3">同步状态</CardTitle>
+            <CardContent className="space-y-4 p-0">
+              <div className="grid gap-2 text-xs">
+                <div className="flex justify-between gap-3">
+                  <span className="text-muted-foreground">Google Drive 授权状态</span>
+                  <span className="font-medium">
+                    {syncState.isAuthenticated ? '已授权' : '未授权'}
+                  </span>
+                </div>
+                <div className="flex justify-between gap-3">
+                  <span className="text-muted-foreground">当前是否正在同步</span>
+                  <span className="font-medium">{syncState.isSyncing ? '是' : '否'}</span>
+                </div>
+                <div className="flex justify-between gap-3">
+                  <span className="text-muted-foreground">上次上传时间</span>
+                  <span className="font-medium">
+                    {formatChatGPTTime(syncState.lastUploadTimeChatGPT)}
+                  </span>
+                </div>
+                <div className="flex justify-between gap-3">
+                  <span className="text-muted-foreground">上次同步时间</span>
+                  <span className="font-medium">
+                    {formatChatGPTTime(syncState.lastSyncTimeChatGPT)}
+                  </span>
+                </div>
+                <div className="flex justify-between gap-3">
+                  <span className="text-muted-foreground">最近错误</span>
+                  <span className="max-w-[180px] truncate font-medium">
+                    {syncState.error || '无'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={handleSyncNow}
+                  disabled={busy}
+                  className="w-full"
+                >
+                  {isUploading ? '正在上传…' : '上传到云端'}
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleDownloadFromDrive('merge')}
+                  disabled={busy}
+                  className="w-full"
+                >
+                  {downloadMode === 'merge' ? '正在拉取…' : '从云端拉取并合并'}
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={handleOverwriteChatGPTCloud}
+                  disabled={busy}
+                  className="w-full"
+                >
+                  上传并覆盖云端
+                </Button>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    onClick={handleSignOut}
+                    disabled={busy}
+                    className="text-xs"
+                  >
+                    清除授权缓存 / 重新授权
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => void refreshChatGPTSyncState()}
+                    disabled={busy}
+                    className="text-xs"
+                  >
+                    刷新状态
+                  </Button>
+                </div>
+              </div>
+
+              <p className="text-muted-foreground text-xs">
+                仅同步提示词、文件夹、对话索引、备注、收藏消息元数据和设置，不同步完整聊天正文。
+              </p>
+
+              {statusMessage && (
+                <p
+                  className={`text-center text-xs ${
+                    statusMessage.kind === 'ok' ? 'text-green-600' : 'text-destructive'
+                  }`}
+                >
+                  {statusMessage.text}
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <Card className="p-4 transition-all hover:shadow-md">

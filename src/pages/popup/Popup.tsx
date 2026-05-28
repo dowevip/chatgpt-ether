@@ -29,6 +29,7 @@ import { DiagnosticsPanel } from './components/DiagnosticsPanel';
 import { FoldersPanel } from './components/FoldersPanel';
 import { KeyboardShortcutSettings } from './components/KeyboardShortcutSettings';
 import { PromptVaultPanel } from './components/PromptVaultPanel';
+import { CloudSyncSettings } from './components/CloudSyncSettings';
 import { StarredHistory } from './components/StarredHistory';
 import { StarredPanel } from './components/StarredPanel';
 import {
@@ -388,7 +389,7 @@ const CHATGPT_DASHBOARD_ENTRY_LABELS: Record<(typeof CHATGPT_DASHBOARD_ENTRIES)[
   Diagnostics: '诊断信息',
 };
 
-type PopupPanel = 'dashboard' | 'promptVault' | 'folders' | 'starred' | 'diagnostics';
+type PopupPanel = 'dashboard' | 'promptVault' | 'folders' | 'starred' | 'sync' | 'diagnostics';
 
 function SectionReorderControls({
   isFirst,
@@ -1428,6 +1429,10 @@ export default function Popup() {
     return <StarredPanel onBack={() => setActivePanel('dashboard')} />;
   }
 
+  if (activePanel === 'sync') {
+    return <CloudSyncSettings chatgptOnly onBack={() => setActivePanel('dashboard')} />;
+  }
+
   if (activePanel === 'diagnostics') {
     return <DiagnosticsPanel onBack={() => setActivePanel('dashboard')} />;
   }
@@ -1512,6 +1517,7 @@ export default function Popup() {
                   label === 'Prompt Vault' ||
                   label === 'Folders' ||
                   label === 'Starred' ||
+                  label === 'Sync' ||
                   label === 'Diagnostics' ||
                   (isTimeline && Boolean(chatgptStatus?.isChatGPTPage));
 
@@ -1524,6 +1530,7 @@ export default function Popup() {
                       if (label === 'Prompt Vault') setActivePanel('promptVault');
                       if (label === 'Folders') setActivePanel('folders');
                       if (label === 'Starred') setActivePanel('starred');
+                      if (label === 'Sync') setActivePanel('sync');
                       if (label === 'Diagnostics') setActivePanel('diagnostics');
                       if (isTimeline) void handleTogglePageTimeline();
                     }}
