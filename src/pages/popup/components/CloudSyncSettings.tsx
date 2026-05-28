@@ -6,6 +6,7 @@ import {
   detectAccountPlatformFromUrl,
   extractRouteUserIdFromUrl,
 } from '@/core/services/AccountIsolationService';
+import { googleDriveSyncService } from '@/core/services/GoogleDriveSyncService';
 import { restoreBackupableSyncSettings } from '@/core/services/SettingsBackupService';
 import { StorageKeys } from '@/core/types/common';
 import type { FolderData } from '@/core/types/folder';
@@ -99,7 +100,7 @@ function isChatGPTUrl(url: string | null | undefined): boolean {
  * Allows users to configure Google Drive sync settings
  */
 export function CloudSyncSettings({ chatgptOnly = false, onBack }: CloudSyncSettingsProps = {}) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const isSafariBrowser = isSafari();
 
   const [syncState, setSyncState] = useState<SyncState>(DEFAULT_SYNC_STATE);
@@ -108,8 +109,26 @@ export function CloudSyncSettings({ chatgptOnly = false, onBack }: CloudSyncSett
   );
   const [isUploading, setIsUploading] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isAuthorizing, setIsAuthorizing] = useState(false);
   const [downloadMode, setDownloadMode] = useState<DownloadMode | null>(null);
   const [platform, setPlatform] = useState<SyncPlatform>('gemini');
+
+  const isChineseLanguage = language.startsWith('zh');
+  const safeSyncCopy = {
+    authorizeGoogleDrive: isChineseLanguage ? '授权 Google Drive' : 'Authorize Google Drive',
+    authorizationSucceeded: isChineseLanguage
+      ? 'Google Drive 授权成功。'
+      : 'Google Drive authorization succeeded.',
+    authorizationFailed: isChineseLanguage
+      ? 'Google Drive 授权失败。'
+      : 'Google Drive authorization failed.',
+    firstUseGuidance: isChineseLanguage
+      ? '新设备首次使用建议先从云端拉取并合并。'
+      : 'On a new device, pull from cloud and merge first.',
+    uploadExistingCloudConfirm: isChineseLanguage
+      ? '云端已有同步数据。当前设备数据可能不是最新，上传会更新云端数据。建议先从云端拉取并合并。是否仍要上传？'
+      : 'Cloud sync data already exists. Data on this device may not be current, and uploading will update cloud data. We recommend pulling from cloud and merging first. Upload anyway?',
+  };
 
   const getBaseFolderStorageKey = useCallback(
     (targetPlatform: SyncPlatform) =>
@@ -369,20 +388,59 @@ export function CloudSyncSettings({ chatgptOnly = false, onBack }: CloudSyncSett
     }
   }, [platform, t]);
 
+  const handleAuthorizeGoogleDrive = useCallback(async () => {
+    setStatusMessage(null);
+    setIsAuthorizing(true);
+
+    try {
+      const response = (await chrome.runtime.sendMessage({
+        type: 'gv.sync.authenticate',
+        payload: { interactive: true },
+      })) as { ok?: boolean; state?: SyncState; error?: string } | undefined;
+
+      if (response?.state) setSyncState(response.state);
+      if (!response?.ok) {
+        throw new Error(response?.error || response?.state?.error || safeSyncCopy.authorizationFailed);
+      }
+
+      setStatusMessage({ text: safeSyncCopy.authorizationSucceeded, kind: 'ok' });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : safeSyncCopy.authorizationFailed;
+      setStatusMessage({ text: message, kind: 'err' });
+    } finally {
+      setIsAuthorizing(false);
+    }
+  }, [safeSyncCopy.authorizationFailed, safeSyncCopy.authorizationSucceeded]);
+
   // Handle sync now (upload current data)
   const handleSyncNow = useCallback(async () => {
-    if (
-      platform === 'chatgpt' &&
-      (syncState.lastUploadTimeChatGPT || syncState.lastSyncTimeChatGPT) &&
-      !window.confirm(t('syncUploadConfirmExistingCloud'))
-    ) {
+    if (!syncState.isAuthenticated) {
       return;
     }
 
     setStatusMessage(null);
-    setIsUploading(true);
 
     try {
+      const accountContext =
+        platform === 'chatgpt' ? null : await resolveAccountSyncContext();
+      const timelineHierarchyContext =
+        platform === 'chatgpt' ? null : await resolveTimelineHierarchySyncContext();
+      const cloudDataExists =
+        platform === 'chatgpt'
+          ? await googleDriveSyncService.hasChatGPTSyncData(false)
+          : await googleDriveSyncService.hasCloudSyncData(
+              false,
+              platform,
+              accountContext?.accountScope ?? null,
+              timelineHierarchyContext?.accountScope ?? null,
+            );
+
+      if (cloudDataExists && !window.confirm(safeSyncCopy.uploadExistingCloudConfirm)) {
+        return;
+      }
+
+      setIsUploading(true);
+
       if (platform === 'chatgpt') {
         const response = (await chrome.runtime.sendMessage({
           type: 'gv.chatgpt.sync.upload',
@@ -397,8 +455,7 @@ export function CloudSyncSettings({ chatgptOnly = false, onBack }: CloudSyncSett
         return;
       }
 
-      const accountContext = await resolveAccountSyncContext();
-      const timelineHierarchyContext = await resolveTimelineHierarchySyncContext();
+      if (!accountContext || !timelineHierarchyContext) return;
       let accountScope = accountContext.accountScope;
       let folderStorageKey = accountContext.folderStorageKey;
       const timelineHierarchyAccountScope = timelineHierarchyContext.accountScope;
@@ -498,8 +555,8 @@ export function CloudSyncSettings({ chatgptOnly = false, onBack }: CloudSyncSett
     platform,
     resolveAccountSyncContext,
     resolveTimelineHierarchySyncContext,
-    syncState.lastSyncTimeChatGPT,
-    syncState.lastUploadTimeChatGPT,
+    safeSyncCopy.uploadExistingCloudConfirm,
+    syncState.isAuthenticated,
     t,
   ]);
 
@@ -815,7 +872,7 @@ export function CloudSyncSettings({ chatgptOnly = false, onBack }: CloudSyncSett
   if (isSafariBrowser) return null;
 
   if (chatgptOnly) {
-    const busy = isUploading || isDownloading || syncState.isSyncing;
+    const busy = isAuthorizing || isUploading || isDownloading || syncState.isSyncing;
 
     return (
       <div className="bg-background text-foreground w-[360px]">
@@ -866,36 +923,16 @@ export function CloudSyncSettings({ chatgptOnly = false, onBack }: CloudSyncSett
                 </div>
               </div>
 
-              <div className="grid gap-2">
-                <Button
-                  type="button"
-                  size="sm"
-                  onClick={handleSyncNow}
-                  disabled={busy}
-                  className="w-full"
-                >
-                  {isUploading ? t('syncUploading') : t('syncUploadToCloud')}
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleDownloadFromDrive('merge')}
-                  disabled={busy}
-                  className="w-full"
-                >
-                  {downloadMode === 'merge' ? t('syncDownloading') : t('syncDownloadMerge')}
-                </Button>
-                <div className="grid grid-cols-2 gap-2">
+              {!syncState.isAuthenticated ? (
+                <div className="grid gap-2">
                   <Button
                     type="button"
                     size="sm"
-                    variant="ghost"
-                    onClick={handleSignOut}
+                    onClick={handleAuthorizeGoogleDrive}
                     disabled={busy}
-                    className="text-xs"
+                    className="w-full"
                   >
-                    {t('syncClearAuthReauth')}
+                    {safeSyncCopy.authorizeGoogleDrive}
                   </Button>
                   <Button
                     type="button"
@@ -908,7 +945,52 @@ export function CloudSyncSettings({ chatgptOnly = false, onBack }: CloudSyncSett
                     {t('syncRefreshStatus')}
                   </Button>
                 </div>
-              </div>
+              ) : (
+                <div className="grid gap-2">
+                  <p className="text-muted-foreground text-xs">{safeSyncCopy.firstUseGuidance}</p>
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={handleSyncNow}
+                    disabled={busy}
+                    className="w-full"
+                  >
+                    {isUploading ? t('syncUploading') : t('syncUploadToCloud')}
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleDownloadFromDrive('merge')}
+                    disabled={busy}
+                    className="w-full"
+                  >
+                    {downloadMode === 'merge' ? t('syncDownloading') : t('syncDownloadMerge')}
+                  </Button>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={handleSignOut}
+                      disabled={busy}
+                      className="text-xs"
+                    >
+                      {t('syncClearAuthReauth')}
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => void refreshChatGPTSyncState()}
+                      disabled={busy}
+                      className="text-xs"
+                    >
+                      {t('syncRefreshStatus')}
+                    </Button>
+                  </div>
+                </div>
+              )}
 
               <p className="text-muted-foreground text-xs">
                 {t('syncPrivacyNote')}
@@ -973,6 +1055,20 @@ export function CloudSyncSettings({ chatgptOnly = false, onBack }: CloudSyncSett
         {/* Sync Actions - Only show if not disabled */}
         {syncState.mode !== 'disabled' && (
           <>
+            {!syncState.isAuthenticated ? (
+              <div className="grid gap-2">
+                <Button
+                  size="sm"
+                  className="w-full"
+                  onClick={handleAuthorizeGoogleDrive}
+                  disabled={isAuthorizing || isUploading || isDownloading || syncState.isSyncing}
+                >
+                  {safeSyncCopy.authorizeGoogleDrive}
+                </Button>
+              </div>
+            ) : (
+              <>
+                <p className="text-muted-foreground text-xs">{safeSyncCopy.firstUseGuidance}</p>
             {/* Upload/Download Buttons */}
             <div className="grid gap-2">
               {/* Upload Button (Local → Drive) */}
@@ -1144,6 +1240,8 @@ export function CloudSyncSettings({ chatgptOnly = false, onBack }: CloudSyncSett
               >
                 {t('signOut')}
               </Button>
+            )}
+              </>
             )}
           </>
         )}

@@ -221,6 +221,52 @@ export class GoogleDriveSyncService {
     }
   }
 
+  async hasChatGPTSyncData(interactive: boolean = false): Promise<boolean> {
+    const token = await this.getAuthToken(interactive);
+    if (!token) return false;
+    return Boolean(await this.findAppDataFile(token, CHATGPT_SYNC_FILE_NAME));
+  }
+
+  async hasCloudSyncData(
+    interactive: boolean = false,
+    platform: SyncPlatform = 'gemini',
+    accountScope: SyncAccountScope | null = null,
+    timelineHierarchyAccountScope: SyncAccountScope | null = null,
+  ): Promise<boolean> {
+    const token = await this.getAuthToken(interactive);
+    if (!token) return false;
+
+    const foldersBaseFileName =
+      platform === 'aistudio' ? AISTUDIO_FOLDERS_FILE_NAME : FOLDERS_FILE_NAME;
+    if (await this.findFileForScope(token, foldersBaseFileName, accountScope)) {
+      return true;
+    }
+
+    if (await this.findFile(token, SETTINGS_FILE_NAME)) {
+      return true;
+    }
+
+    if (platform !== 'gemini') {
+      return false;
+    }
+
+    const timelineHierarchyScope = timelineHierarchyAccountScope ?? accountScope;
+    const geminiFileNames: Array<[string, SyncAccountScope | null]> = [
+      [PROMPTS_FILE_NAME, accountScope],
+      [STARRED_FILE_NAME, accountScope],
+      [FORKS_FILE_NAME, accountScope],
+      [TIMELINE_HIERARCHY_FILE_NAME, timelineHierarchyScope],
+    ];
+
+    for (const [fileName, scope] of geminiFileNames) {
+      if (await this.findFileForScope(token, fileName, scope)) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
   /**
    * Upload folders, prompts, and timeline data as separate files to Google Drive
    * @param folders Folder data to upload
