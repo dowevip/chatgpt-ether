@@ -25,6 +25,7 @@ import { Switch } from '../../components/ui/switch';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useWidthAdjuster } from '../../hooks/useWidthAdjuster';
 import { ContextSyncSettings } from './components/ContextSyncSettings';
+import { DiagnosticsPanel } from './components/DiagnosticsPanel';
 import { FoldersPanel } from './components/FoldersPanel';
 import { KeyboardShortcutSettings } from './components/KeyboardShortcutSettings';
 import { PromptVaultPanel } from './components/PromptVaultPanel';
@@ -387,7 +388,7 @@ const CHATGPT_DASHBOARD_ENTRY_LABELS: Record<(typeof CHATGPT_DASHBOARD_ENTRIES)[
   Diagnostics: '诊断信息',
 };
 
-type PopupPanel = 'dashboard' | 'promptVault' | 'folders' | 'starred';
+type PopupPanel = 'dashboard' | 'promptVault' | 'folders' | 'starred' | 'diagnostics';
 
 function SectionReorderControls({
   isFirst,
@@ -1427,6 +1428,10 @@ export default function Popup() {
     return <StarredPanel onBack={() => setActivePanel('dashboard')} />;
   }
 
+  if (activePanel === 'diagnostics') {
+    return <DiagnosticsPanel onBack={() => setActivePanel('dashboard')} />;
+  }
+
   return (
     <div className="bg-background text-foreground w-[360px]">
       {/* Header */}
@@ -1507,6 +1512,7 @@ export default function Popup() {
                   label === 'Prompt Vault' ||
                   label === 'Folders' ||
                   label === 'Starred' ||
+                  label === 'Diagnostics' ||
                   (isTimeline && Boolean(chatgptStatus?.isChatGPTPage));
 
                 return (
@@ -1518,6 +1524,7 @@ export default function Popup() {
                       if (label === 'Prompt Vault') setActivePanel('promptVault');
                       if (label === 'Folders') setActivePanel('folders');
                       if (label === 'Starred') setActivePanel('starred');
+                      if (label === 'Diagnostics') setActivePanel('diagnostics');
                       if (isTimeline) void handleTogglePageTimeline();
                     }}
                     className="border-border bg-secondary/40 text-muted-foreground enabled:text-foreground rounded-md border px-2 py-2 text-xs font-medium"
