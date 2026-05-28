@@ -26,6 +26,7 @@ const STYLE_ID = 'cg-voyager-timeline-style';
 const STORAGE_KEY = 'chatgptVoyager.timeline.visible';
 const WIDTH_STORAGE_KEY = 'chatgptVoyager.timeline.width';
 const HEIGHT_STORAGE_KEY = 'chatgptVoyager.timeline.height';
+const DARK_MODE_STORAGE_KEY = 'darkMode';
 const PERFORMANCE_PREFIX = '[ChatGPT Voyager Performance]';
 const SUMMARY_LIMIT = 60;
 const SEARCH_SUMMARY_LIMIT = 80;
@@ -57,6 +58,7 @@ let timelineRefreshTimer: number | null = null;
 let searchIndexTimer: number | null = null;
 let panelWidth = DEFAULT_WIDTH;
 let panelHeight = Math.round(globalThis.innerHeight * 0.7);
+let panelDarkMode = false;
 
 type ChatGPTTimelineLocateRequest = {
   conversationId?: string;
@@ -232,6 +234,45 @@ async function writeHeightToStorage(height: number): Promise<void> {
   try {
     await chrome.storage?.local?.set({ [HEIGHT_STORAGE_KEY]: height });
   } catch {}
+}
+
+function normalizeDarkModeValue(value: unknown): boolean | null {
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'string') {
+    if (value === 'true') return true;
+    if (value === 'false') return false;
+  }
+  return null;
+}
+
+async function readDarkModeFromStorage(): Promise<boolean> {
+  try {
+    const result = await chrome.storage?.local?.get({ [DARK_MODE_STORAGE_KEY]: null });
+    const stored = normalizeDarkModeValue(result?.[DARK_MODE_STORAGE_KEY]);
+    if (stored !== null) return stored;
+  } catch {}
+
+  return window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false;
+}
+
+function applyDarkModeState(): void {
+  document.documentElement.classList.toggle('cg-voyager-timeline-dark', panelDarkMode);
+  document
+    .getElementById(ROOT_ID)
+    ?.classList.toggle('cg-voyager-timeline-dark', panelDarkMode);
+}
+
+function watchDarkModeChanges(): void {
+  chrome.storage?.onChanged?.addListener((changes, areaName) => {
+    if (areaName !== 'local') return;
+    const darkModeChange = changes[DARK_MODE_STORAGE_KEY];
+    if (!darkModeChange) return;
+
+    const nextDarkMode = normalizeDarkModeValue(darkModeChange.newValue);
+    if (nextDarkMode === null) return;
+    panelDarkMode = nextDarkMode;
+    applyDarkModeState();
+  });
 }
 
 function applyPanelSize(): void {
@@ -1021,54 +1062,99 @@ function injectStyles(): void {
     .cg-voyager-message-timestamp-assistant {
       margin-left: 0;
     }
-    @media (prefers-color-scheme: dark) {
-      .cg-voyager-timeline-panel {
-        border-color: rgba(148, 163, 184, 0.2);
-        background: rgba(17, 24, 39, 0.46);
-        color: #e5e7eb;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
-      }
-      .cg-voyager-timeline-root:hover .cg-voyager-timeline-panel,
-      .cg-voyager-timeline-root:focus-within .cg-voyager-timeline-panel,
-      .cg-voyager-timeline-root.cg-voyager-timeline-expanded .cg-voyager-timeline-panel,
-      .cg-voyager-timeline-root.cg-voyager-timeline-resizing .cg-voyager-timeline-panel {
-        background: rgba(17, 24, 39, 0.84);
-      }
-      .cg-voyager-timeline-action {
-        border-color: rgba(148, 163, 184, 0.24);
-        background: rgba(31, 41, 55, 0.72);
-        color: #e5e7eb;
-      }
-      .cg-voyager-timeline-search-input {
-        border-color: rgba(148, 163, 184, 0.24);
-        background: rgba(31, 41, 55, 0.72);
-        color: #e5e7eb;
-      }
-      .cg-voyager-timeline-search-clear {
-        color: #94a3b8;
-      }
-      .cg-voyager-timeline-search-clear:hover {
-        background: rgba(148, 163, 184, 0.16);
-        color: #e5e7eb;
-      }
-      .cg-voyager-timeline-node {
-        color: #e5e7eb;
-      }
-      .cg-voyager-timeline-node-summary {
-        color: #cbd5e1;
-      }
-      .cg-voyager-timeline-status,
-      .cg-voyager-timeline-hint,
-      .cg-voyager-timeline-node-role {
-        color: #94a3b8;
-      }
-      .cg-voyager-timeline-star {
-        color: #94a3b8;
-      }
-      .cg-voyager-timeline-star:hover,
-      .cg-voyager-timeline-star-active {
-        color: #fbbf24;
-      }
+    .cg-voyager-timeline-root.cg-voyager-timeline-dark .cg-voyager-timeline-panel {
+      border-color: rgba(148, 163, 184, 0.22);
+      background: rgba(15, 23, 42, 0.54);
+      color: #e5e7eb;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.24);
+    }
+    .cg-voyager-timeline-root.cg-voyager-timeline-dark:hover .cg-voyager-timeline-panel,
+    .cg-voyager-timeline-root.cg-voyager-timeline-dark:focus-within .cg-voyager-timeline-panel,
+    .cg-voyager-timeline-root.cg-voyager-timeline-dark.cg-voyager-timeline-expanded .cg-voyager-timeline-panel,
+    .cg-voyager-timeline-root.cg-voyager-timeline-dark.cg-voyager-timeline-resizing .cg-voyager-timeline-panel {
+      border-color: rgba(148, 163, 184, 0.28);
+      background: rgba(15, 23, 42, 0.9);
+      box-shadow: 0 14px 34px rgba(0, 0, 0, 0.32);
+    }
+    .cg-voyager-timeline-root.cg-voyager-timeline-dark .cg-voyager-timeline-header {
+      border-bottom-color: rgba(148, 163, 184, 0.2);
+    }
+    .cg-voyager-timeline-root.cg-voyager-timeline-dark .cg-voyager-timeline-marker {
+      background: rgba(148, 163, 184, 0.7);
+    }
+    .cg-voyager-timeline-root.cg-voyager-timeline-dark .cg-voyager-timeline-marker-assistant {
+      background: rgba(100, 116, 139, 0.82);
+    }
+    .cg-voyager-timeline-root.cg-voyager-timeline-dark .cg-voyager-timeline-marker:hover,
+    .cg-voyager-timeline-root.cg-voyager-timeline-dark .cg-voyager-timeline-marker-active {
+      background: #60a5fa;
+    }
+    .cg-voyager-timeline-root.cg-voyager-timeline-dark .cg-voyager-timeline-action {
+      border-color: rgba(148, 163, 184, 0.28);
+      background: rgba(30, 41, 59, 0.82);
+      color: #e5e7eb;
+    }
+    .cg-voyager-timeline-root.cg-voyager-timeline-dark .cg-voyager-timeline-action:hover {
+      background: rgba(51, 65, 85, 0.9);
+    }
+    .cg-voyager-timeline-root.cg-voyager-timeline-dark .cg-voyager-timeline-search-input {
+      border-color: rgba(148, 163, 184, 0.28);
+      background: rgba(30, 41, 59, 0.82);
+      color: #e5e7eb;
+    }
+    .cg-voyager-timeline-root.cg-voyager-timeline-dark .cg-voyager-timeline-search-input:focus {
+      border-color: rgba(96, 165, 250, 0.58);
+      box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.16);
+    }
+    .cg-voyager-timeline-root.cg-voyager-timeline-dark .cg-voyager-timeline-search-clear {
+      color: #94a3b8;
+    }
+    .cg-voyager-timeline-root.cg-voyager-timeline-dark .cg-voyager-timeline-search-clear:hover {
+      background: rgba(148, 163, 184, 0.16);
+      color: #e5e7eb;
+    }
+    .cg-voyager-timeline-root.cg-voyager-timeline-dark .cg-voyager-timeline-node {
+      color: #e5e7eb;
+    }
+    .cg-voyager-timeline-root.cg-voyager-timeline-dark .cg-voyager-timeline-node:hover,
+    .cg-voyager-timeline-root.cg-voyager-timeline-dark .cg-voyager-timeline-node-active {
+      border-left-color: #60a5fa;
+      background: rgba(96, 165, 250, 0.14);
+    }
+    .cg-voyager-timeline-root.cg-voyager-timeline-dark .cg-voyager-timeline-node-index {
+      color: #60a5fa;
+    }
+    .cg-voyager-timeline-root.cg-voyager-timeline-dark .cg-voyager-timeline-node-summary {
+      color: #cbd5e1;
+    }
+    .cg-voyager-timeline-root.cg-voyager-timeline-dark .cg-voyager-timeline-status,
+    .cg-voyager-timeline-root.cg-voyager-timeline-dark .cg-voyager-timeline-hint,
+    .cg-voyager-timeline-root.cg-voyager-timeline-dark .cg-voyager-timeline-node-role {
+      color: #94a3b8;
+    }
+    .cg-voyager-timeline-root.cg-voyager-timeline-dark .cg-voyager-timeline-star {
+      color: #94a3b8;
+    }
+    .cg-voyager-timeline-root.cg-voyager-timeline-dark .cg-voyager-timeline-star:hover,
+    .cg-voyager-timeline-root.cg-voyager-timeline-dark .cg-voyager-timeline-star-active {
+      background: rgba(245, 158, 11, 0.16);
+      color: #fbbf24;
+    }
+    .cg-voyager-timeline-root.cg-voyager-timeline-dark .cg-voyager-timeline-search-mark {
+      background: rgba(250, 204, 21, 0.28);
+    }
+    html.cg-voyager-timeline-dark .cg-voyager-message-timestamp {
+      background: rgba(30, 41, 59, 0.86);
+      color: #cbd5e1;
+    }
+    .cg-voyager-timeline-root.cg-voyager-timeline-dark:hover .cg-voyager-timeline-resize,
+    .cg-voyager-timeline-root.cg-voyager-timeline-dark:hover .cg-voyager-timeline-resize-bottom,
+    .cg-voyager-timeline-root.cg-voyager-timeline-dark:hover .cg-voyager-timeline-resize-corner,
+    .cg-voyager-timeline-root.cg-voyager-timeline-dark:focus-within .cg-voyager-timeline-resize,
+    .cg-voyager-timeline-root.cg-voyager-timeline-dark:focus-within .cg-voyager-timeline-resize-bottom,
+    .cg-voyager-timeline-root.cg-voyager-timeline-dark:focus-within .cg-voyager-timeline-resize-corner,
+    .cg-voyager-timeline-root.cg-voyager-timeline-dark.cg-voyager-timeline-resizing .cg-voyager-timeline-resize {
+      background: rgba(96, 165, 250, 0.22);
     }
   `;
   document.documentElement.appendChild(style);
@@ -1513,6 +1599,7 @@ function createPanel(): void {
   panelEl.append(resizeHandle, rail, outline, bottomResizeHandle, cornerResizeHandle);
   root.appendChild(panelEl);
   document.documentElement.appendChild(root);
+  applyDarkModeState();
   applyPanelSize();
   setupResizeHandle(resizeHandle, 'width');
   setupResizeHandle(bottomResizeHandle, 'height');
@@ -1553,6 +1640,11 @@ export function startChatGPTTimelineFloatingPanel(): void {
     panelHeight = storedHeight;
     applyPanelSize();
   });
+  readDarkModeFromStorage().then((storedDarkMode) => {
+    panelDarkMode = storedDarkMode;
+    applyDarkModeState();
+  });
+  watchDarkModeChanges();
   window.addEventListener('cg-voyager-chatgpt-conversation-captured', () => {
     if (enabled) scheduleTimelineRefresh(false, 250);
     scheduleSearchIndexBuild(350);
