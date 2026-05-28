@@ -1,6 +1,6 @@
 {
-  "name": "ChatGPT Voyager",
-  "short_name": "ChatGPT Voyager",
+  "name": "ChatGPT Ether",
+  "short_name": "ChatGPT Ether",
   "description": "Personal ChatGPT conversation manager",
   "action": {
     "default_icon": "public/dev-icon-32.png",

@@ -1,6 +1,6 @@
 {
   "extName": {
-    "message": "ChatGPT Voyager",
+    "message": "ChatGPT Ether",
     "description": "Extension name"
   },
   "extDescription": {
@@ -60,7 +60,7 @@
     "description": "Language label"
   },
   "pm_title": {
-    "message": "Voyager",
+    "message": "ChatGPT Ether",
     "description": "Prompt Manager title"
   },
   "pm_add": {

@@ -379,7 +379,7 @@ export function CloudSyncSettings({ chatgptOnly = false, onBack }: CloudSyncSett
         if (!response?.ok) {
           throw new Error(response?.error || response?.state?.error || '上传到云端失败');
         }
-        setStatusMessage({ text: 'ChatGPT Voyager 已上传到云端。', kind: 'ok' });
+        setStatusMessage({ text: 'ChatGPT以太 已上传到云端。', kind: 'ok' });
         return;
       }
 
@@ -494,7 +494,7 @@ export function CloudSyncSettings({ chatgptOnly = false, onBack }: CloudSyncSett
         mode === 'overwrite' &&
         !window.confirm(
           platform === 'chatgpt'
-            ? '确定要用云端数据覆盖本地 ChatGPT Voyager 数据吗？'
+            ? '确定要用云端数据覆盖本地 ChatGPT以太 数据吗？'
             : t('syncOverwriteConfirm'),
         )
       ) {
@@ -520,8 +520,8 @@ export function CloudSyncSettings({ chatgptOnly = false, onBack }: CloudSyncSett
           setStatusMessage({
             text:
               mode === 'overwrite'
-                ? 'ChatGPT Voyager 已用云端数据覆盖本地。'
-                : 'ChatGPT Voyager 已从云端合并到本地。',
+                ? 'ChatGPT以太 已用云端数据覆盖本地。'
+                : 'ChatGPT以太 已从云端合并到本地。',
             kind: 'ok',
           });
           return;
@@ -796,7 +796,7 @@ export function CloudSyncSettings({ chatgptOnly = false, onBack }: CloudSyncSett
   }, []);
 
   const handleOverwriteChatGPTCloud = useCallback(async () => {
-    if (!window.confirm('确定要用本地 ChatGPT Voyager 数据覆盖云端数据吗？')) return;
+    if (!window.confirm('确定要用本地 ChatGPT以太 数据覆盖云端数据吗？')) return;
     await handleSyncNow();
   }, [handleSyncNow]);
 
@@ -811,7 +811,7 @@ export function CloudSyncSettings({ chatgptOnly = false, onBack }: CloudSyncSett
         <div className="border-border/50 flex items-center justify-between border-b px-5 py-4">
           <div>
             <h1 className="text-lg font-bold">Google Drive 同步</h1>
-            <p className="text-muted-foreground text-xs">ChatGPT Voyager 手动同步</p>
+            <p className="text-muted-foreground text-xs">ChatGPT以太 手动同步</p>
           </div>
           {onBack && (
             <Button type="button" variant="ghost" size="sm" onClick={onBack}>
@@ -1106,7 +1106,7 @@ export function CloudSyncSettings({ chatgptOnly = false, onBack }: CloudSyncSett
             <div className="text-muted-foreground space-y-0.5 text-center text-xs">
               <p className="text-foreground/70 font-medium">
                 {platform === 'chatgpt'
-                  ? 'ChatGPT Voyager'
+                  ? 'ChatGPT以太'
                   : platform === 'aistudio'
                     ? '📊 AI Studio'
                     : '✨ Gemini'}

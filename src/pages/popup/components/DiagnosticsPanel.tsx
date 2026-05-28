@@ -82,7 +82,7 @@ export function DiagnosticsPanel({ onBack }: DiagnosticsPanelProps) {
       <div className="border-border/50 flex items-center justify-between border-b px-5 py-4">
         <div>
           <h1 className="text-primary text-xl font-bold">诊断信息</h1>
-          <p className="text-muted-foreground text-xs">当前 ChatGPT Voyager 运行状态</p>
+          <p className="text-muted-foreground text-xs">当前 ChatGPT以太 运行状态</p>
         </div>
         <Button type="button" variant="outline" size="sm" onClick={onBack}>
           返回

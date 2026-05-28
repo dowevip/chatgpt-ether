@@ -1438,7 +1438,7 @@ export default function Popup() {
     <div className="bg-background text-foreground w-[360px]">
       {/* Header */}
       <div className="border-border/50 flex items-center justify-between border-b px-5 py-5">
-        <h1 className="text-primary text-2xl font-extrabold tracking-tight">{t('extName')}</h1>
+        <h1 className="text-primary text-2xl font-extrabold tracking-tight">ChatGPT以太</h1>
         <div className="flex items-center gap-1">
           <DarkModeToggle />
         </div>

@@ -1,6 +1,6 @@
 {
   "extName": {
-    "message": "ChatGPT Voyager",
+    "message": "ChatGPT以太",
     "description": "扩展程序名称"
   },
   "extDescription": {
@@ -60,7 +60,7 @@
     "description": "语言标签"
   },
   "pm_title": {
-    "message": "Voyager",
+    "message": "ChatGPT以太",
     "description": "面板标题"
   },
   "pm_add": {

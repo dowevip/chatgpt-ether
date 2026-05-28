@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "default_locale": "en",
-  "name": "ChatGPT Voyager",
-  "short_name": "ChatGPT Voyager",
+  "name": "ChatGPT Ether",
+  "short_name": "ChatGPT Ether",
   "description": "Personal ChatGPT conversation manager",
   "version": "0.1.0",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAs6bXWC1ufHVRdFFxUy7RQtnAfJjaopkjaXMOMRPefW16vni/SkY6O4fIJID4rg5xJjxCGc1pnqqy4KhtUas9PNMwXlxp/hvSep1prWoknGNpWeZkIj9suqwuH8LSCFdq9XNjysK30+Tx+VKsjOf4G7VFXDVomlaoPwRX/4yrEgnho7Bp4/SiWzD7oUicRFtVb8ZvNAhyQo45P6At7Nx9TwSEjPgwDrHs7OmX1zA24efuTIDcuU/0gKljpcONk+wgCC1oraTdbvz1VkmX1g4G/1yPZY+XUs5lQ5dyGT9/gHW62MEkic0FpJLTywklWeYxKd9bnYh5vPu1uLn1JHGkPwIDAQAB",
