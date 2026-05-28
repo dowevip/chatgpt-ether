@@ -39,6 +39,7 @@ const CHATGPT_INPUT_SELECTORS = [
 const CHATGPT_MESSAGE_ANCHOR_ATTR = 'data-cg-voyager-anchor';
 const CHATGPT_MESSAGE_ID_ATTR = 'data-cg-voyager-message-id';
 const CHATGPT_MESSAGE_FINGERPRINT_ATTR = 'data-cg-voyager-fingerprint';
+const CHATGPT_MESSAGE_INDEX_ATTR = 'data-cg-voyager-index';
 
 type ChatGPTInsertMethod = 'textarea' | 'contenteditable' | 'fallback';
 
@@ -59,6 +60,43 @@ export type ChatGPTInsertPromptResult = {
   };
 };
 
+export type ChatGPTTimelineTarget = {
+  index?: number;
+  messageAnchor: string;
+  messageId?: string;
+  fingerprint?: string;
+  summary?: string;
+};
+
+export type ChatGPTDomUserMessageIndexEntry = {
+  element: HTMLElement;
+  anchor: string;
+  messageId?: string;
+  fingerprint: string;
+  index: number;
+  normalizedText: string;
+  snippet: string;
+};
+
+export type ChatGPTScrollContainerInfo = {
+  element: HTMLElement;
+  debug: {
+    tagName: string;
+    className: string;
+    scrollTop: number;
+    scrollHeight: number;
+    clientHeight: number;
+  };
+};
+
+export type ChatGPTLocateResult = {
+  found: boolean;
+  method?: 'messageId' | 'anchor' | 'fingerprint' | 'text' | 'index';
+  element?: HTMLElement;
+  domIndexCount: number;
+  matchedCount: number;
+};
+
 function getCurrentUrl(): string {
   return typeof location === 'undefined' ? '' : location.href;
 }
@@ -76,6 +114,17 @@ function normalizeSnippet(text: string | null | undefined): string {
     .replace(/\s+/g, ' ')
     .trim()
     .slice(0, 160);
+}
+
+function normalizeMessageText(text: string | null | undefined): string {
+  return String(text || '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function classNameSummary(element: Element | null): string {
+  if (!element || typeof element.className !== 'string') return '';
+  return element.className.trim().split(/\s+/).slice(0, 4).join(' ');
 }
 
 function extractConversationIdFromChatGPTUrl(input: string): string | null {
@@ -421,7 +470,7 @@ function getMessageIdFromElement(element: HTMLElement): string | undefined {
 }
 
 function fingerprintText(text: string): string {
-  const normalized = normalizeSnippet(text).toLowerCase();
+  const normalized = normalizeMessageText(text).slice(0, 160).toLowerCase();
   let hash = 2166136261;
   for (let index = 0; index < normalized.length; index += 1) {
     hash ^= normalized.charCodeAt(index);
@@ -437,6 +486,293 @@ function parseCapturedAnchor(anchor: string): { messageId?: string; fingerprint?
     messageId: messageId && messageId !== 'no-message-id' ? messageId : undefined,
     fingerprint,
   };
+}
+
+function getCapturedNodeLookup(capturedNodes: ChatGPTTimelineTarget[] = []): {
+  byFingerprint: Map<string, ChatGPTTimelineTarget>;
+  byMessageId: Map<string, ChatGPTTimelineTarget>;
+} {
+  const byFingerprint = new Map<string, ChatGPTTimelineTarget>();
+  const byMessageId = new Map<string, ChatGPTTimelineTarget>();
+
+  for (const node of capturedNodes) {
+    if (node.fingerprint) byFingerprint.set(node.fingerprint, node);
+    if (node.messageId) byMessageId.set(node.messageId, node);
+  }
+
+  return { byFingerprint, byMessageId };
+}
+
+export function indexChatGPTUserMessageDom(
+  capturedNodes: ChatGPTTimelineTarget[] = [],
+): ChatGPTDomUserMessageIndexEntry[] {
+  const { byFingerprint, byMessageId } = getCapturedNodeLookup(capturedNodes);
+  const entries = sortByDocumentPosition(
+    getTurnElementsByRole('user').map((element, index) => ({
+      element,
+      role: 'user' as const,
+      anchor: '',
+      snippet: normalizeSnippet(element.textContent),
+      index,
+    })),
+  );
+
+  const indexed = entries
+    .map((node, index) => {
+      const normalizedText = normalizeMessageText(node.element.textContent);
+      const fingerprint = fingerprintText(normalizedText);
+      const messageId = getMessageIdFromElement(node.element);
+      const captured =
+        (messageId ? byMessageId.get(messageId) : undefined) || byFingerprint.get(fingerprint);
+      const anchor =
+        captured?.messageAnchor || node.element.getAttribute(CHATGPT_MESSAGE_ANCHOR_ATTR) || '';
+      const finalAnchor =
+        anchor || `chatgpt:user:${hashString(messageId || fingerprint || String(index))}:${index}`;
+      const finalMessageId = messageId || captured?.messageId;
+
+      node.element.setAttribute(CHATGPT_MESSAGE_INDEX_ATTR, String(index + 1));
+      node.element.setAttribute(CHATGPT_MESSAGE_FINGERPRINT_ATTR, fingerprint);
+      node.element.setAttribute(CHATGPT_MESSAGE_ANCHOR_ATTR, finalAnchor);
+      if (finalMessageId) node.element.setAttribute(CHATGPT_MESSAGE_ID_ATTR, finalMessageId);
+
+      return {
+        element: node.element,
+        anchor: finalAnchor,
+        messageId: finalMessageId,
+        fingerprint,
+        index: index + 1,
+        normalizedText,
+        snippet: normalizeSnippet(normalizedText),
+      };
+    })
+    .filter((entry) => entry.normalizedText);
+
+  console.debug('[ChatGPT Voyager] DOM 用户消息索引完成', {
+    domUserMessages: indexed.length,
+    matched: indexed.filter((entry) => entry.messageId || byFingerprint.has(entry.fingerprint))
+      .length,
+  });
+
+  return indexed;
+}
+
+function isScrollableElement(element: HTMLElement): boolean {
+  const style = window.getComputedStyle(element);
+  const overflowY = style.overflowY;
+  return (
+    (overflowY === 'auto' || overflowY === 'scroll') &&
+    element.scrollHeight > element.clientHeight + 24
+  );
+}
+
+function getScrollableAncestors(element: HTMLElement): HTMLElement[] {
+  const ancestors: HTMLElement[] = [];
+  let parent = element.parentElement;
+  while (parent && parent !== document.body.parentElement) {
+    if (isScrollableElement(parent)) ancestors.push(parent);
+    parent = parent.parentElement;
+  }
+  return ancestors;
+}
+
+function scrollContainerDebug(element: HTMLElement): ChatGPTScrollContainerInfo['debug'] {
+  return {
+    tagName: element.tagName.toLowerCase(),
+    className: classNameSummary(element),
+    scrollTop: Math.round(element.scrollTop),
+    scrollHeight: Math.round(element.scrollHeight),
+    clientHeight: Math.round(element.clientHeight),
+  };
+}
+
+export function getChatGPTMainScrollContainer(
+  entries: ChatGPTDomUserMessageIndexEntry[] = indexChatGPTUserMessageDom(),
+): ChatGPTScrollContainerInfo {
+  const doc = getSafeDocument();
+  const candidates: HTMLElement[] = [];
+  const scrollingElement = doc?.scrollingElement;
+  if (scrollingElement instanceof HTMLElement) candidates.push(scrollingElement);
+
+  for (const selector of ['main', '[role="main"]']) {
+    try {
+      candidates.push(...Array.from(document.querySelectorAll<HTMLElement>(selector)));
+    } catch {}
+  }
+
+  for (const entry of entries) {
+    candidates.push(...getScrollableAncestors(entry.element));
+  }
+
+  try {
+    for (const element of Array.from(document.querySelectorAll<HTMLElement>('body *'))) {
+      if (isScrollableElement(element)) candidates.push(element);
+    }
+  } catch {}
+
+  const uniqueCandidates = uniqueElements(candidates).filter((candidate) => {
+    if (candidate.scrollHeight <= candidate.clientHeight + 24) return false;
+    if (entries.length === 0) return true;
+    return entries.some(
+      (entry) => candidate === entry.element || candidate.contains(entry.element),
+    );
+  });
+
+  const element =
+    uniqueCandidates.sort((left, right) => right.scrollHeight - left.scrollHeight)[0] ||
+    (scrollingElement instanceof HTMLElement ? scrollingElement : document.documentElement);
+  const debug = scrollContainerDebug(element);
+  console.debug('[ChatGPT Voyager] 时间轴滚动容器', debug);
+  return { element, debug };
+}
+
+export function getChatGPTScrollMetrics(container: ChatGPTScrollContainerInfo): {
+  scrollTop: number;
+  scrollHeight: number;
+  clientHeight: number;
+  atTop: boolean;
+  atBottom: boolean;
+} {
+  const { element } = container;
+  const scrollTop = element.scrollTop;
+  const scrollHeight = element.scrollHeight;
+  const clientHeight = element.clientHeight || window.innerHeight;
+  return {
+    scrollTop,
+    scrollHeight,
+    clientHeight,
+    atTop: scrollTop <= 2,
+    atBottom: scrollTop + clientHeight >= scrollHeight - 2,
+  };
+}
+
+export function scrollChatGPTContainerBy(
+  container: ChatGPTScrollContainerInfo,
+  delta: number,
+): void {
+  container.element.scrollBy({ top: delta, behavior: 'auto' });
+}
+
+export function scrollChatGPTContainerToTop(container: ChatGPTScrollContainerInfo): void {
+  container.element.scrollTo({ top: 0, behavior: 'auto' });
+}
+
+function textSimilarity(left: string, right: string): number {
+  const leftTokens = new Set(
+    left
+      .toLowerCase()
+      .split(/\s+/)
+      .filter((token) => token.length > 1),
+  );
+  const rightTokens = new Set(
+    right
+      .toLowerCase()
+      .split(/\s+/)
+      .filter((token) => token.length > 1),
+  );
+  if (leftTokens.size === 0 || rightTokens.size === 0) return 0;
+
+  let overlap = 0;
+  for (const token of leftTokens) {
+    if (rightTokens.has(token)) overlap += 1;
+  }
+  return overlap / Math.min(leftTokens.size, rightTokens.size);
+}
+
+function targetText(target: ChatGPTTimelineTarget): string {
+  return normalizeMessageText(target.summary || '').replace(/\.\.\.$/, '');
+}
+
+export function locateChatGPTUserTimelineTarget(
+  target: ChatGPTTimelineTarget,
+  capturedNodes: ChatGPTTimelineTarget[] = [],
+): ChatGPTLocateResult {
+  const entries = indexChatGPTUserMessageDom(capturedNodes);
+  const targetNormalized = targetText(target);
+  const targetFingerprint =
+    target.fingerprint || (targetNormalized ? fingerprintText(targetNormalized) : '');
+  let matchedCount = 0;
+
+  if (target.messageId) {
+    const found = entries.find((entry) => entry.messageId === target.messageId);
+    if (found)
+      return {
+        found: true,
+        method: 'messageId',
+        element: found.element,
+        domIndexCount: entries.length,
+        matchedCount: 1,
+      };
+  }
+
+  const byAnchor = entries.find((entry) => entry.anchor === target.messageAnchor);
+  if (byAnchor)
+    return {
+      found: true,
+      method: 'anchor',
+      element: byAnchor.element,
+      domIndexCount: entries.length,
+      matchedCount: 1,
+    };
+
+  if (targetFingerprint) {
+    const byFingerprint = entries.find((entry) => entry.fingerprint === targetFingerprint);
+    if (byFingerprint) {
+      return {
+        found: true,
+        method: 'fingerprint',
+        element: byFingerprint.element,
+        domIndexCount: entries.length,
+        matchedCount: 1,
+      };
+    }
+  }
+
+  if (targetNormalized) {
+    const textMatches = entries
+      .map((entry) => {
+        const contains =
+          entry.normalizedText.includes(targetNormalized) ||
+          targetNormalized.includes(entry.normalizedText);
+        const similarity = textSimilarity(targetNormalized, entry.normalizedText);
+        return { entry, score: contains ? 1 : similarity };
+      })
+      .filter((item) => item.score >= 0.6)
+      .sort((left, right) => right.score - left.score);
+    matchedCount = textMatches.length;
+    if (textMatches[0]) {
+      return {
+        found: true,
+        method: textMatches[0].score === 1 ? 'text' : 'fingerprint',
+        element: textMatches[0].entry.element,
+        domIndexCount: entries.length,
+        matchedCount,
+      };
+    }
+  }
+
+  if (typeof target.index === 'number') {
+    const byIndex = entries.find((entry) => entry.index === target.index);
+    if (byIndex) {
+      return {
+        found: true,
+        method: 'index',
+        element: byIndex.element,
+        domIndexCount: entries.length,
+        matchedCount: 1,
+      };
+    }
+  }
+
+  return { found: false, domIndexCount: entries.length, matchedCount };
+}
+
+export function highlightChatGPTMessageElement(element: HTMLElement): void {
+  element.classList.add('cg-voyager-message-highlight');
+  window.setTimeout(() => element.classList.remove('cg-voyager-message-highlight'), 1500);
+}
+
+export function scrollChatGPTMessageIntoView(element: HTMLElement): void {
+  element.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
 export const chatgptAdapter: PageAdapter = {
@@ -478,13 +814,13 @@ export const chatgptAdapter: PageAdapter = {
   },
 
   getMessageNodes(): MessageNodeRef[] {
-    const userNodes = this.getUserMessageNodes().map((element, index) => ({
-      element,
+    const userNodes = indexChatGPTUserMessageDom().map((entry) => ({
+      element: entry.element,
       role: 'user' as const,
-      anchor: this.buildMessageAnchor(element, index, 'user'),
-      snippet: normalizeSnippet(element.textContent),
-      messageId: getMessageIdFromElement(element),
-      fingerprint: element.getAttribute(CHATGPT_MESSAGE_FINGERPRINT_ATTR) || undefined,
+      anchor: entry.anchor,
+      snippet: entry.snippet,
+      messageId: entry.messageId,
+      fingerprint: entry.fingerprint,
     }));
     const assistantNodes = this.getAssistantMessageNodes().map((element, index) => ({
       element,
@@ -508,63 +844,29 @@ export const chatgptAdapter: PageAdapter = {
 
   scrollToMessage(anchor: string): boolean {
     const captured = parseCapturedAnchor(anchor);
-    if (captured.messageId) {
-      const messageElement = findMessageElementByAttribute(CHATGPT_MESSAGE_ID_ATTR, captured.messageId);
-      if (messageElement) {
-        messageElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        console.debug('[ChatGPT Voyager] 时间轴定位结果', { found: true, method: 'messageId' });
-        return true;
-      }
-    }
-
-    const anchoredElement = findMessageElementByAnchor(anchor);
-    if (anchoredElement) {
-      anchoredElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      console.debug('[ChatGPT Voyager] 时间轴定位结果', { found: true, method: 'anchor' });
-      return true;
-    }
-
-    const currentNodes = this.getMessageNodes();
-    const retryByMessageId = captured.messageId
-      ? findMessageElementByAttribute(CHATGPT_MESSAGE_ID_ATTR, captured.messageId)
-      : null;
-    if (retryByMessageId) {
-      retryByMessageId.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      console.debug('[ChatGPT Voyager] 时间轴定位结果', { found: true, method: 'messageIdRetry' });
-      return true;
-    }
-
-    const retryByAnchor = findMessageElementByAnchor(anchor);
-    if (retryByAnchor) {
-      retryByAnchor.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      console.debug('[ChatGPT Voyager] 时间轴定位结果', { found: true, method: 'anchorRetry' });
-      return true;
-    }
-
-    if (captured.fingerprint) {
-      const fingerprintElement = findMessageElementByAttribute(
-        CHATGPT_MESSAGE_FINGERPRINT_ATTR,
-        captured.fingerprint,
-      );
-      if (fingerprintElement) {
-        fingerprintElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        console.debug('[ChatGPT Voyager] 时间轴定位结果', { found: true, method: 'fingerprint' });
-        return true;
-      }
-    }
-
-    const message = currentNodes.find((node) => node.anchor === anchor);
-    if (!message) {
+    const result = locateChatGPTUserTimelineTarget({
+      messageAnchor: anchor,
+      messageId: captured.messageId,
+      fingerprint: captured.fingerprint,
+    });
+    if (!result.found || !result.element) {
       console.debug('[ChatGPT Voyager] 时间轴定位结果', {
         found: false,
-        anchor,
-        messageCount: currentNodes.length,
+        domIndexCount: result.domIndexCount,
+        matchedCount: result.matchedCount,
         url: getCurrentUrl(),
       });
       return false;
     }
 
-    message.element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    scrollChatGPTMessageIntoView(result.element);
+    highlightChatGPTMessageElement(result.element);
+    console.debug('[ChatGPT Voyager] 时间轴定位结果', {
+      found: true,
+      method: result.method,
+      domIndexCount: result.domIndexCount,
+      matchedCount: result.matchedCount,
+    });
     return true;
   },
 

@@ -1,4 +1,14 @@
-import { chatgptAdapter } from '@/core/adapters/chatgptAdapter';
+import {
+  chatgptAdapter,
+  getChatGPTMainScrollContainer,
+  getChatGPTScrollMetrics,
+  highlightChatGPTMessageElement,
+  indexChatGPTUserMessageDom,
+  locateChatGPTUserTimelineTarget,
+  scrollChatGPTContainerBy,
+  scrollChatGPTContainerToTop,
+  scrollChatGPTMessageIntoView,
+} from '@/core/adapters/chatgptAdapter';
 import type { ChatGPTTimelineNode } from '@/core/types/timeline';
 
 import {
@@ -29,11 +39,14 @@ let statusEl: HTMLParagraphElement | null = null;
 let hintEl: HTMLParagraphElement | null = null;
 let activeAnchor: string | null = null;
 let locatingAnchor: string | null = null;
+let locatingText = '正在定位...';
 let panelWidth = DEFAULT_WIDTH;
 let panelHeight = Math.round(globalThis.innerHeight * 0.7);
 
 function summarize(text: string): string {
-  const normalized = String(text || '').replace(/\s+/g, ' ').trim();
+  const normalized = String(text || '')
+    .replace(/\s+/g, ' ')
+    .trim();
   return normalized.length > SUMMARY_LIMIT
     ? `${normalized.slice(0, SUMMARY_LIMIT - 3)}...`
     : normalized;
@@ -101,23 +114,8 @@ function applyPanelSize(): void {
 }
 
 function reconcileDomMessageIds(capturedNodes: ChatGPTTimelineNode[]): void {
-  const capturedByFingerprint = new Map(
-    capturedNodes
-      .filter((node) => node.fingerprint && node.messageId)
-      .map((node) => [node.fingerprint as string, node.messageId as string]),
-  );
-  if (capturedByFingerprint.size === 0) return;
-
-  let matched = 0;
-  for (const domNode of chatgptAdapter.getMessageNodes()) {
-    if (domNode.role !== 'user') continue;
-    const fingerprint = (domNode as { fingerprint?: string }).fingerprint;
-    const messageId = fingerprint ? capturedByFingerprint.get(fingerprint) : null;
-    if (messageId) {
-      domNode.element.setAttribute('data-cg-voyager-message-id', messageId);
-      matched += 1;
-    }
-  }
+  const indexed = indexChatGPTUserMessageDom(capturedNodes);
+  const matched = indexed.filter((entry) => entry.messageId).length;
   console.debug('[ChatGPT Voyager] 时间轴 DOM 映射完成', {
     matched,
     captured: capturedNodes.length,
@@ -129,18 +127,19 @@ function wait(ms: number): Promise<void> {
 }
 
 function findRenderedIndexRange(): { min: number; max: number } | null {
-  const byMessageId = new Map(nodes.filter((node) => node.messageId).map((node) => [node.messageId, node.index]));
+  const byMessageId = new Map(
+    nodes.filter((node) => node.messageId).map((node) => [node.messageId, node.index]),
+  );
   const byFingerprint = new Map(
     nodes.filter((node) => node.fingerprint).map((node) => [node.fingerprint, node.index]),
   );
   const indices: number[] = [];
 
-  for (const domNode of chatgptAdapter.getMessageNodes()) {
-    if (domNode.role !== 'user') continue;
-    const messageId = (domNode as { messageId?: string }).messageId;
-    const fingerprint = (domNode as { fingerprint?: string }).fingerprint;
-    const index = (messageId && byMessageId.get(messageId)) || (fingerprint && byFingerprint.get(fingerprint));
-    if (index) indices.push(index);
+  for (const domNode of indexChatGPTUserMessageDom(nodes)) {
+    const index =
+      (domNode.messageId && byMessageId.get(domNode.messageId)) ||
+      (domNode.fingerprint && byFingerprint.get(domNode.fingerprint));
+    if (typeof index === 'number') indices.push(index);
   }
 
   if (indices.length === 0) return null;
@@ -148,29 +147,86 @@ function findRenderedIndexRange(): { min: number; max: number } | null {
 }
 
 async function progressiveScrollToNode(node: ChatGPTTimelineNode): Promise<boolean> {
-  if (chatgptAdapter.scrollToMessage(node.messageAnchor)) return true;
+  let indexed = indexChatGPTUserMessageDom(nodes);
+  let container = getChatGPTMainScrollContainer(indexed);
+  let locateResult = locateChatGPTUserTimelineTarget(node, nodes);
+  if (locateResult.found && locateResult.element) {
+    scrollChatGPTMessageIntoView(locateResult.element);
+    highlightChatGPTMessageElement(locateResult.element);
+    return true;
+  }
 
   const visibleRange = findRenderedIndexRange();
-  const direction = visibleRange && node.index < visibleRange.min ? -1 : 1;
-  const distance = Math.max(320, Math.round(window.innerHeight * 0.75)) * direction;
+  let direction: -1 | 1 | null = null;
+  if (visibleRange) {
+    if (node.index < visibleRange.min) direction = -1;
+    if (node.index > visibleRange.max) direction = 1;
+  }
 
-  for (let attempt = 0; attempt < 60; attempt += 1) {
-    window.scrollBy({ top: distance, behavior: 'auto' });
-    await wait(150);
+  let attempts = 0;
+  const maxAttempts = 100;
+
+  const searchStep = async (nextDirection: -1 | 1): Promise<boolean> => {
+    if (statusEl) statusEl.textContent = nextDirection < 0 ? '向上查找...' : '向下查找...';
+    locatingText = nextDirection < 0 ? '向上查找...' : '向下查找...';
+    renderList();
+
+    const metrics = getChatGPTScrollMetrics(container);
+    const distance = Math.max(320, Math.round(metrics.clientHeight * 0.7)) * nextDirection;
+    scrollChatGPTContainerBy(container, distance);
+    attempts += 1;
+    await wait(180);
     requestCurrentChatGPTConversationCapture();
-    reconcileDomMessageIds(nodes);
-    if (chatgptAdapter.scrollToMessage(node.messageAnchor)) {
+    indexed = indexChatGPTUserMessageDom(nodes);
+    container = getChatGPTMainScrollContainer(indexed);
+    locateResult = locateChatGPTUserTimelineTarget(node, nodes);
+    if (locateResult.found && locateResult.element) {
+      scrollChatGPTMessageIntoView(locateResult.element);
+      highlightChatGPTMessageElement(locateResult.element);
       console.debug('[ChatGPT Voyager] 时间轴渐进定位完成', {
         success: true,
-        attempts: attempt + 1,
+        attempts,
+        method: locateResult.method,
+        domIndexCount: locateResult.domIndexCount,
+        matchedCount: locateResult.matchedCount,
       });
       return true;
     }
+    return false;
+  };
+
+  if (direction === null) {
+    locatingText = '向上查找...';
+    if (statusEl) statusEl.textContent = locatingText;
+    scrollChatGPTContainerToTop(container);
+    attempts += 1;
+    await wait(200);
+    indexed = indexChatGPTUserMessageDom(nodes);
+    container = getChatGPTMainScrollContainer(indexed);
+    locateResult = locateChatGPTUserTimelineTarget(node, nodes);
+    if (locateResult.found && locateResult.element) {
+      scrollChatGPTMessageIntoView(locateResult.element);
+      highlightChatGPTMessageElement(locateResult.element);
+      return true;
+    }
+    direction = 1;
+  }
+
+  while (attempts < maxAttempts) {
+    const metrics = getChatGPTScrollMetrics(container);
+    if (direction < 0 && metrics.atTop) {
+      direction = 1;
+    } else if (direction > 0 && metrics.atBottom) {
+      direction = -1;
+    }
+
+    if (await searchStep(direction)) return true;
   }
 
   console.debug('[ChatGPT Voyager] 时间轴渐进定位完成', {
     success: false,
-    attempts: 60,
+    attempts,
+    container: container.debug,
   });
   return false;
 }
@@ -452,6 +508,13 @@ function injectStyles(): void {
       -webkit-box-orient: vertical;
       -webkit-line-clamp: 2;
     }
+    .cg-voyager-message-highlight {
+      outline: 2px solid rgba(37, 99, 235, 0.8) !important;
+      outline-offset: 4px !important;
+      border-radius: 12px !important;
+      box-shadow: 0 0 0 6px rgba(37, 99, 235, 0.16) !important;
+      transition: outline-color 160ms ease, box-shadow 160ms ease;
+    }
     @media (prefers-color-scheme: dark) {
       .cg-voyager-timeline-panel {
         border-color: rgba(148, 163, 184, 0.2);
@@ -548,7 +611,8 @@ function renderList(): void {
 
     const summary = document.createElement('p');
     summary.className = 'cg-voyager-timeline-node-summary';
-    summary.textContent = node.messageAnchor === locatingAnchor ? '正在定位...' : node.summary || '未识别内容';
+    summary.textContent =
+      node.messageAnchor === locatingAnchor ? locatingText : node.summary || '未识别内容';
 
     meta.append(index, role);
     item.append(meta, summary);
@@ -558,19 +622,22 @@ function renderList(): void {
 
 async function handleNodeClick(node: ChatGPTTimelineNode): Promise<void> {
   locatingAnchor = node.messageAnchor;
+  locatingText = '正在定位...';
   renderList();
   if (statusEl) statusEl.textContent = '正在定位...';
 
   const scrolled = await progressiveScrollToNode(node);
   if (!scrolled && statusEl) {
     locatingAnchor = null;
+    locatingText = '正在定位...';
     renderList();
-    statusEl.textContent = '未能定位该消息，可能当前页面未渲染该段内容，请手动滚动附近后再试';
+    statusEl.textContent = '未能自动定位该消息，请手动滚动到附近后再试';
     return;
   }
 
   activeAnchor = node.messageAnchor;
   locatingAnchor = null;
+  locatingText = '正在定位...';
   renderList();
   if (statusEl) statusEl.textContent = '已定位';
 }
