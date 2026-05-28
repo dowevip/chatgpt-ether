@@ -43,6 +43,7 @@ const CHATGPT_TURN_ID_ATTR = 'data-cg-voyager-turn-id';
 const CHATGPT_MESSAGE_ID_ATTR = 'data-cg-voyager-message-id';
 const CHATGPT_MESSAGE_FINGERPRINT_ATTR = 'data-cg-voyager-fingerprint';
 const CHATGPT_MESSAGE_INDEX_ATTR = 'data-cg-voyager-index';
+const CHATGPT_MESSAGE_ROLE_ATTR = 'data-cg-voyager-role';
 
 type ChatGPTInsertMethod = 'textarea' | 'contenteditable' | 'fallback';
 
@@ -585,7 +586,9 @@ function fingerprintText(text: string): string {
 
 function parseCapturedAnchor(anchor: string): { messageId?: string; fingerprint?: string } {
   if (!anchor.startsWith('chatgpt-captured:')) return {};
-  const [, messageId, fingerprint] = anchor.split(':');
+  const parts = anchor.split(':');
+  const messageId = parts.length >= 4 ? parts[2] : parts[1];
+  const fingerprint = parts.length >= 4 ? parts[3] : parts[2];
   return {
     messageId: messageId && messageId !== 'no-message-id' ? messageId : undefined,
     fingerprint,
@@ -1099,15 +1102,23 @@ export const chatgptAdapter: PageAdapter = {
       messageId: entry.messageId,
       fingerprint: entry.fingerprint,
     }));
-    const assistantNodes = this.getAssistantMessageNodes().map((element, index) => ({
-      element,
-      role: 'assistant' as const,
-      anchor: this.buildMessageAnchor(element, index, 'assistant'),
-      snippet: normalizeSnippet(element.textContent),
-      turnId: getTurnIdFromElement(element),
-      messageId: getMessageIdFromElement(element),
-      fingerprint: element.getAttribute(CHATGPT_MESSAGE_FINGERPRINT_ATTR) || undefined,
-    }));
+    const assistantNodes = this.getAssistantMessageNodes().map((element, index) => {
+      const anchor = this.buildMessageAnchor(element, index, 'assistant');
+      const text = normalizeMessageText(element.textContent);
+      const fingerprint =
+        element.getAttribute(CHATGPT_MESSAGE_FINGERPRINT_ATTR) || fingerprintText(text);
+      element.setAttribute(CHATGPT_MESSAGE_ROLE_ATTR, 'assistant');
+      element.setAttribute(CHATGPT_MESSAGE_FINGERPRINT_ATTR, fingerprint);
+      return {
+        element,
+        role: 'assistant' as const,
+        anchor,
+        snippet: normalizeSnippet(text),
+        turnId: getTurnIdFromElement(element),
+        messageId: getMessageIdFromElement(element),
+        fingerprint,
+      };
+    });
 
     return sortByDocumentPosition([...userNodes, ...assistantNodes]);
   },
@@ -1166,6 +1177,7 @@ export const chatgptAdapter: PageAdapter = {
     if (messageId) messageElement.setAttribute(CHATGPT_MESSAGE_ID_ATTR, messageId);
     messageElement.setAttribute(CHATGPT_MESSAGE_FINGERPRINT_ATTR, fingerprint);
     messageElement.setAttribute(CHATGPT_MESSAGE_ANCHOR_ATTR, anchor);
+    messageElement.setAttribute(CHATGPT_MESSAGE_ROLE_ATTR, role);
     return anchor;
   },
 };

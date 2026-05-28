@@ -5,10 +5,12 @@ type CapturedPayload = {
   url: string;
   nodes: Array<{
     conversationId: string | null;
+    turnId?: string;
     messageId?: string;
     parentId?: string | null;
-    role: 'user';
+    role: 'user' | 'assistant';
     summary: string;
+    searchText?: string;
     fingerprint: string;
     createdAt?: number | null;
     order: number;
@@ -46,7 +48,9 @@ function toTimelineNodes(payload: CapturedPayload): ChatGPTTimelineNode[] {
     index: index + 1,
     role: node.role,
     summary: node.summary,
-    messageAnchor: `chatgpt-captured:${node.messageId || 'no-message-id'}:${node.fingerprint}`,
+    searchText: node.searchText,
+    turnId: node.turnId || node.messageId,
+    messageAnchor: `chatgpt-captured:${node.role}:${node.messageId || 'no-message-id'}:${node.fingerprint}`,
     messageId: node.messageId,
     parentId: node.parentId ?? null,
     createdAt: node.createdAt ?? null,
@@ -73,8 +77,13 @@ export function startChatGPTConversationCapture(): void {
     }
 
     normalizeConversationState();
-    const payloadConversationId = data.payload.conversationId || getConversationIdFromUrl(data.payload.url);
-    if (payloadConversationId && currentConversationId && payloadConversationId !== currentConversationId) {
+    const payloadConversationId =
+      data.payload.conversationId || getConversationIdFromUrl(data.payload.url);
+    if (
+      payloadConversationId &&
+      currentConversationId &&
+      payloadConversationId !== currentConversationId
+    ) {
       return;
     }
 

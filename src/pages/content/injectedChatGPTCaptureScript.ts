@@ -2,10 +2,12 @@ type CapturedRole = 'user' | 'assistant';
 
 type CapturedNode = {
   conversationId: string | null;
+  turnId?: string;
   messageId?: string;
   parentId?: string | null;
   role: CapturedRole;
   summary: string;
+  searchText: string;
   fingerprint: string;
   createdAt?: number | null;
   order: number;
@@ -56,15 +58,41 @@ function textFromMessage(message: Record<string, unknown>): string {
   return normalizeText(content || message);
 }
 
+function shouldSkipMessage(message: Record<string, unknown>, role: CapturedRole | null): boolean {
+  if (!role) return true;
+  if (role !== 'user' && role !== 'assistant') return true;
+
+  const metadata = message.metadata as Record<string, unknown> | undefined;
+  const content = message.content as Record<string, unknown> | undefined;
+  const contentType = String(content?.content_type || message.content_type || '').toLowerCase();
+  const recipient = String(message.recipient || '').toLowerCase();
+
+  if (metadata?.is_visually_hidden_from_conversation === true) return true;
+  if (metadata?.is_complete === false && role === 'assistant') return true;
+  if (recipient && recipient !== 'all') return true;
+  if (/system|tool|code|execution|thought|reasoning|tether/.test(contentType)) return true;
+
+  return false;
+}
+
+function cleanAssistantText(text: string): string {
+  return normalizeText(text)
+    .replace(/^已思考\s*\d+\s*秒\s*/i, '')
+    .replace(/^思考中[。.．…\s]*/i, '')
+    .trim();
+}
+
 function nodeFromMessage(
   message: Record<string, unknown>,
   parentId: string | null | undefined,
   order: number,
 ): CapturedNode | null {
   const role = roleFromMessage(message);
-  if (role !== 'user') return null;
+  if (shouldSkipMessage(message, role)) return null;
 
-  const text = textFromMessage(message);
+  const text =
+    role === 'assistant' ? cleanAssistantText(textFromMessage(message)) : textFromMessage(message);
+  if (!text) return null;
 
   const messageId =
     typeof message.id === 'string'
@@ -82,10 +110,12 @@ function nodeFromMessage(
 
   return {
     conversationId: currentConversationId(),
+    turnId: messageId,
     messageId,
     parentId: parentId || (typeof message.parent === 'string' ? message.parent : null),
     role,
-    summary: text ? summarize(text) : '未识别内容',
+    summary: summarize(text),
+    searchText: text,
     fingerprint: fingerprint(text.slice(0, 160).toLowerCase()),
     createdAt,
     order,
@@ -179,9 +209,11 @@ function extractTimeline(data: unknown): CapturedNode[] {
 function postCaptured(nodes: CapturedNode[], url: string): void {
   if (nodes.length === 0) return;
   const user = nodes.filter((node) => node.role === 'user').length;
+  const assistant = nodes.filter((node) => node.role === 'assistant').length;
   console.debug('[ChatGPT Voyager] 捕获到对话数据', {
     total: nodes.length,
     user,
+    assistant,
     hasConversationData: true,
   });
   window.postMessage(
@@ -201,7 +233,10 @@ function postCaptured(nodes: CapturedNode[], url: string): void {
 function shouldInspect(url: string): boolean {
   try {
     const parsed = new URL(url, location.href);
-    return parsed.origin === location.origin && /conversation|backend-api|mapping|message/i.test(parsed.href);
+    return (
+      parsed.origin === location.origin &&
+      /conversation|backend-api|mapping|message/i.test(parsed.href)
+    );
   } catch {
     return false;
   }
@@ -233,7 +268,8 @@ const originalFetch = window.fetch.bind(window);
 window.fetch = async (...args: Parameters<typeof fetch>) => {
   const response = await originalFetch(...args);
   const input = args[0];
-  const url = typeof input === 'string' ? input : input instanceof Request ? input.url : String(input);
+  const url =
+    typeof input === 'string' ? input : input instanceof Request ? input.url : String(input);
   if (shouldInspect(url)) {
     response
       .clone()

@@ -27,6 +27,7 @@ const STORAGE_KEY = 'chatgptVoyager.timeline.visible';
 const WIDTH_STORAGE_KEY = 'chatgptVoyager.timeline.width';
 const HEIGHT_STORAGE_KEY = 'chatgptVoyager.timeline.height';
 const SUMMARY_LIMIT = 60;
+const SEARCH_SUMMARY_LIMIT = 80;
 const DEFAULT_WIDTH = 260;
 const MIN_WIDTH = 180;
 const MAX_WIDTH = 420;
@@ -41,10 +42,13 @@ let listEl: HTMLDivElement | null = null;
 let markerEl: HTMLDivElement | null = null;
 let statusEl: HTMLParagraphElement | null = null;
 let hintEl: HTMLParagraphElement | null = null;
+let searchInputEl: HTMLInputElement | null = null;
+let searchClearButtonEl: HTMLButtonElement | null = null;
 let activeAnchor: string | null = null;
 let locatingAnchor: string | null = null;
 let locatingText = '正在定位...';
 let starredMessageKeys = new Set<string>();
+let searchQuery = '';
 let panelWidth = DEFAULT_WIDTH;
 let panelHeight = Math.round(globalThis.innerHeight * 0.7);
 
@@ -55,6 +59,11 @@ type ChatGPTTimelineLocateRequest = {
   messageAnchor?: string;
   snippet?: string;
   fingerprint?: string;
+};
+
+type ChatGPTTimelineSearchResult = ChatGPTTimelineNode & {
+  resultIndex: number;
+  searchText: string;
 };
 
 function summarize(text: string): string {
@@ -68,6 +77,72 @@ function summarize(text: string): string {
 
 function roleLabel(role: ChatGPTTimelineNode['role']): string {
   return role === 'user' ? '用户' : '助手';
+}
+
+function searchRoleLabel(role: ChatGPTTimelineNode['role']): string {
+  return role === 'user' ? '我' : '助手';
+}
+
+function normalizeSearchText(text: string): string {
+  return String(text || '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function getSearchKey(node: Partial<ChatGPTTimelineNode>): string {
+  return (
+    node.turnId ||
+    node.messageId ||
+    node.messageAnchor ||
+    node.fingerprint ||
+    `${node.role || 'message'}:${node.index || 0}`
+  );
+}
+
+function summarizeSearchMatch(text: string, query: string): string {
+  const normalized = normalizeSearchText(text);
+  if (normalized.length <= SEARCH_SUMMARY_LIMIT) return normalized;
+
+  const lowerText = normalized.toLowerCase();
+  const lowerQuery = query.toLowerCase();
+  const matchIndex = lowerText.indexOf(lowerQuery);
+  if (matchIndex < 0) return `${normalized.slice(0, SEARCH_SUMMARY_LIMIT - 3)}...`;
+
+  const context = Math.floor((SEARCH_SUMMARY_LIMIT - query.length) / 2);
+  const start = Math.max(0, matchIndex - Math.max(12, context));
+  const end = Math.min(normalized.length, start + SEARCH_SUMMARY_LIMIT);
+  return `${start > 0 ? '...' : ''}${normalized.slice(start, end)}${
+    end < normalized.length ? '...' : ''
+  }`;
+}
+
+function appendHighlightedText(parent: HTMLElement, text: string, query: string): void {
+  const normalizedQuery = normalizeSearchText(query);
+  if (!normalizedQuery) {
+    parent.textContent = text;
+    return;
+  }
+
+  const lowerText = text.toLowerCase();
+  const lowerQuery = normalizedQuery.toLowerCase();
+  let cursor = 0;
+  let matchIndex = lowerText.indexOf(lowerQuery);
+
+  while (matchIndex >= 0) {
+    if (matchIndex > cursor) {
+      parent.appendChild(document.createTextNode(text.slice(cursor, matchIndex)));
+    }
+    const mark = document.createElement('mark');
+    mark.className = 'cg-voyager-timeline-search-mark';
+    mark.textContent = text.slice(matchIndex, matchIndex + normalizedQuery.length);
+    parent.appendChild(mark);
+    cursor = matchIndex + normalizedQuery.length;
+    matchIndex = lowerText.indexOf(lowerQuery, cursor);
+  }
+
+  if (cursor < text.length) {
+    parent.appendChild(document.createTextNode(text.slice(cursor)));
+  }
 }
 
 function getStarredKey(conversationId: string, locatorId: string): string {
@@ -193,10 +268,79 @@ function findRenderedIndexRange(): { min: number; max: number } | null {
   return { min: Math.min(...indices), max: Math.max(...indices) };
 }
 
+function locateAnyTimelineNode(node: ChatGPTTimelineNode): {
+  found: boolean;
+  element?: HTMLElement;
+  method?: string;
+  domIndexCount: number;
+  matchedCount: number;
+} {
+  if (node.role === 'user') return locateChatGPTUserTimelineTarget(node, nodes);
+
+  const refs = chatgptAdapter.getMessageNodes();
+  const candidates = refs
+    .filter((ref) => ref.role === node.role)
+    .map((ref, index) => {
+      const extended = ref as typeof ref & {
+        turnId?: string;
+        messageId?: string;
+        fingerprint?: string;
+      };
+      return {
+        element: ref.element,
+        role: ref.role,
+        index: index + 1,
+        turnId: extended.turnId,
+        messageId: extended.messageId,
+        anchor: ref.anchor,
+        fingerprint: extended.fingerprint,
+        text: normalizeSearchText(ref.element.textContent || ref.snippet),
+      };
+    });
+
+  const targetText = normalizeSearchText(node.summary).replace(/\.\.\.$/, '');
+  const checks: Array<[string, (candidate: (typeof candidates)[number]) => boolean]> = [
+    ['turnId', (candidate) => Boolean(node.turnId && candidate.turnId === node.turnId)],
+    ['messageId', (candidate) => Boolean(node.messageId && candidate.messageId === node.messageId)],
+    [
+      'anchor',
+      (candidate) => Boolean(node.messageAnchor && candidate.anchor === node.messageAnchor),
+    ],
+    [
+      'fingerprint',
+      (candidate) => Boolean(node.fingerprint && candidate.fingerprint === node.fingerprint),
+    ],
+    [
+      'text',
+      (candidate) =>
+        Boolean(
+          targetText &&
+            (candidate.text.includes(targetText) || targetText.includes(candidate.text)),
+        ),
+    ],
+    ['index', (candidate) => Boolean(node.index > 0 && candidate.index === node.index)],
+  ];
+
+  for (const [method, predicate] of checks) {
+    const found = candidates.find(predicate);
+    if (found) {
+      return {
+        found: true,
+        element: found.element,
+        method,
+        domIndexCount: candidates.length,
+        matchedCount: 1,
+      };
+    }
+  }
+
+  return { found: false, domIndexCount: candidates.length, matchedCount: 0 };
+}
+
 async function progressiveScrollToNode(node: ChatGPTTimelineNode): Promise<boolean> {
   let indexed = indexChatGPTUserMessageDom(nodes);
   let container = getChatGPTMainScrollContainer(indexed);
-  let locateResult = locateChatGPTUserTimelineTarget(node, nodes);
+  let locateResult = locateAnyTimelineNode(node);
   if (locateResult.found && locateResult.element) {
     await scrollChatGPTMessageIntoView(locateResult.element);
     highlightChatGPTMessageElement(locateResult.element);
@@ -226,7 +370,7 @@ async function progressiveScrollToNode(node: ChatGPTTimelineNode): Promise<boole
     requestCurrentChatGPTConversationCapture();
     indexed = indexChatGPTUserMessageDom(nodes);
     container = getChatGPTMainScrollContainer(indexed);
-    locateResult = locateChatGPTUserTimelineTarget(node, nodes);
+    locateResult = locateAnyTimelineNode(node);
     if (locateResult.found && locateResult.element) {
       await scrollChatGPTMessageIntoView(locateResult.element);
       highlightChatGPTMessageElement(locateResult.element);
@@ -250,7 +394,7 @@ async function progressiveScrollToNode(node: ChatGPTTimelineNode): Promise<boole
     await wait(200);
     indexed = indexChatGPTUserMessageDom(nodes);
     container = getChatGPTMainScrollContainer(indexed);
-    locateResult = locateChatGPTUserTimelineTarget(node, nodes);
+    locateResult = locateAnyTimelineNode(node);
     if (locateResult.found && locateResult.element) {
       await scrollChatGPTMessageIntoView(locateResult.element);
       highlightChatGPTMessageElement(locateResult.element);
@@ -284,13 +428,13 @@ function readTimelineNodes(): ChatGPTTimelineNode[] {
   const capturedNodes = getCapturedChatGPTTimelineNodes();
   if (capturedNodes.length > 0) {
     reconcileDomMessageIds(capturedNodes);
-    const userCount = capturedNodes.filter((node) => node.role === 'user').length;
+    const userNodes = capturedNodes.filter((node) => node.role === 'user');
     console.debug('[ChatGPT Voyager] 时间轴使用捕获数据', {
       total: capturedNodes.length,
-      user: userCount,
+      user: userNodes.length,
       hasConversationData: true,
     });
-    return capturedNodes;
+    return userNodes.map((node, index) => ({ ...node, index: index + 1 }));
   }
 
   const messageNodes = chatgptAdapter.getMessageNodes().filter((node) => node.role === 'user');
@@ -310,6 +454,78 @@ function readTimelineNodes(): ChatGPTTimelineNode[] {
     fingerprint: (node as { fingerprint?: string }).fingerprint,
     source: 'dom',
   }));
+}
+
+function readSearchCorpus(): ChatGPTTimelineSearchResult[] {
+  const byKey = new Map<string, ChatGPTTimelineSearchResult>();
+
+  const addResult = (
+    node: Omit<ChatGPTTimelineSearchResult, 'resultIndex'>,
+    preferExistingOrder = true,
+  ) => {
+    const key = getSearchKey(node);
+    const existing = byKey.get(key);
+    const resultIndex = existing?.resultIndex || byKey.size + 1;
+    if (existing && preferExistingOrder) {
+      byKey.set(key, {
+        ...existing,
+        ...node,
+        index: existing.index || node.index,
+        resultIndex,
+        searchText: node.searchText || existing.searchText,
+        summary: node.summary || existing.summary,
+      });
+      return;
+    }
+    byKey.set(key, { ...node, resultIndex });
+  };
+
+  for (const node of getCapturedChatGPTTimelineNodes()) {
+    addResult({
+      ...node,
+      searchText: normalizeSearchText(node.searchText || node.summary),
+    });
+  }
+
+  const domNodes = chatgptAdapter.getMessageNodes();
+  domNodes.forEach((ref, index) => {
+    const extended = ref as typeof ref & {
+      turnId?: string;
+      messageId?: string;
+      fingerprint?: string;
+    };
+    const searchText = normalizeSearchText(ref.element.textContent || ref.snippet);
+    if (!searchText) return;
+    addResult({
+      index: index + 1,
+      role: ref.role,
+      summary: summarize(searchText),
+      turnId: extended.turnId,
+      messageAnchor: ref.anchor,
+      messageId: extended.messageId,
+      fingerprint: extended.fingerprint,
+      source: 'dom',
+      searchText,
+    });
+  });
+
+  return Array.from(byKey.values()).map((result, index) => ({
+    ...result,
+    resultIndex: index + 1,
+  }));
+}
+
+function getSearchResults(): ChatGPTTimelineSearchResult[] {
+  const query = normalizeSearchText(searchQuery);
+  if (!query) return [];
+  const lowerQuery = query.toLowerCase();
+  return readSearchCorpus()
+    .filter((result) => result.searchText.toLowerCase().includes(lowerQuery))
+    .map((result, index) => ({
+      ...result,
+      resultIndex: index + 1,
+      summary: summarizeSearchMatch(result.searchText, query),
+    }));
 }
 
 async function refreshStarredState(): Promise<void> {
@@ -366,6 +582,28 @@ async function handleStarClick(node: ChatGPTTimelineNode): Promise<void> {
   } catch {
     if (statusEl) statusEl.textContent = '收藏操作失败';
   }
+}
+
+async function handleSearchResultClick(result: ChatGPTTimelineSearchResult): Promise<void> {
+  locatingAnchor = result.messageAnchor;
+  locatingText = '正在定位...';
+  renderList();
+  if (statusEl) statusEl.textContent = '正在定位搜索结果...';
+
+  const scrolled = await progressiveScrollToNode(result);
+  if (!scrolled && statusEl) {
+    locatingAnchor = null;
+    locatingText = '正在定位...';
+    renderList();
+    statusEl.textContent = '未能自动定位该搜索结果，请手动滚动到附近后再试';
+    return;
+  }
+
+  activeAnchor = result.messageAnchor;
+  locatingAnchor = null;
+  locatingText = '正在定位...';
+  renderList();
+  if (statusEl) statusEl.textContent = '已定位';
 }
 
 function injectStyles(): void {
@@ -564,6 +802,40 @@ function injectStyles(): void {
       font-size: 11px;
       line-height: 1.4;
     }
+    .cg-voyager-timeline-search {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0 12px 8px;
+    }
+    .cg-voyager-timeline-search-input {
+      min-width: 0;
+      flex: 1;
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      border-radius: 7px;
+      background: rgba(255, 255, 255, 0.72);
+      color: #111827;
+      font-size: 12px;
+      outline: none;
+      padding: 5px 7px;
+    }
+    .cg-voyager-timeline-search-input:focus {
+      border-color: rgba(37, 99, 235, 0.48);
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
+    }
+    .cg-voyager-timeline-search-clear {
+      border: 0;
+      border-radius: 6px;
+      background: transparent;
+      color: #6b7280;
+      cursor: pointer;
+      font-size: 12px;
+      padding: 4px 5px;
+    }
+    .cg-voyager-timeline-search-clear:hover {
+      background: rgba(148, 163, 184, 0.14);
+      color: #111827;
+    }
     .cg-voyager-timeline-list {
       display: flex;
       flex-direction: column;
@@ -627,6 +899,12 @@ function injectStyles(): void {
       -webkit-box-orient: vertical;
       -webkit-line-clamp: 2;
     }
+    .cg-voyager-timeline-search-mark {
+      border-radius: 3px;
+      background: rgba(250, 204, 21, 0.42);
+      color: inherit;
+      padding: 0 1px;
+    }
     .cg-voyager-message-highlight {
       outline: 2px solid rgba(37, 99, 235, 0.8) !important;
       outline-offset: 4px !important;
@@ -650,6 +928,18 @@ function injectStyles(): void {
       .cg-voyager-timeline-action {
         border-color: rgba(148, 163, 184, 0.24);
         background: rgba(31, 41, 55, 0.72);
+        color: #e5e7eb;
+      }
+      .cg-voyager-timeline-search-input {
+        border-color: rgba(148, 163, 184, 0.24);
+        background: rgba(31, 41, 55, 0.72);
+        color: #e5e7eb;
+      }
+      .cg-voyager-timeline-search-clear {
+        color: #94a3b8;
+      }
+      .cg-voyager-timeline-search-clear:hover {
+        background: rgba(148, 163, 184, 0.16);
         color: #e5e7eb;
       }
       .cg-voyager-timeline-node {
@@ -686,6 +976,59 @@ function renderList(): void {
 
   if (!chatgptAdapter.isSupportedPage()) {
     statusEl.textContent = '当前页面未识别为 ChatGPT';
+    return;
+  }
+
+  const normalizedSearchQuery = normalizeSearchText(searchQuery);
+  if (normalizedSearchQuery) {
+    const results = getSearchResults();
+    statusEl.textContent = results.length > 0 ? `找到 ${results.length} 条结果` : '未找到匹配内容';
+    if (hintEl) {
+      hintEl.textContent = hasCapturedChatGPTConversationData()
+        ? '正在搜索当前对话；助手回复以页面已识别内容为准。'
+        : '正在搜索页面已识别内容。';
+    }
+
+    for (const result of results) {
+      const item = document.createElement('div');
+      item.className = [
+        'cg-voyager-timeline-node',
+        result.messageAnchor === activeAnchor ? 'cg-voyager-timeline-node-active' : '',
+      ]
+        .filter(Boolean)
+        .join(' ');
+      item.tabIndex = 0;
+      item.setAttribute('role', 'button');
+      item.addEventListener('click', () => void handleSearchResultClick(result));
+      item.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault();
+        void handleSearchResultClick(result);
+      });
+
+      const meta = document.createElement('div');
+      meta.className = 'cg-voyager-timeline-node-meta';
+
+      const index = document.createElement('span');
+      index.className = 'cg-voyager-timeline-node-index';
+      index.textContent = `#${result.resultIndex}`;
+
+      const role = document.createElement('span');
+      role.className = 'cg-voyager-timeline-node-role';
+      role.textContent = searchRoleLabel(result.role);
+
+      const summary = document.createElement('p');
+      summary.className = 'cg-voyager-timeline-node-summary';
+      if (result.messageAnchor === locatingAnchor) {
+        summary.textContent = locatingText;
+      } else {
+        appendHighlightedText(summary, result.summary || '未识别内容', normalizedSearchQuery);
+      }
+
+      meta.append(index, role);
+      item.append(meta, summary);
+      listEl.appendChild(item);
+    }
     return;
   }
 
@@ -980,13 +1323,47 @@ function createPanel(): void {
   hintEl.className = 'cg-voyager-timeline-hint';
   hintEl.textContent = '';
 
+  const searchWrap = document.createElement('div');
+  searchWrap.className = 'cg-voyager-timeline-search';
+
+  searchInputEl = document.createElement('input');
+  searchInputEl.type = 'search';
+  searchInputEl.className = 'cg-voyager-timeline-search-input';
+  searchInputEl.placeholder = '搜索当前对话';
+  searchInputEl.autocomplete = 'off';
+  searchInputEl.addEventListener('input', () => {
+    searchQuery = searchInputEl?.value || '';
+    renderList();
+  });
+  searchInputEl.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape') return;
+    event.stopPropagation();
+    searchQuery = '';
+    if (searchInputEl) searchInputEl.value = '';
+    renderList();
+  });
+
+  searchClearButtonEl = document.createElement('button');
+  searchClearButtonEl.type = 'button';
+  searchClearButtonEl.className = 'cg-voyager-timeline-search-clear';
+  searchClearButtonEl.textContent = '清空';
+  searchClearButtonEl.addEventListener('click', () => {
+    searchQuery = '';
+    if (searchInputEl) {
+      searchInputEl.value = '';
+      searchInputEl.focus();
+    }
+    renderList();
+  });
+
   listEl = document.createElement('div');
   listEl.className = 'cg-voyager-timeline-list';
 
+  searchWrap.append(searchInputEl, searchClearButtonEl);
   actions.append(refreshButton, closeButton);
   header.append(title, actions);
   rail.appendChild(markerEl);
-  outline.append(header, statusEl, hintEl, listEl);
+  outline.append(header, searchWrap, statusEl, hintEl, listEl);
   panelEl.append(resizeHandle, rail, outline, bottomResizeHandle, cornerResizeHandle);
   root.appendChild(panelEl);
   document.documentElement.appendChild(root);
