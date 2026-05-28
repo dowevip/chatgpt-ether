@@ -16,6 +16,30 @@ type CapturedNode = {
 const POST_MESSAGE_TYPE = 'cg-voyager-chatgpt-conversation-captured';
 const FETCH_REQUEST_TYPE = 'cg-voyager-chatgpt-fetch-current-conversation';
 const MAX_SUMMARY_LENGTH = 60;
+const PERFORMANCE_PREFIX = '[ChatGPT Voyager Performance]';
+
+function performanceLog(label: string, startedAt: number, extra: Record<string, unknown> = {}): void {
+  console.debug(PERFORMANCE_PREFIX, {
+    label,
+    durationMs: Math.round(performance.now() - startedAt),
+    ...extra,
+  });
+}
+
+function scheduleIdleTask(callback: () => void, timeout = 1800): void {
+  const idleCallback = (
+    window as typeof window & {
+      requestIdleCallback?: (cb: IdleRequestCallback, options?: IdleRequestOptions) => number;
+    }
+  ).requestIdleCallback;
+
+  if (idleCallback) {
+    idleCallback(() => callback(), { timeout });
+    return;
+  }
+
+  window.setTimeout(callback, Math.min(timeout, 600));
+}
 
 function currentConversationId(): string | null {
   const match = location.pathname.match(/\/c\/([^/?#]+)/);
@@ -243,11 +267,22 @@ function shouldInspect(url: string): boolean {
 }
 
 function inspectJson(data: unknown, url: string): void {
+  const startedAt = performance.now();
   const nodes = extractTimeline(data);
+  performanceLog('conversation 捕获解析耗时', startedAt, {
+    total: nodes.length,
+    user: nodes.filter((node) => node.role === 'user').length,
+    assistant: nodes.filter((node) => node.role === 'assistant').length,
+  });
   postCaptured(nodes, url);
 }
 
+function scheduleInspectJson(data: unknown, url: string): void {
+  scheduleIdleTask(() => inspectJson(data, url));
+}
+
 async function fetchCurrentConversation(): Promise<void> {
+  const startedAt = performance.now();
   const conversationId = currentConversationId();
   if (!conversationId) return;
 
@@ -255,7 +290,8 @@ async function fetchCurrentConversation(): Promise<void> {
   try {
     const response = await originalFetch(url, { credentials: 'include' });
     const data = await response.clone().json();
-    inspectJson(data, url);
+    scheduleInspectJson(data, url);
+    performanceLog('conversation 捕获请求耗时', startedAt, { conversationId });
   } catch {
     console.debug('[ChatGPT Voyager] 当前对话主动读取失败', {
       conversationId,
@@ -274,7 +310,7 @@ window.fetch = async (...args: Parameters<typeof fetch>) => {
     response
       .clone()
       .json()
-      .then((data) => inspectJson(data, url))
+      .then((data) => scheduleInspectJson(data, url))
       .catch(() => {});
   }
   return response;
@@ -284,7 +320,7 @@ window.addEventListener('message', (event) => {
   if (event.source !== window || event.origin !== window.location.origin) return;
   const data = event.data as { type?: string; source?: string };
   if (data?.type === FETCH_REQUEST_TYPE && data.source === 'chatgpt-voyager') {
-    void fetchCurrentConversation();
+    scheduleIdleTask(() => void fetchCurrentConversation(), 800);
   }
 });
 
@@ -293,11 +329,11 @@ window.setInterval(() => {
   const nextConversationId = currentConversationId();
   if (nextConversationId && nextConversationId !== lastConversationId) {
     lastConversationId = nextConversationId;
-    void fetchCurrentConversation();
+    scheduleIdleTask(() => void fetchCurrentConversation(), 1200);
   }
 }, 1000);
 
-setTimeout(() => void fetchCurrentConversation(), 800);
+setTimeout(() => scheduleIdleTask(() => void fetchCurrentConversation(), 1800), 2200);
 
 const OriginalXHR = window.XMLHttpRequest;
 const originalOpen = OriginalXHR.prototype.open;
@@ -313,7 +349,8 @@ OriginalXHR.prototype.send = function send(...args: unknown[]) {
     const url = String(this.__cgVoyagerUrl || '');
     if (!shouldInspect(url)) return;
     try {
-      inspectJson(JSON.parse(this.responseText), url);
+      const data = JSON.parse(this.responseText);
+      scheduleInspectJson(data, url);
     } catch {}
   });
   return originalSend.apply(this, args as [Document | XMLHttpRequestBodyInit | null | undefined]);

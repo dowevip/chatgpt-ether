@@ -21,6 +21,15 @@ let currentConversationId: string | null = null;
 let capturedNodes: ChatGPTTimelineNode[] = [];
 let capturedUrl = '';
 let listenerStarted = false;
+const PERFORMANCE_PREFIX = '[ChatGPT Voyager Performance]';
+
+function performanceLog(label: string, startedAt: number, extra: Record<string, unknown> = {}): void {
+  console.debug(PERFORMANCE_PREFIX, {
+    label,
+    durationMs: Math.round(performance.now() - startedAt),
+    ...extra,
+  });
+}
 
 function getConversationIdFromUrl(url = location.href): string | null {
   const match = url.match(/\/c\/([^/?#]+)/);
@@ -36,6 +45,7 @@ function normalizeConversationState(): void {
 }
 
 function toTimelineNodes(payload: CapturedPayload): ChatGPTTimelineNode[] {
+  const startedAt = performance.now();
   const sorted = [...payload.nodes].sort((left, right) => {
     const leftTime = typeof left.createdAt === 'number' ? left.createdAt : Number.POSITIVE_INFINITY;
     const rightTime =
@@ -44,7 +54,7 @@ function toTimelineNodes(payload: CapturedPayload): ChatGPTTimelineNode[] {
     return left.order - right.order;
   });
 
-  return sorted.map((node, index) => ({
+  const nextNodes = sorted.map((node, index) => ({
     index: index + 1,
     role: node.role,
     summary: node.summary,
@@ -57,6 +67,12 @@ function toTimelineNodes(payload: CapturedPayload): ChatGPTTimelineNode[] {
     fingerprint: node.fingerprint,
     source: 'captured',
   }));
+  performanceLog('conversation 捕获入内存耗时', startedAt, {
+    total: nextNodes.length,
+    user: nextNodes.filter((node) => node.role === 'user').length,
+    assistant: nextNodes.filter((node) => node.role === 'assistant').length,
+  });
+  return nextNodes;
 }
 
 export function startChatGPTConversationCapture(): void {

@@ -26,6 +26,7 @@ const STYLE_ID = 'cg-voyager-timeline-style';
 const STORAGE_KEY = 'chatgptVoyager.timeline.visible';
 const WIDTH_STORAGE_KEY = 'chatgptVoyager.timeline.width';
 const HEIGHT_STORAGE_KEY = 'chatgptVoyager.timeline.height';
+const PERFORMANCE_PREFIX = '[ChatGPT Voyager Performance]';
 const SUMMARY_LIMIT = 60;
 const SEARCH_SUMMARY_LIMIT = 80;
 const DEFAULT_WIDTH = 260;
@@ -49,6 +50,11 @@ let locatingAnchor: string | null = null;
 let locatingText = '正在定位...';
 let starredMessageKeys = new Set<string>();
 let searchQuery = '';
+let timelineDataState: 'idle' | 'loading' | 'ready' | 'error' = 'idle';
+let searchIndexState: 'idle' | 'loading' | 'ready' | 'error' = 'idle';
+let searchIndex: ChatGPTTimelineSearchResult[] = [];
+let timelineRefreshTimer: number | null = null;
+let searchIndexTimer: number | null = null;
 let panelWidth = DEFAULT_WIDTH;
 let panelHeight = Math.round(globalThis.innerHeight * 0.7);
 
@@ -65,6 +71,27 @@ type ChatGPTTimelineSearchResult = ChatGPTTimelineNode & {
   resultIndex: number;
   searchText: string;
 };
+
+function performanceLog(label: string, startedAt: number, extra: Record<string, unknown> = {}): void {
+  console.debug(PERFORMANCE_PREFIX, {
+    label,
+    durationMs: Math.round(performance.now() - startedAt),
+    ...extra,
+  });
+}
+
+function scheduleIdleTask(callback: () => void, timeout = 1500): void {
+  const idleCallback = (
+    window as typeof window & {
+      requestIdleCallback?: (cb: IdleRequestCallback, options?: IdleRequestOptions) => number;
+    }
+  ).requestIdleCallback;
+  if (idleCallback) {
+    idleCallback(() => callback(), { timeout });
+    return;
+  }
+  window.setTimeout(callback, Math.min(timeout, 500));
+}
 
 function summarize(text: string): string {
   const normalized = String(text || '')
@@ -457,6 +484,7 @@ function readTimelineNodes(): ChatGPTTimelineNode[] {
 }
 
 function readSearchCorpus(): ChatGPTTimelineSearchResult[] {
+  const startedAt = performance.now();
   const byKey = new Map<string, ChatGPTTimelineSearchResult>();
 
   const addResult = (
@@ -509,23 +537,49 @@ function readSearchCorpus(): ChatGPTTimelineSearchResult[] {
     });
   });
 
-  return Array.from(byKey.values()).map((result, index) => ({
+  const results = Array.from(byKey.values()).map((result, index) => ({
     ...result,
     resultIndex: index + 1,
   }));
+  performanceLog('搜索索引构建耗时', startedAt, {
+    count: results.length,
+    captured: getCapturedChatGPTTimelineNodes().length,
+  });
+  return results;
 }
 
 function getSearchResults(): ChatGPTTimelineSearchResult[] {
   const query = normalizeSearchText(searchQuery);
   if (!query) return [];
   const lowerQuery = query.toLowerCase();
-  return readSearchCorpus()
+  return searchIndex
     .filter((result) => result.searchText.toLowerCase().includes(lowerQuery))
     .map((result, index) => ({
       ...result,
       resultIndex: index + 1,
       summary: summarizeSearchMatch(result.searchText, query),
     }));
+}
+
+function scheduleSearchIndexBuild(delay = 250): void {
+  if (searchIndexTimer !== null) {
+    window.clearTimeout(searchIndexTimer);
+  }
+  searchIndexState = searchIndex.length > 0 ? searchIndexState : 'loading';
+  searchIndexTimer = window.setTimeout(() => {
+    searchIndexTimer = null;
+    scheduleIdleTask(() => {
+      try {
+        searchIndexState = 'loading';
+        searchIndex = readSearchCorpus();
+        searchIndexState = 'ready';
+        renderList();
+      } catch {
+        searchIndexState = 'error';
+        renderList();
+      }
+    }, 1600);
+  }, delay);
 }
 
 async function refreshStarredState(): Promise<void> {
@@ -981,11 +1035,19 @@ function renderList(): void {
 
   const normalizedSearchQuery = normalizeSearchText(searchQuery);
   if (normalizedSearchQuery) {
+    if (searchIndexState !== 'ready') {
+      statusEl.textContent =
+        searchIndexState === 'error' ? '搜索索引准备失败' : '正在准备搜索索引...';
+      if (hintEl) hintEl.textContent = '搜索索引会在后台完成，不影响 ChatGPT 对话正文显示。';
+      scheduleSearchIndexBuild(0);
+      return;
+    }
+
     const results = getSearchResults();
     statusEl.textContent = results.length > 0 ? `找到 ${results.length} 条结果` : '未找到匹配内容';
     if (hintEl) {
       hintEl.textContent = hasCapturedChatGPTConversationData()
-        ? '正在搜索当前对话；助手回复以页面已识别内容为准。'
+        ? '正在搜索当前对话。'
         : '正在搜索页面已识别内容。';
     }
 
@@ -1033,7 +1095,8 @@ function renderList(): void {
   }
 
   if (nodes.length === 0) {
-    statusEl.textContent = '暂未识别到消息';
+    statusEl.textContent = timelineDataState === 'error' ? '时间轴加载失败' : '加载中...';
+    if (hintEl) hintEl.textContent = '时间轴和搜索索引正在后台准备。';
     return;
   }
 
@@ -1190,19 +1253,45 @@ export async function scrollChatGPTTimelineToMessage(
 }
 
 async function refreshTimeline(requestCapture = true): Promise<void> {
-  if (requestCapture) {
-    requestCurrentChatGPTConversationCapture();
-    await wait(250);
-  }
-  nodes = readTimelineNodes();
-  await refreshStarredState();
+  const startedAt = performance.now();
+  timelineDataState = 'loading';
   renderList();
+  try {
+    if (requestCapture) {
+      requestCurrentChatGPTConversationCapture();
+      await wait(250);
+    }
+    nodes = readTimelineNodes();
+    await refreshStarredState();
+    timelineDataState = 'ready';
+    performanceLog('时间轴数据准备耗时', startedAt, {
+      nodes: nodes.length,
+      captured: hasCapturedChatGPTConversationData(),
+    });
+    renderList();
+    scheduleSearchIndexBuild(250);
+  } catch {
+    timelineDataState = 'error';
+    renderList();
+  }
+}
+
+function scheduleTimelineRefresh(requestCapture = true, delay = 600): void {
+  if (timelineRefreshTimer !== null) {
+    window.clearTimeout(timelineRefreshTimer);
+  }
+  timelineDataState = nodes.length > 0 ? timelineDataState : 'loading';
+  renderList();
+  timelineRefreshTimer = window.setTimeout(() => {
+    timelineRefreshTimer = null;
+    scheduleIdleTask(() => void refreshTimeline(requestCapture), 1800);
+  }, delay);
 }
 
 function applyEnabledState(): void {
   const root = document.getElementById(ROOT_ID);
   root?.classList.toggle('cg-voyager-timeline-hidden', !enabled);
-  if (enabled) void refreshTimeline();
+  if (enabled) scheduleTimelineRefresh(true, 900);
 }
 
 function setupResizeHandle(handle: HTMLDivElement, mode: 'width' | 'height' | 'both'): void {
@@ -1317,7 +1406,7 @@ function createPanel(): void {
 
   statusEl = document.createElement('p');
   statusEl.className = 'cg-voyager-timeline-status';
-  statusEl.textContent = '暂未识别到消息';
+  statusEl.textContent = '加载中...';
 
   hintEl = document.createElement('p');
   hintEl.className = 'cg-voyager-timeline-hint';
@@ -1333,6 +1422,9 @@ function createPanel(): void {
   searchInputEl.autocomplete = 'off';
   searchInputEl.addEventListener('input', () => {
     searchQuery = searchInputEl?.value || '';
+    if (normalizeSearchText(searchQuery) && searchIndexState !== 'ready') {
+      scheduleSearchIndexBuild(0);
+    }
     renderList();
   });
   searchInputEl.addEventListener('keydown', (event) => {
@@ -1377,18 +1469,27 @@ function watchConversationChanges(): void {
   window.setInterval(() => {
     if (location.href === lastUrl) return;
     lastUrl = location.href;
-    if (enabled) void refreshTimeline();
+    nodes = [];
+    searchIndex = [];
+    searchIndexState = 'idle';
+    timelineDataState = 'loading';
+    if (enabled) scheduleTimelineRefresh(true, 900);
   }, 1000);
 }
 
 export function startChatGPTTimelineFloatingPanel(): void {
+  const startedAt = performance.now();
   if (started || !chatgptAdapter.isSupportedPage()) return;
   started = true;
   lastUrl = location.href;
   createPanel();
+  timelineDataState = 'loading';
+  renderList();
   readEnabledFromStorage().then((storedEnabled) => {
     enabled = storedEnabled;
-    applyEnabledState();
+    const root = document.getElementById(ROOT_ID);
+    root?.classList.toggle('cg-voyager-timeline-hidden', !enabled);
+    if (enabled) scheduleTimelineRefresh(true, 1200);
   });
   readWidthFromStorage().then((storedWidth) => {
     panelWidth = storedWidth;
@@ -1399,7 +1500,9 @@ export function startChatGPTTimelineFloatingPanel(): void {
     applyPanelSize();
   });
   window.addEventListener('cg-voyager-chatgpt-conversation-captured', () => {
-    if (enabled) void refreshTimeline(false);
+    if (enabled) scheduleTimelineRefresh(false, 250);
+    scheduleSearchIndexBuild(350);
   });
   watchConversationChanges();
+  performanceLog('插件初始化耗时', startedAt, { component: 'timeline-shell' });
 }

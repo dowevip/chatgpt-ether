@@ -44,6 +44,7 @@ const CHATGPT_MESSAGE_ID_ATTR = 'data-cg-voyager-message-id';
 const CHATGPT_MESSAGE_FINGERPRINT_ATTR = 'data-cg-voyager-fingerprint';
 const CHATGPT_MESSAGE_INDEX_ATTR = 'data-cg-voyager-index';
 const CHATGPT_MESSAGE_ROLE_ATTR = 'data-cg-voyager-role';
+const PERFORMANCE_PREFIX = '[ChatGPT Voyager Performance]';
 
 type ChatGPTInsertMethod = 'textarea' | 'contenteditable' | 'fallback';
 
@@ -83,6 +84,21 @@ export type ChatGPTDomUserMessageIndexEntry = {
   normalizedText: string;
   snippet: string;
 };
+
+type ChatGPTUserDomIndexCache = {
+  createdAt: number;
+  entries: ChatGPTDomUserMessageIndexEntry[];
+};
+
+let userDomIndexCache: ChatGPTUserDomIndexCache | null = null;
+
+function performanceLog(label: string, startedAt: number, extra: Record<string, unknown> = {}): void {
+  console.debug(PERFORMANCE_PREFIX, {
+    label,
+    durationMs: Math.round(performance.now() - startedAt),
+    ...extra,
+  });
+}
 
 export type ChatGPTScrollContainerInfo = {
   element: HTMLElement;
@@ -616,6 +632,15 @@ function getCapturedNodeLookup(capturedNodes: ChatGPTTimelineTarget[] = []): {
 export function indexChatGPTUserMessageDom(
   capturedNodes: ChatGPTTimelineTarget[] = [],
 ): ChatGPTDomUserMessageIndexEntry[] {
+  const startedAt = performance.now();
+  if (
+    capturedNodes.length === 0 &&
+    userDomIndexCache &&
+    performance.now() - userDomIndexCache.createdAt < 350
+  ) {
+    return userDomIndexCache.entries;
+  }
+
   const { byTurnId, byFingerprint, byMessageId } = getCapturedNodeLookup(capturedNodes);
   const entries = sortByDocumentPosition(
     getTurnElementsByRole('user').map((element, index) => ({
@@ -671,10 +696,18 @@ export function indexChatGPTUserMessageDom(
       (entry) =>
         (entry.turnId && byTurnId.has(entry.turnId)) ||
         entry.messageId ||
-        byFingerprint.has(entry.fingerprint),
+      byFingerprint.has(entry.fingerprint),
     ).length,
   });
+  performanceLog('DOM 扫描耗时', startedAt, {
+    role: 'user',
+    count: indexed.length,
+    captured: capturedNodes.length,
+  });
 
+  if (capturedNodes.length === 0) {
+    userDomIndexCache = { createdAt: performance.now(), entries: indexed };
+  }
   return indexed;
 }
 
@@ -1093,6 +1126,7 @@ export const chatgptAdapter: PageAdapter = {
   },
 
   getMessageNodes(): MessageNodeRef[] {
+    const startedAt = performance.now();
     const userNodes = indexChatGPTUserMessageDom().map((entry) => ({
       element: entry.element,
       role: 'user' as const,
@@ -1120,7 +1154,14 @@ export const chatgptAdapter: PageAdapter = {
       };
     });
 
-    return sortByDocumentPosition([...userNodes, ...assistantNodes]);
+    const sortedNodes = sortByDocumentPosition([...userNodes, ...assistantNodes]);
+    performanceLog('DOM 扫描耗时', startedAt, {
+      role: 'all',
+      count: sortedNodes.length,
+      user: userNodes.length,
+      assistant: assistantNodes.length,
+    });
+    return sortedNodes;
   },
 
   getInputElement(): HTMLElement | null {
