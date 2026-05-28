@@ -66,6 +66,7 @@ export type ChatGPTInsertPromptResult = {
 };
 
 export type ChatGPTTimelineTarget = {
+  role?: MessageRole;
   index?: number;
   turnId?: string;
   messageAnchor?: string;
@@ -76,6 +77,7 @@ export type ChatGPTTimelineTarget = {
 
 export type ChatGPTDomUserMessageIndexEntry = {
   element: HTMLElement;
+  role?: MessageRole;
   turnId?: string;
   anchor: string;
   messageId?: string;
@@ -123,12 +125,14 @@ export type ChatGPTUserTurnLocateMethod =
   | 'turnId'
   | 'cgTurnId'
   | 'messageId'
+  | 'cgMessageId'
   | 'anchor'
   | 'fingerprint'
   | 'text'
   | 'index';
 
 export type ChatGPTUserTurnLocateRequest = {
+  role?: MessageRole;
   turnId?: string;
   messageId?: string;
   anchor?: string;
@@ -471,6 +475,48 @@ function getUserTurnText(element: HTMLElement): string {
   return extractReactFiberUserText(element);
 }
 
+function getAssistantTurnText(element: HTMLElement): string {
+  const clone = element.cloneNode(true) as HTMLElement;
+  for (const removable of Array.from(
+    clone.querySelectorAll(
+      [
+        'button',
+        'svg',
+        'script',
+        'style',
+        '[hidden]',
+        '[aria-hidden="true"]',
+        '[data-testid*="copy"]',
+        '[data-testid*="edit"]',
+        '[data-testid*="share"]',
+        '[data-testid*="more"]',
+        '[data-testid*="toolbar"]',
+        '[data-testid*="actions"]',
+        '[role="button"]',
+        '[role="toolbar"]',
+      ].join(','),
+    ),
+  )) {
+    removable.remove();
+  }
+
+  const preferredText = Array.from(
+    clone.querySelectorAll<HTMLElement>(
+      '.markdown, .prose, [data-message-author-role="assistant"]',
+    ),
+  )
+    .map((node) => normalizeMessageText(node.textContent))
+    .filter(Boolean)
+    .sort((left, right) => right.length - left.length)[0];
+  const text = normalizeMessageText(preferredText || clone.textContent);
+  if (/^(已思考|思考中|thinking|thought for|searching|正在搜索)/i.test(text)) return '';
+  return text;
+}
+
+function getTurnText(element: HTMLElement, role: MessageRole): string {
+  return role === 'user' ? getUserTurnText(element) : getAssistantTurnText(element);
+}
+
 function getRoleFromElement(element: HTMLElement): MessageRole | null {
   const turnRole =
     element.getAttribute('data-turn') ||
@@ -545,7 +591,7 @@ function getTurnElementsByRole(role: MessageRole): HTMLElement[] {
   return uniqueMessageElements(matches).filter((element) =>
     role === 'user'
       ? Boolean(getTurnIdFromElement(element) || getUserTurnText(element))
-      : Boolean(normalizeSnippet(element.textContent)),
+      : Boolean(getTurnIdFromElement(element) || getAssistantTurnText(element)),
   );
 }
 
@@ -632,8 +678,22 @@ function getCapturedNodeLookup(capturedNodes: ChatGPTTimelineTarget[] = []): {
 export function indexChatGPTUserMessageDom(
   capturedNodes: ChatGPTTimelineTarget[] = [],
 ): ChatGPTDomUserMessageIndexEntry[] {
+  return indexChatGPTMessageDom('user', capturedNodes);
+}
+
+export function indexChatGPTAssistantMessageDom(
+  capturedNodes: ChatGPTTimelineTarget[] = [],
+): ChatGPTDomUserMessageIndexEntry[] {
+  return indexChatGPTMessageDom('assistant', capturedNodes);
+}
+
+export function indexChatGPTMessageDom(
+  role: MessageRole,
+  capturedNodes: ChatGPTTimelineTarget[] = [],
+): ChatGPTDomUserMessageIndexEntry[] {
   const startedAt = performance.now();
   if (
+    role === 'user' &&
     capturedNodes.length === 0 &&
     userDomIndexCache &&
     performance.now() - userDomIndexCache.createdAt < 350
@@ -641,20 +701,21 @@ export function indexChatGPTUserMessageDom(
     return userDomIndexCache.entries;
   }
 
-  const { byTurnId, byFingerprint, byMessageId } = getCapturedNodeLookup(capturedNodes);
+  const roleCapturedNodes = capturedNodes.filter((node) => !node.role || node.role === role);
+  const { byTurnId, byFingerprint, byMessageId } = getCapturedNodeLookup(roleCapturedNodes);
   const entries = sortByDocumentPosition(
-    getTurnElementsByRole('user').map((element, index) => ({
+    getTurnElementsByRole(role).map((element, index) => ({
       element,
-      role: 'user' as const,
+      role,
       anchor: '',
-      snippet: normalizeSnippet(getUserTurnText(element)),
+      snippet: normalizeSnippet(getTurnText(element, role)),
       index,
     })),
   );
 
   const indexed = entries
     .map((node, index) => {
-      const normalizedText = getUserTurnText(node.element);
+      const normalizedText = getTurnText(node.element, role);
       const fingerprint = fingerprintText(normalizedText);
       const turnId = getTurnIdFromElement(node.element);
       const messageId = getMessageIdFromElement(node.element);
@@ -668,10 +729,11 @@ export function indexChatGPTUserMessageDom(
         anchor ||
         (turnId
           ? `chatgpt-turn:${turnId}`
-          : `chatgpt:user:${hashString(messageId || fingerprint || String(index))}:${index}`);
+          : `chatgpt:${role}:${hashString(messageId || fingerprint || String(index))}:${index}`);
       const finalMessageId = messageId || captured?.messageId;
 
       node.element.setAttribute(CHATGPT_MESSAGE_INDEX_ATTR, String(index + 1));
+      node.element.setAttribute(CHATGPT_MESSAGE_ROLE_ATTR, role);
       if (turnId) node.element.setAttribute(CHATGPT_TURN_ID_ATTR, turnId);
       node.element.setAttribute(CHATGPT_MESSAGE_FINGERPRINT_ATTR, fingerprint);
       node.element.setAttribute(CHATGPT_MESSAGE_ANCHOR_ATTR, finalAnchor);
@@ -679,6 +741,7 @@ export function indexChatGPTUserMessageDom(
 
       return {
         element: node.element,
+        role,
         turnId,
         anchor: finalAnchor,
         messageId: finalMessageId,
@@ -690,8 +753,9 @@ export function indexChatGPTUserMessageDom(
     })
     .filter((entry) => entry.normalizedText || entry.turnId);
 
-  console.debug('[ChatGPT Voyager] DOM 用户消息索引完成', {
-    domUserMessages: indexed.length,
+  console.debug('[ChatGPT Voyager] DOM 消息索引完成', {
+    role,
+    domMessages: indexed.length,
     matched: indexed.filter(
       (entry) =>
         (entry.turnId && byTurnId.has(entry.turnId)) ||
@@ -700,12 +764,12 @@ export function indexChatGPTUserMessageDom(
     ).length,
   });
   performanceLog('DOM 扫描耗时', startedAt, {
-    role: 'user',
+    role,
     count: indexed.length,
-    captured: capturedNodes.length,
+    captured: roleCapturedNodes.length,
   });
 
-  if (capturedNodes.length === 0) {
+  if (role === 'user' && capturedNodes.length === 0) {
     userDomIndexCache = { createdAt: performance.now(), entries: indexed };
   }
   return indexed;
@@ -964,11 +1028,12 @@ function foundUserTurn(
   };
 }
 
-export function locateUserTurn(
+export function locateMessageTurn(
   request: ChatGPTUserTurnLocateRequest,
   capturedNodes: ChatGPTTimelineTarget[] = [],
 ): ChatGPTUserTurnLocateResult {
-  const entries = indexChatGPTUserMessageDom(capturedNodes);
+  const role = request.role || 'user';
+  const entries = indexChatGPTMessageDom(role, capturedNodes);
   const anchor = request.anchor || request.messageAnchor || '';
   const targetNormalized = normalizeMessageText(request.snippet || request.summary || '').replace(
     /\.\.\.$/,
@@ -980,7 +1045,7 @@ export function locateUserTurn(
 
   if (request.turnId) {
     const nativeByTurnId = Array.from(
-      getSafeDocument()?.querySelectorAll<HTMLElement>('[data-turn="user"][data-turn-id]') || [],
+      getSafeDocument()?.querySelectorAll<HTMLElement>(`[data-turn="${role}"][data-turn-id]`) || [],
     ).find((element) => element.getAttribute('data-turn-id') === request.turnId);
     if (nativeByTurnId) return foundUserTurn(request, entries, nativeByTurnId, 'turnId');
 
@@ -992,6 +1057,14 @@ export function locateUserTurn(
   }
 
   if (request.messageId) {
+    if (role === 'assistant') {
+      const byCgMessageId = findMessageElementByAttribute(
+        CHATGPT_MESSAGE_ID_ATTR,
+        request.messageId,
+      );
+      if (byCgMessageId) return foundUserTurn(request, entries, byCgMessageId, 'cgMessageId');
+    }
+
     const found = entries.find((entry) => entry.messageId === request.messageId);
     if (found) return foundUserTurn(request, entries, found.element, 'messageId');
   }
@@ -1036,9 +1109,16 @@ export function locateUserTurn(
 
   return {
     ok: false,
-    reason: '未找到匹配的用户消息',
+    reason: role === 'user' ? '未找到匹配的用户消息' : '未找到匹配的助手消息',
     debug: locateDebug(request, entries, matchedCount),
   };
+}
+
+export function locateUserTurn(
+  request: ChatGPTUserTurnLocateRequest,
+  capturedNodes: ChatGPTTimelineTarget[] = [],
+): ChatGPTUserTurnLocateResult {
+  return locateMessageTurn({ ...request, role: 'user' }, capturedNodes);
 }
 
 export function locateChatGPTUserTimelineTarget(
@@ -1066,13 +1146,42 @@ export function locateChatGPTUserTimelineTarget(
   };
 }
 
+export function locateChatGPTTimelineTarget(
+  target: ChatGPTTimelineTarget,
+  capturedNodes: ChatGPTTimelineTarget[] = [],
+): ChatGPTLocateResult {
+  const result = locateMessageTurn(
+    {
+      role: target.role || 'user',
+      turnId: target.turnId,
+      messageId: target.messageId,
+      anchor: target.messageAnchor,
+      fingerprint: target.fingerprint,
+      summary: targetText(target),
+      index: target.index,
+    },
+    capturedNodes,
+  );
+
+  return {
+    found: result.ok,
+    method: result.method,
+    element: result.targetElement,
+    domIndexCount: result.debug.domIndexCount,
+    matchedCount: result.debug.matchedCount,
+  };
+}
+
 export function highlightChatGPTMessageElement(element: HTMLElement): void {
   element.classList.add('cg-voyager-message-highlight');
   window.setTimeout(() => element.classList.remove('cg-voyager-message-highlight'), 1500);
 }
 
 export async function scrollChatGPTMessageIntoView(element: HTMLElement): Promise<void> {
-  const entries = indexChatGPTUserMessageDom();
+  const entries = [
+    ...indexChatGPTUserMessageDom(),
+    ...indexChatGPTAssistantMessageDom(),
+  ];
   const container = getChatGPTMainScrollContainer(entries);
   await waitForStableTurnLayout(element, container.element);
 
@@ -1136,23 +1245,15 @@ export const chatgptAdapter: PageAdapter = {
       messageId: entry.messageId,
       fingerprint: entry.fingerprint,
     }));
-    const assistantNodes = this.getAssistantMessageNodes().map((element, index) => {
-      const anchor = this.buildMessageAnchor(element, index, 'assistant');
-      const text = normalizeMessageText(element.textContent);
-      const fingerprint =
-        element.getAttribute(CHATGPT_MESSAGE_FINGERPRINT_ATTR) || fingerprintText(text);
-      element.setAttribute(CHATGPT_MESSAGE_ROLE_ATTR, 'assistant');
-      element.setAttribute(CHATGPT_MESSAGE_FINGERPRINT_ATTR, fingerprint);
-      return {
-        element,
-        role: 'assistant' as const,
-        anchor,
-        snippet: normalizeSnippet(text),
-        turnId: getTurnIdFromElement(element),
-        messageId: getMessageIdFromElement(element),
-        fingerprint,
-      };
-    });
+    const assistantNodes = indexChatGPTAssistantMessageDom().map((entry) => ({
+      element: entry.element,
+      role: 'assistant' as const,
+      anchor: entry.anchor,
+      snippet: entry.snippet,
+      turnId: entry.turnId,
+      messageId: entry.messageId,
+      fingerprint: entry.fingerprint,
+    }));
 
     const sortedNodes = sortByDocumentPosition([...userNodes, ...assistantNodes]);
     performanceLog('DOM 扫描耗时', startedAt, {
@@ -1174,7 +1275,9 @@ export const chatgptAdapter: PageAdapter = {
 
   scrollToMessage(anchor: string): boolean {
     const captured = parseCapturedAnchor(anchor);
-    const result = locateChatGPTUserTimelineTarget({
+    const role = anchor.includes(':assistant:') ? 'assistant' : 'user';
+    const result = locateChatGPTTimelineTarget({
+      role,
       messageAnchor: anchor,
       messageId: captured.messageId,
       fingerprint: captured.fingerprint,

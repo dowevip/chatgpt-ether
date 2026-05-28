@@ -3,8 +3,8 @@ import {
   getChatGPTMainScrollContainer,
   getChatGPTScrollMetrics,
   highlightChatGPTMessageElement,
-  indexChatGPTUserMessageDom,
-  locateChatGPTUserTimelineTarget,
+  indexChatGPTMessageDom,
+  locateChatGPTTimelineTarget,
   scrollChatGPTContainerBy,
   scrollChatGPTContainerToTop,
   scrollChatGPTMessageIntoView,
@@ -60,6 +60,7 @@ let panelHeight = Math.round(globalThis.innerHeight * 0.7);
 
 type ChatGPTTimelineLocateRequest = {
   conversationId?: string;
+  role?: ChatGPTTimelineNode['role'];
   turnId?: string;
   messageId?: string;
   messageAnchor?: string;
@@ -240,7 +241,10 @@ function applyPanelSize(): void {
 }
 
 function reconcileDomMessageIds(capturedNodes: ChatGPTTimelineNode[]): void {
-  const indexed = indexChatGPTUserMessageDom(capturedNodes);
+  const indexed = [
+    ...indexChatGPTMessageDom('user', capturedNodes),
+    ...indexChatGPTMessageDom('assistant', capturedNodes),
+  ];
   const byTurnId = new Map(
     indexed.filter((entry) => entry.turnId).map((entry) => [entry.turnId, entry]),
   );
@@ -271,19 +275,25 @@ function wait(ms: number): Promise<void> {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
-function findRenderedIndexRange(): { min: number; max: number } | null {
+function findRenderedIndexRange(role: ChatGPTTimelineNode['role']): { min: number; max: number } | null {
   const byTurnId = new Map(
-    nodes.filter((node) => node.turnId).map((node) => [node.turnId, node.index]),
+    nodes
+      .filter((node) => node.role === role && node.turnId)
+      .map((node) => [node.turnId, node.index]),
   );
   const byMessageId = new Map(
-    nodes.filter((node) => node.messageId).map((node) => [node.messageId, node.index]),
+    nodes
+      .filter((node) => node.role === role && node.messageId)
+      .map((node) => [node.messageId, node.index]),
   );
   const byFingerprint = new Map(
-    nodes.filter((node) => node.fingerprint).map((node) => [node.fingerprint, node.index]),
+    nodes
+      .filter((node) => node.role === role && node.fingerprint)
+      .map((node) => [node.fingerprint, node.index]),
   );
   const indices: number[] = [];
 
-  for (const domNode of indexChatGPTUserMessageDom(nodes)) {
+  for (const domNode of indexChatGPTMessageDom(role, nodes)) {
     const index =
       (domNode.turnId && byTurnId.get(domNode.turnId)) ||
       (domNode.messageId && byMessageId.get(domNode.messageId)) ||
@@ -302,70 +312,11 @@ function locateAnyTimelineNode(node: ChatGPTTimelineNode): {
   domIndexCount: number;
   matchedCount: number;
 } {
-  if (node.role === 'user') return locateChatGPTUserTimelineTarget(node, nodes);
-
-  const refs = chatgptAdapter.getMessageNodes();
-  const candidates = refs
-    .filter((ref) => ref.role === node.role)
-    .map((ref, index) => {
-      const extended = ref as typeof ref & {
-        turnId?: string;
-        messageId?: string;
-        fingerprint?: string;
-      };
-      return {
-        element: ref.element,
-        role: ref.role,
-        index: index + 1,
-        turnId: extended.turnId,
-        messageId: extended.messageId,
-        anchor: ref.anchor,
-        fingerprint: extended.fingerprint,
-        text: normalizeSearchText(ref.element.textContent || ref.snippet),
-      };
-    });
-
-  const targetText = normalizeSearchText(node.summary).replace(/\.\.\.$/, '');
-  const checks: Array<[string, (candidate: (typeof candidates)[number]) => boolean]> = [
-    ['turnId', (candidate) => Boolean(node.turnId && candidate.turnId === node.turnId)],
-    ['messageId', (candidate) => Boolean(node.messageId && candidate.messageId === node.messageId)],
-    [
-      'anchor',
-      (candidate) => Boolean(node.messageAnchor && candidate.anchor === node.messageAnchor),
-    ],
-    [
-      'fingerprint',
-      (candidate) => Boolean(node.fingerprint && candidate.fingerprint === node.fingerprint),
-    ],
-    [
-      'text',
-      (candidate) =>
-        Boolean(
-          targetText &&
-            (candidate.text.includes(targetText) || targetText.includes(candidate.text)),
-        ),
-    ],
-    ['index', (candidate) => Boolean(node.index > 0 && candidate.index === node.index)],
-  ];
-
-  for (const [method, predicate] of checks) {
-    const found = candidates.find(predicate);
-    if (found) {
-      return {
-        found: true,
-        element: found.element,
-        method,
-        domIndexCount: candidates.length,
-        matchedCount: 1,
-      };
-    }
-  }
-
-  return { found: false, domIndexCount: candidates.length, matchedCount: 0 };
+  return locateChatGPTTimelineTarget(node, nodes);
 }
 
 async function progressiveScrollToNode(node: ChatGPTTimelineNode): Promise<boolean> {
-  let indexed = indexChatGPTUserMessageDom(nodes);
+  let indexed = indexChatGPTMessageDom(node.role, nodes);
   let container = getChatGPTMainScrollContainer(indexed);
   let locateResult = locateAnyTimelineNode(node);
   if (locateResult.found && locateResult.element) {
@@ -374,7 +325,7 @@ async function progressiveScrollToNode(node: ChatGPTTimelineNode): Promise<boole
     return true;
   }
 
-  const visibleRange = findRenderedIndexRange();
+  const visibleRange = findRenderedIndexRange(node.role);
   let direction: -1 | 1 | null = null;
   if (visibleRange && node.index > 0) {
     if (node.index < visibleRange.min) direction = -1;
@@ -395,7 +346,7 @@ async function progressiveScrollToNode(node: ChatGPTTimelineNode): Promise<boole
     attempts += 1;
     await wait(180);
     requestCurrentChatGPTConversationCapture();
-    indexed = indexChatGPTUserMessageDom(nodes);
+    indexed = indexChatGPTMessageDom(node.role, nodes);
     container = getChatGPTMainScrollContainer(indexed);
     locateResult = locateAnyTimelineNode(node);
     if (locateResult.found && locateResult.element) {
@@ -419,7 +370,7 @@ async function progressiveScrollToNode(node: ChatGPTTimelineNode): Promise<boole
     scrollChatGPTContainerToTop(container);
     attempts += 1;
     await wait(200);
-    indexed = indexChatGPTUserMessageDom(nodes);
+    indexed = indexChatGPTMessageDom(node.role, nodes);
     container = getChatGPTMainScrollContainer(indexed);
     locateResult = locateAnyTimelineNode(node);
     if (locateResult.found && locateResult.element) {
@@ -455,20 +406,22 @@ function readTimelineNodes(): ChatGPTTimelineNode[] {
   const capturedNodes = getCapturedChatGPTTimelineNodes();
   if (capturedNodes.length > 0) {
     reconcileDomMessageIds(capturedNodes);
-    const userNodes = capturedNodes.filter((node) => node.role === 'user');
     console.debug('[ChatGPT Voyager] 时间轴使用捕获数据', {
       total: capturedNodes.length,
-      user: userNodes.length,
+      user: capturedNodes.filter((node) => node.role === 'user').length,
+      assistant: capturedNodes.filter((node) => node.role === 'assistant').length,
       hasConversationData: true,
     });
-    return userNodes.map((node, index) => ({ ...node, index: index + 1 }));
+    return capturedNodes.map((node, index) => ({ ...node, index: index + 1 }));
   }
 
-  const messageNodes = chatgptAdapter.getMessageNodes().filter((node) => node.role === 'user');
+  const messageNodes = chatgptAdapter.getMessageNodes();
   const userCount = messageNodes.filter((node) => node.role === 'user').length;
+  const assistantCount = messageNodes.filter((node) => node.role === 'assistant').length;
   console.debug('[ChatGPT Voyager] 时间轴扫描完成', {
     total: messageNodes.length,
     user: userCount,
+    assistant: assistantCount,
   });
 
   return messageNodes.map((node, index) => ({
@@ -481,6 +434,49 @@ function readTimelineNodes(): ChatGPTTimelineNode[] {
     fingerprint: (node as { fingerprint?: string }).fingerprint,
     source: 'dom',
   }));
+}
+
+function formatMessageTimestamp(value: number): string | null {
+  if (!Number.isFinite(value) || value <= 0) return null;
+  const milliseconds = value > 10_000_000_000 ? value : value * 1000;
+  const date = new Date(milliseconds);
+  if (Number.isNaN(date.getTime())) return null;
+  return new Intl.DateTimeFormat('zh-CN', {
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(date);
+}
+
+function hasDirectTimestamp(element: HTMLElement): boolean {
+  return Array.from(element.children).some((child) =>
+    child.classList.contains('cg-voyager-message-timestamp'),
+  );
+}
+
+function applyChatGPTMessageTimestamps(timelineNodes: ChatGPTTimelineNode[]): void {
+  const startedAt = performance.now();
+  let applied = 0;
+  for (const node of timelineNodes) {
+    const timestamp = formatMessageTimestamp(node.createdAt || 0);
+    if (!timestamp) continue;
+
+    const located = locateChatGPTTimelineTarget(node, timelineNodes);
+    const element = located.element;
+    if (!located.found || !element || hasDirectTimestamp(element)) continue;
+
+    const timestampEl = document.createElement('div');
+    timestampEl.className = `cg-voyager-message-timestamp cg-voyager-message-timestamp-${node.role}`;
+    timestampEl.textContent = timestamp;
+    element.prepend(timestampEl);
+    applied += 1;
+  }
+  performanceLog('正文时间戳应用耗时', startedAt, {
+    applied,
+    candidates: timelineNodes.filter((node) => Boolean(node.createdAt)).length,
+  });
 }
 
 function readSearchCorpus(): ChatGPTTimelineSearchResult[] {
@@ -966,6 +962,23 @@ function injectStyles(): void {
       box-shadow: 0 0 0 6px rgba(37, 99, 235, 0.16) !important;
       transition: outline-color 160ms ease, box-shadow 160ms ease;
     }
+    .cg-voyager-message-timestamp {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      max-width: 100%;
+      margin: 0 0 4px;
+      border-radius: 999px;
+      background: rgba(148, 163, 184, 0.12);
+      color: #6b7280;
+      font-size: 11px;
+      line-height: 1.2;
+      padding: 2px 6px;
+      pointer-events: none;
+    }
+    .cg-voyager-message-timestamp-assistant {
+      margin-left: 0;
+    }
     @media (prefers-color-scheme: dark) {
       .cg-voyager-timeline-panel {
         border-color: rgba(148, 163, 184, 0.2);
@@ -1231,7 +1244,7 @@ export async function scrollChatGPTTimelineToMessage(
     nodes.find((item) => target.fingerprint && item.fingerprint === target.fingerprint) ||
     ({
       index: 0,
-      role: 'user',
+      role: target.role || 'user',
       summary: target.snippet || '',
       turnId: target.turnId,
       messageAnchor: target.messageAnchor || (target.turnId ? `chatgpt-turn:${target.turnId}` : ''),
@@ -1239,8 +1252,6 @@ export async function scrollChatGPTTimelineToMessage(
       fingerprint: target.fingerprint,
       source: 'captured',
     } satisfies ChatGPTTimelineNode);
-
-  if (node.role !== 'user') return false;
 
   const scrolled = await progressiveScrollToNode(node);
   if (scrolled) {
@@ -1262,6 +1273,7 @@ async function refreshTimeline(requestCapture = true): Promise<void> {
       await wait(250);
     }
     nodes = readTimelineNodes();
+    applyChatGPTMessageTimestamps(nodes);
     await refreshStarredState();
     timelineDataState = 'ready';
     performanceLog('时间轴数据准备耗时', startedAt, {

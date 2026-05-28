@@ -158,7 +158,7 @@ function getChatGPTTimelineSnapshot() {
     };
   }
 
-  const messageNodes = chatgptAdapter.getMessageNodes().filter((node) => node.role === 'user');
+  const messageNodes = chatgptAdapter.getMessageNodes();
   const userCount = messageNodes.filter((node) => node.role === 'user').length;
   const assistantCount = messageNodes.filter((node) => node.role === 'assistant').length;
   console.debug('[ChatGPT Voyager] Popup 时间轴扫描完成', {
@@ -171,8 +171,9 @@ function getChatGPTTimelineSnapshot() {
     isChatGPTPage: true,
     nodes: messageNodes.map((node, index) => ({
       index: index + 1,
-      role: 'user' as const,
+      role: node.role,
       summary: summarizeChatGPTTimelineMessage(node.snippet),
+      turnId: (node as { turnId?: string }).turnId,
       messageAnchor: node.anchor,
       fingerprint: (node as { fingerprint?: string }).fingerprint,
       messageId: (node as { messageId?: string }).messageId,
@@ -203,6 +204,7 @@ function registerChatGPTStatusListener(): void {
       const messageAnchor = typeof payload.messageAnchor === 'string' ? payload.messageAnchor : '';
       const locateRequest = {
         conversationId: typeof payload.conversationId === 'string' ? payload.conversationId : '',
+        role: payload.role === 'assistant' ? ('assistant' as const) : ('user' as const),
         turnId: typeof payload.turnId === 'string' ? payload.turnId : undefined,
         messageId: typeof payload.messageId === 'string' ? payload.messageId : undefined,
         messageAnchor,
