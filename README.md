@@ -1,310 +1,75 @@
-<div align="center">
-  <img src="docs/public/assets/promotion/Promo-Banner.png" alt="promotion"/>
-  <h3>Make Your Gemini™ Experience Truly Yours ✨</h3>
-  <p>
-    Navigate conversations with an elegant timeline, organize chats with folders, and build your own prompt vault.<br>
-    <b>It's the missing power-up for Google Gemini.</b>
-  </p>
-  
-  <p>
-    <img src="https://img.shields.io/badge/Chrome-✓-4285F4?style=flat-square&logo=googlechrome&logoColor=white" alt="Chrome">
-    <img src="https://img.shields.io/badge/Edge-✓-0078D7?style=flat-square&logo=microsoftedge&logoColor=white" alt="Edge">
-    <img src="https://img.shields.io/badge/Firefox-✓-FF7139?style=flat-square&logo=firefox&logoColor=white" alt="Firefox">
-    <img src="https://img.shields.io/badge/Safari-✓-000000?style=flat-square&logo=safari&logoColor=white" alt="Safari">
-    <img src="https://img.shields.io/badge/Opera-✓-FF1B2D?style=flat-square&logo=opera&logoColor=white" alt="Opera">
-    <img src="https://img.shields.io/badge/Brave-✓-FB542B?style=flat-square&logo=brave&logoColor=white" alt="Brave">
-  </p>
-  <p>
-    <img src="https://img.shields.io/github/stars/Nagi-ovo/gemini-voyager?style=flat-square&logo=github" alt="GitHub stars">
-    <img src="https://img.shields.io/github/forks/Nagi-ovo/gemini-voyager?style=flat-square&logo=github" alt="GitHub forks">
-    <img src="https://img.shields.io/github/v/release/Nagi-ovo/gemini-voyager?style=flat-square&logo=github" alt="Latest version">
-    <img src="https://img.shields.io/github/downloads/Nagi-ovo/gemini-voyager/total?style=flat-square&logo=github" alt="GitHub downloads">
-    <img src="https://img.shields.io/chrome-web-store/users/iifacdnjakkhjjiengaffnegbndgingi?style=flat-square&logo=google-chrome" alt="Chrome Web Store users">
-    <img src="https://img.shields.io/chrome-web-store/rating/iifacdnjakkhjjiengaffnegbndgingi?style=flat-square&logo=google-chrome" alt="Chrome Web Store rating">
-    <img src="https://img.shields.io/badge/edge%20users-50k%2B-0078D7?style=flat-square&logo=microsoftedge&logoColor=white" alt="Edge Add-ons users">
-    <img src="https://img.shields.io/amo/users/gemini-voyager?style=flat-square&logo=firefox" alt="Firefox Add-ons users">
-    <img src="https://img.shields.io/amo/rating/gemini-voyager?style=flat-square&logo=firefox" alt="Firefox Add-ons rating">
-  </p>
-  <p>
-    <a href="https://trendshift.io/repositories/16094" target="_blank"><img src="https://trendshift.io/api/badge/repositories/16094" alt="Nagi-ovo%2Fgemini-voyager | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
-    <a href="https://www.producthunt.com/products/gemini-voyager?embed=true&amp;utm_source=badge-featured&amp;utm_medium=badge&amp;utm_campaign=badge-gemini-voyager" target="_blank" rel="noopener noreferrer"><img alt="Gemini Voyager - All-in-one Gemini suite: folders, chat export and much more | Product Hunt" width="250" height="54" src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1064704&amp;theme=light&amp;t=1768842096186"></a>
-  </p>
-  <p>
-    <a href="https://x.com/Nag1ovo" target="_blank"><img src="https://img.shields.io/badge/@Nag1ovo-000000?style=flat-square&logo=x&logoColor=white" alt="X"></a>
-    <a href="https://discord.gg/TEUFxdMbGb" target="_blank"><img src="https://img.shields.io/badge/Discord-Join-5865F2?style=flat-square&logo=discord&logoColor=white" alt="Discord"></a>
-    <a href="https://www.xiaohongshu.com/user/profile/5d366136000000001101950a" target="_blank"><img src="https://img.shields.io/badge/小红书-@Nagi--ovo-FF2442?style=flat-square" alt="Xiaohongshu"></a>
-    <a href="https://space.bilibili.com/312249633" target="_blank"><img src="https://img.shields.io/badge/Bilibili-@卡普迪姆-FB7299?style=flat-square&logo=bilibili&logoColor=white" alt="Bilibili"></a>
-  </p>
-</div>
+[中文版](./README.zh-CN.md)
 
-<p align="center">
-  <a href="https://voyager.nagi.fun/en">📖 Documentation</a> • 
-  <a href="./.github/README_ZH.md">简体中文</a> •
-  <a href="./.github/README_ZH_TW.md">繁體中文</a> •
-  <a href="./.github/README_JA.md">日本語</a> •
-  <a href="./.github/README_FR.md">Français</a> •
-  <a href="./.github/README_ES.md">Español</a> •
-  <a href="./.github/README_PT.md">Português</a> •
-  <a href="./.github/README_RU.md">Русский</a> •
-  <a href="./.github/README_AR.md">العربية</a> •
-  <a href="./.github/README_KO.md">한국어</a>
-</p>
+# ChatGPT Ether / ChatGPT以太
 
-<p align="center">
-    <img src="https://count.getloli.com/@gemini-voyager?name=gemini-voyager&theme=rule34&padding=7&offset=0&align=top&scale=1&pixelated=1&darkmode=auto" width="400">
-  </p>
+ChatGPT Ether is a personal-use / development Chrome extension for managing ChatGPT conversations. It adds local organization tools around the ChatGPT web page, including a right-side timeline, current conversation search, starred messages, folders, Prompt Vault, diagnostics, manual Google Drive sync, and conversation time context injection.
 
-> [!IMPORTANT]
-> **Gemini's web UI just had a major redesign** — adapting now. Features that may be affected: **Default Model auto-selection** and the **Folder UI**. Day-to-day usage should still be fine; if you spot other anomalies, please open a GitHub issue and I'll fix it ASAP. Please wait for the Chrome Web Store update. _(2026-05-19)_
+This project is adapted from earlier open source work. It is not an official OpenAI product, is not affiliated with OpenAI, and is not affiliated with Google.
 
-> [!NOTE]
-> If Voyager helps you, feel free to share it on X, Reddit, YouTube, Threads, etc. Every share helps more people discover the project and improve the Gemini experience. Thanks.
+## Current Status
 
----
+ChatGPT Ether is currently maintained as a personal-use / development build. It is intended to be loaded from local source and reviewed before use. This repository does not claim a public Chrome Web Store release.
 
-## 👋 Why Voyager?
+## Features
 
-We love Gemini, but sometimes we wish it had just a _bit_ more structure.
+* Prompt Vault for saving and reusing prompts.
+* Conversation folders and conversation index.
+* Right-side conversation timeline on ChatGPT conversation pages.
+* Current conversation search from the right-side timeline.
+* Starred messages for important conversation turns.
+* Diagnostics panel for inspecting extension state.
+* Manual Google Drive sync for extension data.
+* Conversation time context injection.
+* Chinese and English Popup localization.
+* Dark mode sync between the Popup and the page-side timeline panel.
 
-That's why I built **Voyager**. It's not just a tool; it's a companion that helps you keep your AI conversations organized, accessible, and productive. Whether you're a researcher juggling dozens of threads, a developer saving code snippets, or just someone who loves order, Voyager is designed for you.
+## Install From Local Source
 
-<p align="center">
-  <a href="https://x.com/Nag1ovo/status/2024509398601597412?s=20" target="_blank">
-    <img src="docs/public/assets/try-voyager.png" alt="Try Voyager" width="500">
-  </a>
-  <br>
-  <i>During the issue on February 18th where the Google Gemini App caused some users' historical conversations to become inaccessible, Voyager users were still able to see their saved conversations in their folders.</i>
-</p>
-
----
-
-## ✨ Features
-
-### 🌌 Core (Gemini & AI Studio)
-
-- **📂 [Folder Organization](https://voyager.nagi.fun/en/guide/folders)**: Organize chats into a two-level folder hierarchy with drag-and-drop support.
-  - **Gemini**: Supports **Account Isolation Mode** and **Custom Folder Colors**.
-- **💡 [Prompt Vault](https://voyager.nagi.fun/en/guide/prompts)**: Save and reuse prompts across Gemini, AI Studio, and [custom websites](https://voyager.nagi.fun/en/guide/custom-websites).
-- **☁️ [Cloud Sync](https://voyager.nagi.fun/en/guide/cloud-sync)**: Sync folders and prompts to Google Drive.
-- **📐 Formula Copy**: One-click copy for LaTeX and MathML (Word) source codes.
-- **🌦️ Visual Effects**: Add seasonal ambience with **snow**, **cinematic rain**, or **falling sakura petals** from the settings panel.
-
-### ✨ Gemini Exclusive
-
-- **📍 [Timeline Navigation](https://voyager.nagi.fun/en/guide/timeline)**: Visual nodes to jump between messages, star key moments, and manage conversation branches.
-- **💾 [Chat Export](https://voyager.nagi.fun/en/guide/export)**: Export conversations to JSON, Markdown, or PDF with images included.
-- **🧜‍♀️ [Mermaid Rendering](https://voyager.nagi.fun/en/guide/mermaid)**: Auto-render flowcharts, sequence diagrams, and other Mermaid charts.
-- **📝 [Markdown Rendering Fix](https://voyager.nagi.fun/en/guide/markdown-fix)**: Automatically fix broken bold syntax caused by Gemini's injected HTML elements.
-- **🍌 [NanoBanana](https://voyager.nagi.fun/en/guide/nanobanana)**: Lossless watermark removal for Gemini-generated images.
-- **🔬 [Deep Research](https://voyager.nagi.fun/en/guide/deep-research)**: Extract thinking processes and research links from Deep Research sessions.
-- **🛠️ Power Tools**:
-  - **[Batch Delete](https://voyager.nagi.fun/en/guide/batch-delete)**: Bulk delete conversations.
-  - **[Quote Reply](https://voyager.nagi.fun/en/guide/quote-reply)**: Reply with context by selecting text.
-  - **[Tab Title Sync](https://voyager.nagi.fun/en/guide/tab-title)**: Auto-sync browser tab titles.
-  - **[Prevent Auto Scroll](https://voyager.nagi.fun/en/guide/prevent-auto-scroll)**: Intercepts unwanted jumping behavior when hitting enter to send a new prompt.
-  - **[Input Collapse](https://voyager.nagi.fun/en/guide/input-collapse)**: Auto-expandable input area for more reading space.
-  - **[Default Model](https://voyager.nagi.fun/en/guide/default-model)**: Set your favorite model as default.
-  - **[Hide Recent Items](https://voyager.nagi.fun/en/guide/recents-hider)**: Hide "Recent" list in the sidebar to reduce distraction.
-
-### 🎨 Personalization
-
-- Open the extension popup and find **Visual Effects** to switch between `Off`, `Snow`, `Sakura`, and `Rain`.
-- Effects are rendered as lightweight full-screen overlays and do not block page interaction.
-- When you switch effects or turn them off, existing particles drain out naturally instead of disappearing abruptly.
-
----
-
-## 📥 Installation
-
-> ⚠️ Note: Prompt Manager is the only feature that supports Gemini for Enterprise.
-
-<div align="center">
-  <a href="https://chromewebstore.google.com/detail/iifacdnjakkhjjiengaffnegbndgingi?utm_source=github&utm_medium=readme&utm_campaign=organic_growth&utm_content=en" target="_blank">
-    <img src="https://img.shields.io/badge/Chrome%20Web%20Store-4285F4?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Chrome Web Store" height="36">
-  </a>
-  &nbsp;&nbsp;
-  <a href="https://microsoftedge.microsoft.com/addons/detail/gemini-voyager/gibmkggjijalcjinbdhcpklodjkhhlne" target="_blank">
-    <img src="https://img.shields.io/badge/Microsoft%20Edge-0078D7?style=for-the-badge&logo=microsoftedge&logoColor=white" alt="Microsoft Edge Add-ons" height="36">
-  </a>
-  &nbsp;&nbsp;
-  <a href="https://addons.mozilla.org/firefox/addon/gemini-voyager/" target="_blank">
-    <img src="https://img.shields.io/badge/Firefox%20Add--ons-FF7139?style=for-the-badge&logo=firefox&logoColor=white" alt="Firefox Add-ons" height="36">
-  </a>
-  &nbsp;&nbsp;
-  <a href="https://github.com/Nagi-ovo/gemini-voyager/releases/latest/" target="_blank">
-    <img src="https://img.shields.io/badge/Safari-000000?style=for-the-badge&logo=safari&logoColor=white" alt="Safari Download" height="36">
-  </a>
-</div>
-
-<p align="center">
-  <sub><b>Chrome Web Store</b> also works on Edge, Opera, Brave, Vivaldi, Arc, and other Chromium browsers.</sub>
-</p>
-
-> **Store Status:** Chrome ✅ · Firefox ✅ · Edge ✅ · Safari ✅
-
-For **manual installation** or **development builds**, please refer to the [Installation Guide](https://voyager.nagi.fun/en/guide/installation).
-
----
-
-## ☕ Support This Project
-
-<div align="center">
-  <a href="https://github.com/Nagi-ovo/gemini-voyager">
-    <img src="https://raw.githubusercontent.com/Nagi-ovo/gemini-voyager/main/docs/public/assets/sponsors.svg" width="1000px" />
-  </a>
-</div>
-
-If Voyager makes your life easier, consider buying me a coffee. It helps keep the updates coming! Sponsors will be featured in our Special Thanks section. ❤️
-
-<div align="center">
-  <a href="https://www.buymeacoffee.com/Nag1ovo" target="_blank">
-    <img src="https://img.shields.io/badge/Buy%20Me%20a%20Coffee-ffdd00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black" alt="Buy Me A Coffee" height="36">
-  </a>
-  <a href="https://github.com/sponsors/Nagi-ovo" target="_blank">
-    <img src="https://img.shields.io/badge/Sponsor%20me-GitHub-ea4aaa?style=for-the-badge&logo=github&logoColor=white" alt="Sponsor on GitHub" height="36">
-  </a>
-  
-  <p><b>Or support via WeChat / Alipay / Afdian:</b></p>
-  <table align="center" border="0" cellpadding="0" cellspacing="0">
-    <tr>
-      <td align="center">
-        <img src="docs/public/assets/wechat-sponsor.png" alt="WeChat Pay" height="160"><br>
-        <sub><b>WeChat Pay</b></sub>
-      </td>
-      <td align="center">
-        <img src="docs/public/assets/alipay-sponsor.jpg" alt="Alipay" height="160"><br>
-        <sub><b>Alipay</b></sub>
-      </td>
-      <td align="center">
-        <a href="https://afdian.com/a/nagi-ovo" target="_blank">
-          <picture>
-            <source media="(prefers-color-scheme: dark)" srcset="https://afdian-connect.deno.dev/profile.svg?slug=nagi-ovo&bg_color=%230d1117&text_color=%23dedbd7&border_color=%232e343d" />
-            <source media="(prefers-color-scheme: light)" srcset="https://afdian-connect.deno.dev/profile.svg?slug=nagi-ovo" />
-            <img alt="Nagi-ovo's Profile" src="https://afdian-connect.deno.dev/profile.svg?slug=nagi-ovo" height="160" />
-          </picture>
-        </a><br>
-        <sub><b>Afdian</b></sub>
-      </td>
-    </tr>
-  </table>
-</div>
-
-### 🎙️ Recommended Tool: Typeless
-
-I highly recommend **[Typeless (typeless.com)](https://www.typeless.com/refer?code=MZRYZP1)**, an AI voice-to-text tool that I used extensively during the development of Voyager. Integrating it into my daily workflow has saved me a tremendous amount of time and significantly boosted my productivity.
-
-> 🎁 **[Join via my referral link](https://www.typeless.com/refer?code=MZRYZP1)** (Code: _`MZRYZP1`_) to get **$5 free credits**. This also gives me credits to keep maintaining this project—a free way to support my work! ❤️
-
----
-
-## 💬 Community
-
-<table>
-  <tr>
-    <td align="center" width="50%" valign="top">
-      <a href="https://x.com/Nag1ovo/status/2012610584722731188" target="_blank">
-        <img src="https://img.shields.io/badge/Follow%20on-𝕏-000000?style=for-the-badge&logo=x&logoColor=white" alt="Follow on X" height="36">
-      </a>
-      <br><br>
-      <b>Follow for Updates</b><br>
-      <sub>Get the latest updates.</sub>
-    </td>
-    <td align="center" width="50%" valign="top">
-      <a href="https://discord.gg/TEUFxdMbGb" target="_blank">
-        <img src="https://img.shields.io/discord/1463273957120675973?style=for-the-badge&logo=discord&logoColor=white&label=Join%20Discord" alt="Discord" height="36">
-      </a>
-      <br><br>
-      <b>Join the Community</b><br>
-      <sub>Chat with other users, share prompts, and get help.</sub>
-    </td>
-  </tr>
-</table>
-
----
-
-## 🤝 Contributing & Development
-
-[<img src="https://devin.ai/assets/askdeepwiki.png" alt="Ask DeepWiki" height="20"/>](https://deepwiki.com/Nagi-ovo/gemini-voyager)
-
-We welcome contributions! Whether you want to report bugs, suggest features, improve documentation, or submit code:
-
-- **Issues**: Use our [bug report](https://github.com/Nagi-ovo/gemini-voyager/blob/main/.github/ISSUE_TEMPLATE/bug_report.md) or [feature request](https://github.com/Nagi-ovo/gemini-voyager/blob/main/.github/ISSUE_TEMPLATE/feature_request.yml) templates
-- **Pull Requests**: Check out [CONTRIBUTING.md](./.github/CONTRIBUTING.md) for guidelines
-
-<details>
-<summary>Development Setup</summary>
+Requirements: Node.js-compatible tooling and network access for the build toolchain.
 
 ```bash
-# Install dependencies (Bun recommended)
-bun i
-
-# Development mode (with auto-reload)
-bun run dev:chrome   # Chrome & Chromium browsers
-bun run dev:firefox  # Firefox
-bun run dev:safari   # Safari (requires macOS)
-
-# Production builds
-bun run build:chrome   # Chrome
-bun run build:firefox  # Firefox
-bun run build:safari   # Safari
-bun run build:all      # All browsers
+git clone <this-repository-url>
+cd chatgpt-voyager
+npx --yes bun@latest install
+npx --yes bun@latest run build:chrome
 ```
 
-**Safari Development**: See [safari/README.md](safari/README.md) for additional build steps.
+Then load the built extension:
 
-</details>
+1. Open `chrome://extensions`.
+2. Enable Developer mode.
+3. Choose "Load unpacked".
+4. Select the generated `dist_chrome` directory.
 
-Thank you for helping make Voyager better! ❤️
+## Privacy Summary
 
-### ❤️ Special Thanks
+ChatGPT Ether reads the current ChatGPT page locally so it can build the timeline, search the current conversation, manage starred messages, and show diagnostics. Some extension data is stored locally in browser extension storage.
 
-Special thanks to all contributors for their contributions to Voyager ❤️
+The extension does not sell user data, does not broadly read browsing history, does not read cookies, and does not upload screenshots, images, attachments, or Canvas content. Full chat transcripts are not uploaded by the extension.
 
-<a href="https://github.com/Nagi-ovo/gemini-voyager/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=Nagi-ovo/gemini-voyager&max=200&columns=14" />
-</a>
+If you are concerned about privacy, review the source code before installing or using the extension.
 
----
+See [PRIVACY.md](./PRIVACY.md) for details.
 
-## 🌟 Credits
+## Google Drive Sync
 
-> Voyager is a small side project. I'd rather spend time building things that help people than building migration paths designed to pull users away from other extensions.
+Google Drive sync is manual and uses OAuth only for the sync feature. Sync data is stored in the user's own Google Drive `appDataFolder`.
 
-- **[ChatGPT Conversation Timeline](https://github.com/Reborn14/chatgpt-conversation-timeline)** - The original timeline navigation extension for ChatGPT that inspired this project.
+When Google Drive sync is enabled, the extension may sync extension data such as prompts, folders, conversation index metadata, starred-message metadata, settings, and time metadata. It does not upload complete ChatGPT conversation transcripts.
 
-- **[gemini-watermark-remover](https://github.com/journey-ad/gemini-watermark-remover) / [GeminiWatermarkTool](https://github.com/allenk/GeminiWatermarkTool)** - NanoBanana is adapted from these projects. Third-party MIT notices are retained in [THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md).
+The sync flow is designed for manual upload and download/merge actions; it is not intended to silently overwrite local data.
 
-- **[Gemini Helper](https://github.com/urzeye/tampermonkey-scripts)** - The default-model locking logic includes interaction ideas adapted from Gemini Helper, with source-level attribution retained.
+## Development Notes
 
-## 🌍 Ecosystem
+* Primary Chrome build command: `npx --yes bun@latest run build:chrome`.
+* Built extension output: `dist_chrome`.
+* Some internal identifiers still use legacy names for compatibility with existing storage keys, CSS classes, message names, and sync data.
+* Documentation cleanup does not imply that internal identifiers, repository names, or storage keys have been renamed.
 
-Projects inspired by Voyager:
+## License and Credits
 
-If your project is inspired by Voyager, forked from it, or built on top of it, feel free to open a PR to add it here.
+This project keeps the existing GPL-3.0 license. See [LICENSE](./LICENSE).
 
-- **[DeepSeek Voyager](https://github.com/Azurboy/deepseek-voyager)** - A fork of Voyager adapted for DeepSeek, bringing timeline navigation and chat management to DeepSeek users!
+ChatGPT Ether is based on / adapted from [Nagi-ovo/gemini-voyager](https://github.com/Nagi-ovo/gemini-voyager). Timeline navigation ideas were also inspired by [Reborn14/chatgpt-conversation-timeline](https://github.com/Reborn14/chatgpt-conversation-timeline).
 
-- **[claude-nexus](https://github.com/Qiuner/claude-nexus)** - A Claude.ai enhancement extension inspired by Voyager, featuring timeline navigation, folder management, prompt library and more, with full prompt import/export compatibility with Voyager!
-
-- **[Better_Doubao](https://github.com/Rex16200513/Better_Doubao)** - An advanced browser extension supercharging Doubao with enhanced navigation, organization, and productivity features.
-
----
-
-## 📄 License
-
-Voyager is licensed under **GPL-3.0**.
-Third-party MIT notices for NanoBanana-related code and assets are retained in [THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md).
-
----
-
-<div align="center">
-  <a href="https://www.star-history.com/#Nagi-ovo/gemini-voyager&type=date&legend=top-left">
-   <picture>
-     <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=Nagi-ovo/gemini-voyager&type=date&theme=dark&legend=top-left" />
-     <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=Nagi-ovo/gemini-voyager&type=date&legend=top-left" />
-     <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=Nagi-ovo/gemini-voyager&type=date&legend=top-left" />
-   </picture>
-  </a>
-  <p>Made with ❤️ by Jesse Zhang</p>
-  <sub>GPLv3 License © 2026</sub>
-</div>
+See [CREDITS.md](./CREDITS.md) and [NOTICE.md](./NOTICE.md) for attribution and compatibility notes.
