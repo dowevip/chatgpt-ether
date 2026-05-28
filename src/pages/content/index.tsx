@@ -1,4 +1,5 @@
 import { chatgptAdapter, insertPromptIntoChatGPTInput } from '@/core/adapters/chatgptAdapter';
+import { startChatGPTTimeContextInjection } from '@/core/services/ChatGPTTimeContextService';
 import { StorageKeys } from '@/core/types/common';
 import { isSafari } from '@/core/utils/browser';
 import {
@@ -99,6 +100,7 @@ let draftSaveCleanup: (() => void) | null = null;
 let forkCleanup: (() => void) | null = null;
 let gemsSidebarCleanup: (() => void) | null = null;
 let edgeFinalVersionNoticeCleanup: (() => void) | null = null;
+let chatgptTimeContextCleanup: (() => void) | null = null;
 let chatgptStatusListenerRegistered = false;
 
 type ChatGPTPageStatus = {
@@ -289,6 +291,11 @@ function initializeChatGPTStatusOnly(): void {
   registerChatGPTStatusListener();
   startChatGPTConversationCapture();
   startChatGPTTimelineFloatingPanel();
+  if (!chatgptTimeContextCleanup) {
+    chatgptTimeContextCleanup = startChatGPTTimeContextInjection({
+      getTimelineNodes: getCapturedChatGPTTimelineNodes,
+    });
+  }
   console.log('[Gemini Voyager] ChatGPT page status detected:', getChatGPTPageStatus());
 }
 
@@ -757,6 +764,10 @@ function handleVisibilityChange(): void {
         if (edgeFinalVersionNoticeCleanup) {
           edgeFinalVersionNoticeCleanup();
           edgeFinalVersionNoticeCleanup = null;
+        }
+        if (chatgptTimeContextCleanup) {
+          chatgptTimeContextCleanup();
+          chatgptTimeContextCleanup = null;
         }
         chrome.storage?.onChanged?.removeListener(onStorageChanged);
       } catch (e) {

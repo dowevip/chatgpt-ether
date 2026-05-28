@@ -315,21 +315,62 @@ function locateAnyTimelineNode(node: ChatGPTTimelineNode): {
   return locateChatGPTTimelineTarget(node, nodes);
 }
 
+function resolveCanonicalTimelineNode(node: ChatGPTTimelineNode): ChatGPTTimelineNode {
+  const canonical =
+    nodes.find((item) => node.turnId && item.role === node.role && item.turnId === node.turnId) ||
+    nodes.find(
+      (item) => node.messageId && item.role === node.role && item.messageId === node.messageId,
+    ) ||
+    nodes.find(
+      (item) =>
+        node.messageAnchor && item.role === node.role && item.messageAnchor === node.messageAnchor,
+    ) ||
+    nodes.find(
+      (item) => node.fingerprint && item.role === node.role && item.fingerprint === node.fingerprint,
+    );
+
+  if (!canonical) return node;
+
+  return {
+    ...node,
+    ...canonical,
+    searchText: node.searchText || canonical.searchText,
+    summary: canonical.summary || node.summary,
+  };
+}
+
+async function tryDirectLocateTimelineNode(node: ChatGPTTimelineNode): Promise<boolean> {
+  const target = resolveCanonicalTimelineNode(node);
+  const located = locateAnyTimelineNode(target);
+  if (!located.found || !located.element) return false;
+
+  await scrollChatGPTMessageIntoView(located.element);
+  highlightChatGPTMessageElement(located.element);
+  console.debug('[ChatGPT Voyager] 时间轴直接定位完成', {
+    role: target.role,
+    method: located.method,
+    domIndexCount: located.domIndexCount,
+    matchedCount: located.matchedCount,
+  });
+  return true;
+}
+
 async function progressiveScrollToNode(node: ChatGPTTimelineNode): Promise<boolean> {
+  const target = resolveCanonicalTimelineNode(node);
   let indexed = indexChatGPTMessageDom(node.role, nodes);
   let container = getChatGPTMainScrollContainer(indexed);
-  let locateResult = locateAnyTimelineNode(node);
+  let locateResult = locateAnyTimelineNode(target);
   if (locateResult.found && locateResult.element) {
     await scrollChatGPTMessageIntoView(locateResult.element);
     highlightChatGPTMessageElement(locateResult.element);
     return true;
   }
 
-  const visibleRange = findRenderedIndexRange(node.role);
+  const visibleRange = findRenderedIndexRange(target.role);
   let direction: -1 | 1 | null = null;
-  if (visibleRange && node.index > 0) {
-    if (node.index < visibleRange.min) direction = -1;
-    if (node.index > visibleRange.max) direction = 1;
+  if (visibleRange && target.index > 0) {
+    if (target.index < visibleRange.min) direction = -1;
+    if (target.index > visibleRange.max) direction = 1;
   }
 
   let attempts = 0;
@@ -346,9 +387,9 @@ async function progressiveScrollToNode(node: ChatGPTTimelineNode): Promise<boole
     attempts += 1;
     await wait(180);
     requestCurrentChatGPTConversationCapture();
-    indexed = indexChatGPTMessageDom(node.role, nodes);
+    indexed = indexChatGPTMessageDom(target.role, nodes);
     container = getChatGPTMainScrollContainer(indexed);
-    locateResult = locateAnyTimelineNode(node);
+    locateResult = locateAnyTimelineNode(target);
     if (locateResult.found && locateResult.element) {
       await scrollChatGPTMessageIntoView(locateResult.element);
       highlightChatGPTMessageElement(locateResult.element);
@@ -370,9 +411,9 @@ async function progressiveScrollToNode(node: ChatGPTTimelineNode): Promise<boole
     scrollChatGPTContainerToTop(container);
     attempts += 1;
     await wait(200);
-    indexed = indexChatGPTMessageDom(node.role, nodes);
+    indexed = indexChatGPTMessageDom(target.role, nodes);
     container = getChatGPTMainScrollContainer(indexed);
-    locateResult = locateAnyTimelineNode(node);
+    locateResult = locateAnyTimelineNode(target);
     if (locateResult.found && locateResult.element) {
       await scrollChatGPTMessageIntoView(locateResult.element);
       highlightChatGPTMessageElement(locateResult.element);
@@ -640,7 +681,8 @@ async function handleSearchResultClick(result: ChatGPTTimelineSearchResult): Pro
   renderList();
   if (statusEl) statusEl.textContent = '正在定位搜索结果...';
 
-  const scrolled = await progressiveScrollToNode(result);
+  const target = resolveCanonicalTimelineNode(result);
+  const scrolled = (await tryDirectLocateTimelineNode(target)) || (await progressiveScrollToNode(target));
   if (!scrolled && statusEl) {
     locatingAnchor = null;
     locatingText = '正在定位...';
@@ -649,7 +691,7 @@ async function handleSearchResultClick(result: ChatGPTTimelineSearchResult): Pro
     return;
   }
 
-  activeAnchor = result.messageAnchor;
+  activeAnchor = target.messageAnchor;
   locatingAnchor = null;
   locatingText = '正在定位...';
   renderList();

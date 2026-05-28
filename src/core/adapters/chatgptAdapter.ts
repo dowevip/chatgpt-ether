@@ -73,6 +73,7 @@ export type ChatGPTTimelineTarget = {
   messageId?: string;
   fingerprint?: string;
   summary?: string;
+  searchText?: string;
 };
 
 export type ChatGPTDomUserMessageIndexEntry = {
@@ -329,9 +330,14 @@ function setTextAreaValue(element: HTMLTextAreaElement, value: string): void {
   element.value = value;
 }
 
-export function insertPromptIntoChatGPTInput(content: string): ChatGPTInsertPromptResult {
-  console.debug('[ChatGPT Voyager] insertPrompt requested', { contentLength: content.length });
+export function getChatGPTInputText(input: HTMLElement | null = chatgptAdapter.getInputElement()): string {
+  if (!input) return '';
+  if (input instanceof HTMLTextAreaElement) return input.value;
+  if (input.isContentEditable) return input.innerText || input.textContent || '';
+  return input.textContent || '';
+}
 
+export function replaceChatGPTInputText(content: string): ChatGPTInsertPromptResult {
   if (!chatgptAdapter.isSupportedPage()) {
     return {
       ok: false,
@@ -358,7 +364,7 @@ export function insertPromptIntoChatGPTInput(content: string): ChatGPTInsertProm
     return {
       ok: true,
       method: 'textarea',
-      message: 'Prompt inserted into textarea.',
+      message: 'Text inserted into textarea.',
       debug: buildInsertDebug(content, input),
     };
   }
@@ -378,7 +384,7 @@ export function insertPromptIntoChatGPTInput(content: string): ChatGPTInsertProm
       }
     } catch (error) {
       method = 'fallback';
-      console.debug('[ChatGPT Voyager] contenteditable insertText fallback', {
+      console.debug('[ChatGPT Voyager] contenteditable replace fallback', {
         contentLength: content.length,
         error,
       });
@@ -386,20 +392,10 @@ export function insertPromptIntoChatGPTInput(content: string): ChatGPTInsertProm
     }
 
     dispatchInputEvents(input, content);
-
-    const insertedText = input.textContent || '';
-    if (!insertedText.trim()) {
-      return {
-        ok: false,
-        error: '插入后输入框仍为空。',
-        debug: buildInsertDebug(content, input),
-      };
-    }
-
     return {
       ok: true,
       method,
-      message: 'Prompt inserted into contenteditable input.',
+      message: 'Text inserted into contenteditable input.',
       debug: buildInsertDebug(content, input),
     };
   }
@@ -409,6 +405,20 @@ export function insertPromptIntoChatGPTInput(content: string): ChatGPTInsertProm
     error: 'ChatGPT 输入框暂不支持写入。',
     debug: buildInsertDebug(content, input),
   };
+}
+
+export function insertPromptIntoChatGPTInput(content: string): ChatGPTInsertPromptResult {
+  console.debug('[ChatGPT Voyager] insertPrompt requested', { contentLength: content.length });
+
+  if (!chatgptAdapter.isSupportedPage()) {
+    return {
+      ok: false,
+      error: '当前页面不是 ChatGPT。',
+      debug: buildInsertDebug(content),
+    };
+  }
+
+  return replaceChatGPTInputText(content);
 }
 
 function uniqueElements(elements: HTMLElement[]): HTMLElement[] {
@@ -993,7 +1003,7 @@ function textSimilarity(left: string, right: string): number {
 }
 
 function targetText(target: ChatGPTTimelineTarget): string {
-  return normalizeMessageText(target.summary || '').replace(/\.\.\.$/, '');
+  return normalizeMessageText(target.searchText || target.summary || '').replace(/\.\.\.$/, '');
 }
 
 function locateDebug(
