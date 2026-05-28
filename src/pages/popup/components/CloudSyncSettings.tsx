@@ -365,6 +365,14 @@ export function CloudSyncSettings({ chatgptOnly = false, onBack }: CloudSyncSett
 
   // Handle sync now (upload current data)
   const handleSyncNow = useCallback(async () => {
+    if (
+      platform === 'chatgpt' &&
+      (syncState.lastUploadTimeChatGPT || syncState.lastSyncTimeChatGPT) &&
+      !window.confirm('云端已有同步数据，本次上传将更新云端数据。是否继续？')
+    ) {
+      return;
+    }
+
     setStatusMessage(null);
     setIsUploading(true);
 
@@ -484,6 +492,8 @@ export function CloudSyncSettings({ chatgptOnly = false, onBack }: CloudSyncSett
     platform,
     resolveAccountSyncContext,
     resolveTimelineHierarchySyncContext,
+    syncState.lastSyncTimeChatGPT,
+    syncState.lastUploadTimeChatGPT,
     t,
   ]);
 
@@ -795,11 +805,6 @@ export function CloudSyncSettings({ chatgptOnly = false, onBack }: CloudSyncSett
     });
   }, []);
 
-  const handleOverwriteChatGPTCloud = useCallback(async () => {
-    if (!window.confirm('确定要用本地 ChatGPT以太 数据覆盖云端数据吗？')) return;
-    await handleSyncNow();
-  }, [handleSyncNow]);
-
   // Don't render on Safari
   if (isSafariBrowser) return null;
 
@@ -874,16 +879,6 @@ export function CloudSyncSettings({ chatgptOnly = false, onBack }: CloudSyncSett
                   className="w-full"
                 >
                   {downloadMode === 'merge' ? '正在拉取…' : '从云端拉取并合并'}
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  onClick={handleOverwriteChatGPTCloud}
-                  disabled={busy}
-                  className="w-full"
-                >
-                  上传并覆盖云端
                 </Button>
                 <div className="grid grid-cols-2 gap-2">
                   <Button
