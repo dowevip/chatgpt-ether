@@ -374,7 +374,6 @@ const CHATGPT_DASHBOARD_ENTRIES = [
   'Folders',
   'Timeline',
   'Starred',
-  'Search',
   'Sync',
   'Diagnostics',
 ] as const;
@@ -384,7 +383,6 @@ const CHATGPT_DASHBOARD_ENTRY_LABELS: Record<(typeof CHATGPT_DASHBOARD_ENTRIES)[
   Folders: '对话文件夹',
   Timeline: '时间轴',
   Starred: '收藏消息',
-  Search: '搜索',
   Sync: '同步',
   Diagnostics: '诊断信息',
 };
@@ -1562,6 +1560,8 @@ export default function Popup() {
           </CardContent>
         </Card>
 
+        {false && (
+          <>
         {/* AI Studio master toggle - only shown when on AI Studio */}
         {isAIStudio && (
           <Card
@@ -2906,8 +2906,12 @@ export default function Popup() {
               </CardContent>
             </Card>,
           )}
+          </>
+        )}
       </div>
 
+      {false && (
+        <>
       {/* Footer */}
       <div className="border-border/50 flex flex-col gap-3 border-t px-5 py-4">
         <div className="flex w-full items-center justify-between">
@@ -2958,6 +2962,8 @@ export default function Popup() {
           <span>{t('starProject')}</span>
         </a>
       </div>
+          </>
+        )}
     </div>
   );
 }
