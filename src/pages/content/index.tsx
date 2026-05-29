@@ -147,7 +147,7 @@ function getChatGPTTimelineSnapshot() {
   if (capturedNodes.length > 0) {
     const userCount = capturedNodes.filter((node) => node.role === 'user').length;
     const assistantCount = capturedNodes.filter((node) => node.role === 'assistant').length;
-    console.debug('[ChatGPT Voyager] Popup 时间轴使用捕获数据', {
+    console.debug('[ChatGPT Ether Timeline] Popup 时间轴使用捕获数据', {
       total: capturedNodes.length,
       user: userCount,
       assistant: assistantCount,
@@ -164,7 +164,7 @@ function getChatGPTTimelineSnapshot() {
   const messageNodes = chatgptAdapter.getMessageNodes();
   const userCount = messageNodes.filter((node) => node.role === 'user').length;
   const assistantCount = messageNodes.filter((node) => node.role === 'assistant').length;
-  console.debug('[ChatGPT Voyager] Popup 时间轴扫描完成', {
+  console.debug('[ChatGPT Ether Timeline] Popup 时间轴扫描完成', {
     total: messageNodes.length,
     user: userCount,
     assistant: assistantCount,
@@ -176,6 +176,9 @@ function getChatGPTTimelineSnapshot() {
       index: index + 1,
       role: node.role,
       summary: summarizeChatGPTTimelineMessage(node.snippet),
+      snippet: node.snippet,
+      roleIndex: (node as { roleIndex?: number }).roleIndex,
+      domIndexGlobal: (node as { domIndexGlobal?: number }).domIndexGlobal,
       turnId: (node as { turnId?: string }).turnId,
       messageAnchor: node.anchor,
       fingerprint: (node as { fingerprint?: string }).fingerprint,
@@ -213,6 +216,9 @@ function registerChatGPTStatusListener(): void {
         messageAnchor,
         snippet: typeof payload.snippet === 'string' ? payload.snippet : undefined,
         fingerprint: typeof payload.fingerprint === 'string' ? payload.fingerprint : undefined,
+        roleIndex: typeof payload.roleIndex === 'number' ? payload.roleIndex : undefined,
+        domIndexGlobal:
+          typeof payload.domIndexGlobal === 'number' ? payload.domIndexGlobal : undefined,
       };
       void scrollChatGPTTimelineToMessage(locateRequest)
         .then((scrolled) =>
@@ -252,7 +258,7 @@ function registerChatGPTStatusListener(): void {
 
     if (message?.type === 'gv.chatgpt.insertPrompt') {
       const content = typeof message?.payload?.content === 'string' ? message.payload.content : '';
-      console.debug('[ChatGPT Voyager] insertPrompt message received', {
+      console.debug('[ChatGPT Ether] insertPrompt message received', {
         contentLength: content.length,
         url: location.href,
       });
@@ -263,7 +269,7 @@ function registerChatGPTStatusListener(): void {
 
       try {
         const result = insertPromptIntoChatGPTInput(content);
-        console.debug('[ChatGPT Voyager] insertPrompt result', {
+        console.debug('[ChatGPT Ether] insertPrompt result', {
           ok: result.ok,
           method: result.method,
           error: result.error,
@@ -298,7 +304,7 @@ function initializeChatGPTStatusOnly(): void {
       getTimelineNodes: getCapturedChatGPTTimelineNodes,
     });
   }
-  console.log('[Gemini Voyager] ChatGPT page status detected:', getChatGPTPageStatus());
+  console.log('[ChatGPT Ether] ChatGPT page status detected:', getChatGPTPageStatus());
 }
 
 function isChatGPTVoyagerRuntime(): boolean {
@@ -327,7 +333,7 @@ async function isCustomWebsite(): Promise<boolean> {
     // Normalize current hostname
     const currentHost = location.hostname.toLowerCase().replace(/^www\./, '');
 
-    console.log('[Gemini Voyager] Checking custom websites:', {
+    console.log('[ChatGPT Ether] Checking custom websites:', {
       currentHost,
       customWebsites,
       hostname: location.hostname,
@@ -337,17 +343,17 @@ async function isCustomWebsite(): Promise<boolean> {
       const normalizedWebsite = website.toLowerCase().replace(/^www\./, '');
       const matches =
         currentHost === normalizedWebsite || currentHost.endsWith('.' + normalizedWebsite);
-      console.log('[Gemini Voyager] Comparing:', { currentHost, normalizedWebsite, matches });
+      console.log('[ChatGPT Ether] Comparing:', { currentHost, normalizedWebsite, matches });
       return matches;
     });
 
-    console.log('[Gemini Voyager] Is custom website:', isCustom);
+    console.log('[ChatGPT Ether] Is custom website:', isCustom);
     return isCustom;
   } catch (e) {
     if (isExtensionContextInvalidatedError(e)) {
       return false;
     }
-    console.error('[Gemini Voyager] Error checking custom websites:', e);
+    console.error('[ChatGPT Ether] Error checking custom websites:', e);
     return false;
   }
 }
@@ -372,13 +378,13 @@ async function initializeFeatures(): Promise<void> {
 
     if (isCustomSite) {
       // Only start prompt manager for custom websites
-      console.log('[Gemini Voyager] Custom website detected, starting Prompt Manager only');
+      console.log('[ChatGPT Ether] Custom website detected, starting Prompt Manager only');
 
       promptManagerInstance = await startPromptManager();
       return;
     }
 
-    console.log('[Gemini Voyager] Not a custom website, checking for Gemini/AI Studio');
+    console.log('[ChatGPT Ether] Not a custom website, checking for Gemini/AI Studio');
 
     edgeFinalVersionNoticeCleanup = startEdgeFinalVersionNotice();
 
@@ -393,7 +399,7 @@ async function initializeFeatures(): Promise<void> {
     );
 
     if (isEnterprise) {
-      console.log('[Gemini Voyager] Gemini Enterprise detected, starting Prompt Manager only');
+      console.log('[ChatGPT Ether] Gemini Enterprise detected, starting Prompt Manager only');
       promptManagerInstance = await startPromptManager();
       return;
     }
@@ -555,7 +561,7 @@ async function initializeFeatures(): Promise<void> {
       });
 
       if (!aiStudioEnabled) {
-        console.log('[Gemini Voyager] AI Studio features disabled by user');
+        console.log('[ChatGPT Ether] AI Studio features disabled by user');
         return;
       }
 
@@ -577,7 +583,7 @@ async function initializeFeatures(): Promise<void> {
     if (isExtensionContextInvalidatedError(e)) {
       return;
     }
-    console.error('[Gemini Voyager] Initialization error:', e);
+    console.error('[ChatGPT Ether] Initialization error:', e);
   }
 }
 
@@ -590,14 +596,14 @@ function getInitializationDelay(): number {
 
   if (isVisible) {
     // Foreground tab: initialize immediately for good UX
-    console.log('[Gemini Voyager] Foreground tab detected, initializing immediately');
+    console.log('[ChatGPT Ether] Foreground tab detected, initializing immediately');
     return 0;
   } else {
     // Background tab: add random delay to distribute load across multiple tabs
     const randomRange = BACKGROUND_TAB_MAX_DELAY - BACKGROUND_TAB_MIN_DELAY;
     const randomDelay = BACKGROUND_TAB_MIN_DELAY + Math.random() * randomRange;
     console.log(
-      `[Gemini Voyager] Background tab detected, delaying initialization by ${Math.round(randomDelay)}ms`,
+      `[ChatGPT Ether] Background tab detected, delaying initialization by ${Math.round(randomDelay)}ms`,
     );
     return randomDelay;
   }
@@ -613,7 +619,7 @@ function handleVisibilityChange(): void {
     if (initializationTimer !== null) {
       clearTimeout(initializationTimer);
       initializationTimer = null;
-      console.log('[Gemini Voyager] Tab became visible, initializing immediately');
+      console.log('[ChatGPT Ether] Tab became visible, initializing immediately');
     }
     initializeFeatures();
   }
@@ -681,7 +687,7 @@ function handleVisibilityChange(): void {
     if (isSupportedSite) {
       initKaTeXConfig();
       // Initialize i18n early to ensure translations are available
-      initI18n().catch((e) => console.error('[Gemini Voyager] i18n init error:', e));
+      initI18n().catch((e) => console.error('[ChatGPT Ether] i18n init error:', e));
     }
 
     // If not a known site, check if it's a custom website (async)
@@ -699,11 +705,11 @@ function handleVisibilityChange(): void {
         });
 
         if (isCustomSite) {
-          console.log('[Gemini Voyager] Custom website detected:', hostname);
+          console.log('[ChatGPT Ether] Custom website detected:', hostname);
           initializeFeatures();
         } else {
           // Not a supported site, exit early
-          console.log('[Gemini Voyager] Not a supported website, skipping initialization');
+          console.log('[ChatGPT Ether] Not a supported website, skipping initialization');
         }
       });
       return;
@@ -776,13 +782,13 @@ function handleVisibilityChange(): void {
         if (isExtensionContextInvalidatedError(e)) {
           return;
         }
-        console.error('[Gemini Voyager] Cleanup error:', e);
+        console.error('[ChatGPT Ether] Cleanup error:', e);
       }
     });
   } catch (e) {
     if (isExtensionContextInvalidatedError(e)) {
       return;
     }
-    console.error('[Gemini Voyager] Fatal initialization error:', e);
+    console.error('[ChatGPT Ether] Fatal initialization error:', e);
   }
 })();

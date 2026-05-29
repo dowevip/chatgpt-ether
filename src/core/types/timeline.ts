@@ -79,8 +79,11 @@ export type ChatGPTTimelineRole = 'user' | 'assistant';
 
 export type ChatGPTTimelineNode = {
   index: number;
+  domIndexGlobal?: number;
+  roleIndex?: number;
   role: ChatGPTTimelineRole;
   summary: string;
+  snippet?: string;
   searchText?: string;
   turnId?: string;
   messageAnchor: string;

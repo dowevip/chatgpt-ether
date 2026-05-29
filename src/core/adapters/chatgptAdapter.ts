@@ -43,8 +43,10 @@ const CHATGPT_TURN_ID_ATTR = 'data-cg-voyager-turn-id';
 const CHATGPT_MESSAGE_ID_ATTR = 'data-cg-voyager-message-id';
 const CHATGPT_MESSAGE_FINGERPRINT_ATTR = 'data-cg-voyager-fingerprint';
 const CHATGPT_MESSAGE_INDEX_ATTR = 'data-cg-voyager-index';
+const CHATGPT_MESSAGE_GLOBAL_INDEX_ATTR = 'data-cg-voyager-global-index';
 const CHATGPT_MESSAGE_ROLE_ATTR = 'data-cg-voyager-role';
-const PERFORMANCE_PREFIX = '[ChatGPT Voyager Performance]';
+const PERFORMANCE_PREFIX = '[ChatGPT Ether Performance]';
+const REGISTRY_CACHE_TTL_MS = 80;
 
 type ChatGPTInsertMethod = 'textarea' | 'contenteditable' | 'fallback';
 
@@ -68,22 +70,27 @@ export type ChatGPTInsertPromptResult = {
 export type ChatGPTTimelineTarget = {
   role?: MessageRole;
   index?: number;
+  domIndexGlobal?: number;
+  roleIndex?: number;
   turnId?: string;
   messageAnchor?: string;
   messageId?: string;
   fingerprint?: string;
   summary?: string;
+  snippet?: string;
   searchText?: string;
 };
 
 export type ChatGPTDomUserMessageIndexEntry = {
   element: HTMLElement;
-  role?: MessageRole;
+  role: MessageRole;
   turnId?: string;
   anchor: string;
   messageId?: string;
   fingerprint: string;
   index: number;
+  roleIndex: number;
+  domIndexGlobal: number;
   normalizedText: string;
   snippet: string;
 };
@@ -93,7 +100,15 @@ type ChatGPTUserDomIndexCache = {
   entries: ChatGPTDomUserMessageIndexEntry[];
 };
 
+type ChatGPTMessageRegistryCache = {
+  createdAt: number;
+  url: string;
+  capturedKey: string;
+  entries: ChatGPTDomUserMessageIndexEntry[];
+};
+
 let userDomIndexCache: ChatGPTUserDomIndexCache | null = null;
+let messageRegistryCache: ChatGPTMessageRegistryCache | null = null;
 
 function performanceLog(label: string, startedAt: number, extra: Record<string, unknown> = {}): void {
   console.debug(PERFORMANCE_PREFIX, {
@@ -120,6 +135,8 @@ export type ChatGPTLocateResult = {
   element?: HTMLElement;
   domIndexCount: number;
   matchedCount: number;
+  ambiguous?: boolean;
+  reason?: string;
 };
 
 export type ChatGPTUserTurnLocateMethod =
@@ -128,6 +145,8 @@ export type ChatGPTUserTurnLocateMethod =
   | 'messageId'
   | 'cgMessageId'
   | 'anchor'
+  | 'domIndexGlobal'
+  | 'roleIndex'
   | 'fingerprint'
   | 'text'
   | 'index';
@@ -142,6 +161,8 @@ export type ChatGPTUserTurnLocateRequest = {
   snippet?: string;
   summary?: string;
   index?: number;
+  domIndexGlobal?: number;
+  roleIndex?: number;
 };
 
 export type ChatGPTUserTurnLocateResult = {
@@ -149,6 +170,7 @@ export type ChatGPTUserTurnLocateResult = {
   reason: string;
   targetElement?: HTMLElement;
   method?: ChatGPTUserTurnLocateMethod;
+  ambiguous?: boolean;
   debug: {
     domIndexCount: number;
     matchedCount: number;
@@ -157,6 +179,8 @@ export type ChatGPTUserTurnLocateResult = {
     hasAnchor: boolean;
     hasFingerprint: boolean;
     hasSnippet: boolean;
+    hasRoleIndex: boolean;
+    hasDomIndexGlobal: boolean;
   };
 };
 
@@ -384,7 +408,7 @@ export function replaceChatGPTInputText(content: string): ChatGPTInsertPromptRes
       }
     } catch (error) {
       method = 'fallback';
-      console.debug('[ChatGPT Voyager] contenteditable replace fallback', {
+      console.debug('[ChatGPT Ether] contenteditable replace fallback', {
         contentLength: content.length,
         error,
       });
@@ -408,7 +432,7 @@ export function replaceChatGPTInputText(content: string): ChatGPTInsertPromptRes
 }
 
 export function insertPromptIntoChatGPTInput(content: string): ChatGPTInsertPromptResult {
-  console.debug('[ChatGPT Voyager] insertPrompt requested', { contentLength: content.length });
+  console.debug('[ChatGPT Ether] insertPrompt requested', { contentLength: content.length });
 
   if (!chatgptAdapter.isSupportedPage()) {
     return {
@@ -671,18 +695,30 @@ function getCapturedNodeLookup(capturedNodes: ChatGPTTimelineTarget[] = []): {
   byTurnId: Map<string, ChatGPTTimelineTarget>;
   byFingerprint: Map<string, ChatGPTTimelineTarget>;
   byMessageId: Map<string, ChatGPTTimelineTarget>;
+  byAnchor: Map<string, ChatGPTTimelineTarget>;
 } {
   const byTurnId = new Map<string, ChatGPTTimelineTarget>();
   const byFingerprint = new Map<string, ChatGPTTimelineTarget>();
   const byMessageId = new Map<string, ChatGPTTimelineTarget>();
+  const byAnchor = new Map<string, ChatGPTTimelineTarget>();
+  const fingerprintCounts = new Map<string, number>();
 
   for (const node of capturedNodes) {
     if (node.turnId) byTurnId.set(node.turnId, node);
-    if (node.fingerprint) byFingerprint.set(node.fingerprint, node);
     if (node.messageId) byMessageId.set(node.messageId, node);
+    if (node.messageAnchor) byAnchor.set(node.messageAnchor, node);
+    if (node.fingerprint) {
+      fingerprintCounts.set(node.fingerprint, (fingerprintCounts.get(node.fingerprint) || 0) + 1);
+    }
   }
 
-  return { byTurnId, byFingerprint, byMessageId };
+  for (const node of capturedNodes) {
+    if (node.fingerprint && fingerprintCounts.get(node.fingerprint) === 1) {
+      byFingerprint.set(node.fingerprint, node);
+    }
+  }
+
+  return { byTurnId, byFingerprint, byMessageId, byAnchor };
 }
 
 export function indexChatGPTUserMessageDom(
@@ -695,6 +731,128 @@ export function indexChatGPTAssistantMessageDom(
   capturedNodes: ChatGPTTimelineTarget[] = [],
 ): ChatGPTDomUserMessageIndexEntry[] {
   return indexChatGPTMessageDom('assistant', capturedNodes);
+}
+
+function getRegistryCacheKey(capturedNodes: ChatGPTTimelineTarget[]): string {
+  const first = capturedNodes[0];
+  const last = capturedNodes[capturedNodes.length - 1];
+  return [
+    capturedNodes.length,
+    first?.turnId || first?.messageId || first?.messageAnchor || '',
+    last?.turnId || last?.messageId || last?.messageAnchor || '',
+  ].join(':');
+}
+
+function getMessageCandidates(): Array<{ element: HTMLElement; role: MessageRole }> {
+  const candidates: Array<{ element: HTMLElement; role: MessageRole }> = [];
+  for (const role of ['user', 'assistant'] as const) {
+    for (const element of getTurnElementsByRole(role)) {
+      candidates.push({ element, role });
+    }
+  }
+
+  const byElement = new Map<HTMLElement, MessageRole>();
+  for (const candidate of candidates) {
+    if (!byElement.has(candidate.element)) byElement.set(candidate.element, candidate.role);
+  }
+
+  return sortByDocumentPosition(
+    Array.from(byElement.entries()).map(([element, role]) => ({
+      element,
+      role,
+      anchor: '',
+      snippet: '',
+    })),
+  ).map((node) => ({ element: node.element, role: node.role }));
+}
+
+export function buildChatGPTMessageRegistry(
+  capturedNodes: ChatGPTTimelineTarget[] = [],
+): ChatGPTDomUserMessageIndexEntry[] {
+  const cacheKey = getRegistryCacheKey(capturedNodes);
+  if (
+    messageRegistryCache &&
+    messageRegistryCache.url === getCurrentUrl() &&
+    messageRegistryCache.capturedKey === cacheKey &&
+    performance.now() - messageRegistryCache.createdAt < REGISTRY_CACHE_TTL_MS
+  ) {
+    return messageRegistryCache.entries;
+  }
+
+  const startedAt = performance.now();
+  const capturedByRole = {
+    user: getCapturedNodeLookup(capturedNodes.filter((node) => !node.role || node.role === 'user')),
+    assistant: getCapturedNodeLookup(
+      capturedNodes.filter((node) => !node.role || node.role === 'assistant'),
+    ),
+  };
+  const roleCounts: Record<MessageRole, number> = { user: 0, assistant: 0 };
+  const entries = getMessageCandidates()
+    .map(({ element, role }, globalIndex) => {
+      roleCounts[role] += 1;
+      const roleIndex = roleCounts[role];
+      const normalizedText = getTurnText(element, role);
+      const fingerprint = fingerprintText(normalizedText);
+      const turnId = getTurnIdFromElement(element);
+      const messageId = getMessageIdFromElement(element);
+      const lookups = capturedByRole[role];
+      const captured =
+        (turnId ? lookups.byTurnId.get(turnId) : undefined) ||
+        (messageId ? lookups.byMessageId.get(messageId) : undefined) ||
+        lookups.byFingerprint.get(fingerprint);
+      const finalTurnId = turnId || captured?.turnId;
+      const finalMessageId = messageId || captured?.messageId;
+      const existingAnchor = element.getAttribute(CHATGPT_MESSAGE_ANCHOR_ATTR) || '';
+      const finalAnchor =
+        captured?.messageAnchor ||
+        existingAnchor ||
+        (finalTurnId
+          ? `chatgpt-turn:${finalTurnId}`
+          : `chatgpt:${role}:${hashString(finalMessageId || fingerprint || String(globalIndex))}:${
+              globalIndex + 1
+            }`);
+
+      element.setAttribute(CHATGPT_MESSAGE_GLOBAL_INDEX_ATTR, String(globalIndex + 1));
+      element.setAttribute(CHATGPT_MESSAGE_INDEX_ATTR, String(roleIndex));
+      element.setAttribute(CHATGPT_MESSAGE_ROLE_ATTR, role);
+      if (finalTurnId) element.setAttribute(CHATGPT_TURN_ID_ATTR, finalTurnId);
+      element.setAttribute(CHATGPT_MESSAGE_FINGERPRINT_ATTR, fingerprint);
+      element.setAttribute(CHATGPT_MESSAGE_ANCHOR_ATTR, finalAnchor);
+      if (finalMessageId) element.setAttribute(CHATGPT_MESSAGE_ID_ATTR, finalMessageId);
+
+      return {
+        element,
+        role,
+        turnId: finalTurnId,
+        anchor: finalAnchor,
+        messageId: finalMessageId,
+        fingerprint,
+        index: roleIndex,
+        roleIndex,
+        domIndexGlobal: globalIndex + 1,
+        normalizedText,
+        snippet: normalizeSnippet(normalizedText),
+      };
+    })
+    .filter((entry) => entry.normalizedText || entry.turnId || entry.messageId);
+
+  console.debug('[ChatGPT Ether Timeline] registry built', {
+    total: entries.length,
+    user: entries.filter((entry) => entry.role === 'user').length,
+    assistant: entries.filter((entry) => entry.role === 'assistant').length,
+  });
+  performanceLog('DOM 消息 registry 构建耗时', startedAt, {
+    count: entries.length,
+    captured: capturedNodes.length,
+  });
+
+  messageRegistryCache = {
+    createdAt: performance.now(),
+    url: getCurrentUrl(),
+    capturedKey: cacheKey,
+    entries,
+  };
+  return entries;
 }
 
 export function indexChatGPTMessageDom(
@@ -711,72 +869,17 @@ export function indexChatGPTMessageDom(
     return userDomIndexCache.entries;
   }
 
-  const roleCapturedNodes = capturedNodes.filter((node) => !node.role || node.role === role);
-  const { byTurnId, byFingerprint, byMessageId } = getCapturedNodeLookup(roleCapturedNodes);
-  const entries = sortByDocumentPosition(
-    getTurnElementsByRole(role).map((element, index) => ({
-      element,
-      role,
-      anchor: '',
-      snippet: normalizeSnippet(getTurnText(element, role)),
-      index,
-    })),
-  );
+  const indexed = buildChatGPTMessageRegistry(capturedNodes).filter((entry) => entry.role === role);
 
-  const indexed = entries
-    .map((node, index) => {
-      const normalizedText = getTurnText(node.element, role);
-      const fingerprint = fingerprintText(normalizedText);
-      const turnId = getTurnIdFromElement(node.element);
-      const messageId = getMessageIdFromElement(node.element);
-      const captured =
-        (turnId ? byTurnId.get(turnId) : undefined) ||
-        (messageId ? byMessageId.get(messageId) : undefined) ||
-        byFingerprint.get(fingerprint);
-      const anchor =
-        captured?.messageAnchor || node.element.getAttribute(CHATGPT_MESSAGE_ANCHOR_ATTR) || '';
-      const finalAnchor =
-        anchor ||
-        (turnId
-          ? `chatgpt-turn:${turnId}`
-          : `chatgpt:${role}:${hashString(messageId || fingerprint || String(index))}:${index}`);
-      const finalMessageId = messageId || captured?.messageId;
-
-      node.element.setAttribute(CHATGPT_MESSAGE_INDEX_ATTR, String(index + 1));
-      node.element.setAttribute(CHATGPT_MESSAGE_ROLE_ATTR, role);
-      if (turnId) node.element.setAttribute(CHATGPT_TURN_ID_ATTR, turnId);
-      node.element.setAttribute(CHATGPT_MESSAGE_FINGERPRINT_ATTR, fingerprint);
-      node.element.setAttribute(CHATGPT_MESSAGE_ANCHOR_ATTR, finalAnchor);
-      if (finalMessageId) node.element.setAttribute(CHATGPT_MESSAGE_ID_ATTR, finalMessageId);
-
-      return {
-        element: node.element,
-        role,
-        turnId,
-        anchor: finalAnchor,
-        messageId: finalMessageId,
-        fingerprint,
-        index: index + 1,
-        normalizedText,
-        snippet: normalizeSnippet(normalizedText),
-      };
-    })
-    .filter((entry) => entry.normalizedText || entry.turnId);
-
-  console.debug('[ChatGPT Voyager] DOM 消息索引完成', {
+  console.debug('[ChatGPT Ether Timeline] DOM 消息索引完成', {
     role,
     domMessages: indexed.length,
-    matched: indexed.filter(
-      (entry) =>
-        (entry.turnId && byTurnId.has(entry.turnId)) ||
-        entry.messageId ||
-      byFingerprint.has(entry.fingerprint),
-    ).length,
+    registry: true,
   });
   performanceLog('DOM 扫描耗时', startedAt, {
     role,
     count: indexed.length,
-    captured: roleCapturedNodes.length,
+    captured: capturedNodes.length,
   });
 
   if (role === 'user' && capturedNodes.length === 0) {
@@ -850,7 +953,7 @@ export function getChatGPTMainScrollContainer(
     uniqueCandidates.sort((left, right) => right.scrollHeight - left.scrollHeight)[0] ||
     (scrollingElement instanceof HTMLElement ? scrollingElement : document.documentElement);
   const debug = scrollContainerDebug(element);
-  console.debug('[ChatGPT Voyager] 时间轴滚动容器', debug);
+  console.debug('[ChatGPT Ether] 时间轴滚动容器', debug);
   return { element, debug };
 }
 
@@ -1003,7 +1106,22 @@ function textSimilarity(left: string, right: string): number {
 }
 
 function targetText(target: ChatGPTTimelineTarget): string {
-  return normalizeMessageText(target.searchText || target.summary || '').replace(/\.\.\.$/, '');
+  return normalizeMessageText(target.searchText || target.snippet || target.summary || '').replace(
+    /\.\.\.$/,
+    '',
+  );
+}
+
+function locatorLog(
+  role: MessageRole,
+  method: ChatGPTUserTurnLocateMethod | 'miss' | 'ambiguous',
+  result: 'hit' | 'miss' | 'ambiguous',
+): void {
+  console.debug('[ChatGPT Ether Timeline]', {
+    role,
+    method,
+    result,
+  });
 }
 
 function locateDebug(
@@ -1019,6 +1137,8 @@ function locateDebug(
     hasAnchor: Boolean(request.anchor || request.messageAnchor),
     hasFingerprint: Boolean(request.fingerprint),
     hasSnippet: Boolean(request.snippet || request.summary),
+    hasRoleIndex: Boolean(request.roleIndex),
+    hasDomIndexGlobal: Boolean(request.domIndexGlobal),
   };
 }
 
@@ -1038,12 +1158,72 @@ function foundUserTurn(
   };
 }
 
+function failedMessageTurn(
+  request: ChatGPTUserTurnLocateRequest,
+  entries: ChatGPTDomUserMessageIndexEntry[],
+  reason: string,
+  matchedCount = 0,
+  ambiguous = false,
+): ChatGPTUserTurnLocateResult {
+  return {
+    ok: false,
+    reason,
+    ambiguous,
+    debug: locateDebug(request, entries, matchedCount),
+  };
+}
+
+function uniqueRegistryMatch(
+  request: ChatGPTUserTurnLocateRequest,
+  entries: ChatGPTDomUserMessageIndexEntry[],
+  matches: ChatGPTDomUserMessageIndexEntry[],
+  method: ChatGPTUserTurnLocateMethod,
+): ChatGPTUserTurnLocateResult | null {
+  if (matches.length === 1) {
+    locatorLog(request.role || 'user', method, 'hit');
+    return foundUserTurn(request, entries, matches[0].element, method);
+  }
+  if (matches.length > 1) {
+    locatorLog(request.role || 'user', method, 'ambiguous');
+    return failedMessageTurn(request, entries, '定位结果存在多个候选', matches.length, true);
+  }
+  return null;
+}
+
+function chooseStrongTextMatch(
+  role: MessageRole,
+  entries: ChatGPTDomUserMessageIndexEntry[],
+  targetNormalized: string,
+): { entry: ChatGPTDomUserMessageIndexEntry; score: number; method: ChatGPTUserTurnLocateMethod } | null {
+  const threshold = role === 'assistant' ? 0.82 : 0.62;
+  const matches = entries
+    .map((entry) => {
+      const contains =
+        entry.normalizedText.includes(targetNormalized) ||
+        targetNormalized.includes(entry.normalizedText);
+      const similarity = textSimilarity(targetNormalized, entry.normalizedText);
+      return {
+        entry,
+        score: contains ? 1 : similarity,
+        method: contains ? ('text' as const) : ('fingerprint' as const),
+      };
+    })
+    .filter((item) => item.score >= threshold)
+    .sort((left, right) => right.score - left.score);
+
+  const best = matches[0];
+  if (!best) return null;
+  const second = matches[1];
+  if (role === 'assistant' && second && best.score - second.score < 0.18) return null;
+  return best;
+}
+
 export function locateMessageTurn(
   request: ChatGPTUserTurnLocateRequest,
   capturedNodes: ChatGPTTimelineTarget[] = [],
 ): ChatGPTUserTurnLocateResult {
   const role = request.role || 'user';
-  const entries = indexChatGPTMessageDom(role, capturedNodes);
+  const entries = buildChatGPTMessageRegistry(capturedNodes).filter((entry) => entry.role === role);
   const anchor = request.anchor || request.messageAnchor || '';
   const targetNormalized = normalizeMessageText(request.snippet || request.summary || '').replace(
     /\.\.\.$/,
@@ -1054,69 +1234,92 @@ export function locateMessageTurn(
   let matchedCount = 0;
 
   if (request.turnId) {
-    const nativeByTurnId = Array.from(
-      getSafeDocument()?.querySelectorAll<HTMLElement>(`[data-turn="${role}"][data-turn-id]`) || [],
-    ).find((element) => element.getAttribute('data-turn-id') === request.turnId);
-    if (nativeByTurnId) return foundUserTurn(request, entries, nativeByTurnId, 'turnId');
-
-    const byTurnId = entries.find((entry) => entry.turnId === request.turnId);
-    if (byTurnId) return foundUserTurn(request, entries, byTurnId.element, 'turnId');
-
-    const byCgTurnId = findMessageElementByAttribute(CHATGPT_TURN_ID_ATTR, request.turnId);
-    if (byCgTurnId) return foundUserTurn(request, entries, byCgTurnId, 'cgTurnId');
+    const result = uniqueRegistryMatch(
+      request,
+      entries,
+      entries.filter((entry) => entry.turnId === request.turnId),
+      'turnId',
+    );
+    if (result) return result;
   }
 
   if (request.messageId) {
-    if (role === 'assistant') {
-      const byCgMessageId = findMessageElementByAttribute(
-        CHATGPT_MESSAGE_ID_ATTR,
-        request.messageId,
-      );
-      if (byCgMessageId) return foundUserTurn(request, entries, byCgMessageId, 'cgMessageId');
-    }
-
-    const found = entries.find((entry) => entry.messageId === request.messageId);
-    if (found) return foundUserTurn(request, entries, found.element, 'messageId');
+    const result = uniqueRegistryMatch(
+      request,
+      entries,
+      entries.filter((entry) => entry.messageId === request.messageId),
+      'messageId',
+    );
+    if (result) return result;
   }
 
-  const byAnchor = entries.find((entry) => entry.anchor === anchor);
-  if (byAnchor) return foundUserTurn(request, entries, byAnchor.element, 'anchor');
+  if (anchor) {
+    const result = uniqueRegistryMatch(
+      request,
+      entries,
+      entries.filter((entry) => entry.anchor === anchor),
+      'anchor',
+    );
+    if (result) return result;
+  }
+
+  if (typeof request.roleIndex === 'number' && request.roleIndex > 0) {
+    const result = uniqueRegistryMatch(
+      request,
+      entries,
+      entries.filter((entry) => entry.roleIndex === request.roleIndex),
+      'roleIndex',
+    );
+    if (result) return result;
+  }
+
+  if (typeof request.domIndexGlobal === 'number' && request.domIndexGlobal > 0) {
+    const result = uniqueRegistryMatch(
+      request,
+      entries,
+      entries.filter((entry) => entry.domIndexGlobal === request.domIndexGlobal),
+      'domIndexGlobal',
+    );
+    if (result) return result;
+  }
 
   if (targetFingerprint) {
-    const byFingerprint = entries.find((entry) => entry.fingerprint === targetFingerprint);
-    if (byFingerprint) {
-      return foundUserTurn(request, entries, byFingerprint.element, 'fingerprint');
-    }
+    const fingerprintMatches = entries.filter((entry) => entry.fingerprint === targetFingerprint);
+    matchedCount = fingerprintMatches.length;
+    const result = uniqueRegistryMatch(request, entries, fingerprintMatches, 'fingerprint');
+    if (result) return result;
   }
 
   if (targetNormalized) {
-    const textMatches = entries
-      .map((entry) => {
-        const contains =
-          entry.normalizedText.includes(targetNormalized) ||
-          targetNormalized.includes(entry.normalizedText);
-        const similarity = textSimilarity(targetNormalized, entry.normalizedText);
-        return { entry, score: contains ? 1 : similarity };
-      })
-      .filter((item) => item.score >= 0.6)
-      .sort((left, right) => right.score - left.score);
-    matchedCount = textMatches.length;
-    if (textMatches[0]) {
-      return foundUserTurn(
-        request,
-        entries,
-        textMatches[0].entry.element,
-        textMatches[0].score === 1 ? 'text' : 'fingerprint',
-        matchedCount,
-      );
+    const strongMatch = chooseStrongTextMatch(role, entries, targetNormalized);
+    if (strongMatch) {
+      locatorLog(role, strongMatch.method, 'hit');
+      return foundUserTurn(request, entries, strongMatch.entry.element, strongMatch.method, 1);
+    }
+    const possibleMatches = entries.filter(
+      (entry) =>
+        entry.normalizedText.includes(targetNormalized) ||
+        targetNormalized.includes(entry.normalizedText) ||
+        textSimilarity(targetNormalized, entry.normalizedText) >= (role === 'assistant' ? 0.72 : 0.6),
+    );
+    matchedCount = possibleMatches.length;
+    if (role === 'assistant' && possibleMatches.length > 1) {
+      locatorLog(role, 'ambiguous', 'ambiguous');
+      return failedMessageTurn(request, entries, '定位结果存在多个相似助手消息', matchedCount, true);
     }
   }
 
   if (typeof request.index === 'number' && request.index > 0) {
-    const byIndex = entries.find((entry) => entry.index === request.index);
-    if (byIndex) return foundUserTurn(request, entries, byIndex.element, 'index');
+    const result = uniqueRegistryMatch(
+      request,
+      entries,
+      entries.filter((entry) => entry.roleIndex === request.index),
+      'index',
+    );
+    if (result) return result;
   }
 
+  locatorLog(role, 'miss', 'miss');
   return {
     ok: false,
     reason: role === 'user' ? '未找到匹配的用户消息' : '未找到匹配的助手消息',
@@ -1143,6 +1346,8 @@ export function locateChatGPTUserTimelineTarget(
       fingerprint: target.fingerprint,
       summary: targetText(target),
       index: target.index,
+      roleIndex: target.roleIndex,
+      domIndexGlobal: target.domIndexGlobal,
     },
     capturedNodes,
   );
@@ -1153,6 +1358,8 @@ export function locateChatGPTUserTimelineTarget(
     element: result.targetElement,
     domIndexCount: result.debug.domIndexCount,
     matchedCount: result.debug.matchedCount,
+    ambiguous: result.ambiguous,
+    reason: result.reason,
   };
 }
 
@@ -1169,6 +1376,8 @@ export function locateChatGPTTimelineTarget(
       fingerprint: target.fingerprint,
       summary: targetText(target),
       index: target.index,
+      roleIndex: target.roleIndex,
+      domIndexGlobal: target.domIndexGlobal,
     },
     capturedNodes,
   );
@@ -1179,6 +1388,8 @@ export function locateChatGPTTimelineTarget(
     element: result.targetElement,
     domIndexCount: result.debug.domIndexCount,
     matchedCount: result.debug.matchedCount,
+    ambiguous: result.ambiguous,
+    reason: result.reason,
   };
 }
 
@@ -1254,6 +1465,8 @@ export const chatgptAdapter: PageAdapter = {
       turnId: entry.turnId,
       messageId: entry.messageId,
       fingerprint: entry.fingerprint,
+      roleIndex: entry.roleIndex,
+      domIndexGlobal: entry.domIndexGlobal,
     }));
     const assistantNodes = indexChatGPTAssistantMessageDom().map((entry) => ({
       element: entry.element,
@@ -1263,6 +1476,8 @@ export const chatgptAdapter: PageAdapter = {
       turnId: entry.turnId,
       messageId: entry.messageId,
       fingerprint: entry.fingerprint,
+      roleIndex: entry.roleIndex,
+      domIndexGlobal: entry.domIndexGlobal,
     }));
 
     const sortedNodes = sortByDocumentPosition([...userNodes, ...assistantNodes]);
@@ -1293,7 +1508,7 @@ export const chatgptAdapter: PageAdapter = {
       fingerprint: captured.fingerprint,
     });
     if (!result.found || !result.element) {
-      console.debug('[ChatGPT Voyager] 时间轴定位结果', {
+      console.debug('[ChatGPT Ether] 时间轴定位结果', {
         found: false,
         domIndexCount: result.domIndexCount,
         matchedCount: result.matchedCount,
@@ -1304,7 +1519,7 @@ export const chatgptAdapter: PageAdapter = {
 
     void scrollChatGPTMessageIntoView(result.element);
     highlightChatGPTMessageElement(result.element);
-    console.debug('[ChatGPT Voyager] 时间轴定位结果', {
+    console.debug('[ChatGPT Ether] 时间轴定位结果', {
       found: true,
       method: result.method,
       domIndexCount: result.domIndexCount,

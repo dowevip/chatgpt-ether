@@ -1,4 +1,5 @@
 import {
+  buildChatGPTMessageRegistry,
   chatgptAdapter,
   getChatGPTMainScrollContainer,
   getChatGPTScrollMetrics,
@@ -6,7 +7,6 @@ import {
   indexChatGPTMessageDom,
   locateChatGPTTimelineTarget,
   scrollChatGPTContainerBy,
-  scrollChatGPTContainerToTop,
   scrollChatGPTMessageIntoView,
 } from '@/core/adapters/chatgptAdapter';
 import {
@@ -27,7 +27,7 @@ const STORAGE_KEY = 'chatgptVoyager.timeline.visible';
 const WIDTH_STORAGE_KEY = 'chatgptVoyager.timeline.width';
 const HEIGHT_STORAGE_KEY = 'chatgptVoyager.timeline.height';
 const DARK_MODE_STORAGE_KEY = 'darkMode';
-const PERFORMANCE_PREFIX = '[ChatGPT Voyager Performance]';
+const PERFORMANCE_PREFIX = '[ChatGPT Ether Performance]';
 const SUMMARY_LIMIT = 60;
 const SEARCH_SUMMARY_LIMIT = 80;
 const DEFAULT_WIDTH = 260;
@@ -68,6 +68,8 @@ type ChatGPTTimelineLocateRequest = {
   messageAnchor?: string;
   snippet?: string;
   fingerprint?: string;
+  roleIndex?: number;
+  domIndexGlobal?: number;
 };
 
 type ChatGPTTimelineSearchResult = ChatGPTTimelineNode & {
@@ -127,6 +129,17 @@ function getSearchKey(node: Partial<ChatGPTTimelineNode>): string {
     node.fingerprint ||
     `${node.role || 'message'}:${node.index || 0}`
   );
+}
+
+function withRoleIndices(timelineNodes: ChatGPTTimelineNode[]): ChatGPTTimelineNode[] {
+  const roleCounts: Record<ChatGPTTimelineNode['role'], number> = { user: 0, assistant: 0 };
+  return timelineNodes.map((node) => {
+    roleCounts[node.role] += 1;
+    return {
+      ...node,
+      roleIndex: node.roleIndex || roleCounts[node.role],
+    };
+  });
 }
 
 function summarizeSearchMatch(text: string, query: string): string {
@@ -282,31 +295,41 @@ function applyPanelSize(): void {
 }
 
 function reconcileDomMessageIds(capturedNodes: ChatGPTTimelineNode[]): void {
-  const indexed = [
-    ...indexChatGPTMessageDom('user', capturedNodes),
-    ...indexChatGPTMessageDom('assistant', capturedNodes),
-  ];
+  const indexed = buildChatGPTMessageRegistry(capturedNodes);
   const byTurnId = new Map(
     indexed.filter((entry) => entry.turnId).map((entry) => [entry.turnId, entry]),
   );
   const byMessageId = new Map(
     indexed.filter((entry) => entry.messageId).map((entry) => [entry.messageId, entry]),
   );
-  const byFingerprint = new Map(indexed.map((entry) => [entry.fingerprint, entry]));
+  const fingerprintCounts = new Map<string, number>();
+  for (const entry of indexed) {
+    fingerprintCounts.set(entry.fingerprint, (fingerprintCounts.get(entry.fingerprint) || 0) + 1);
+  }
+  const byFingerprint = new Map(
+    indexed
+      .filter((entry) => fingerprintCounts.get(entry.fingerprint) === 1)
+      .map((entry) => [entry.fingerprint, entry]),
+  );
 
   for (const node of capturedNodes) {
     const matched =
       (node.turnId ? byTurnId.get(node.turnId) : undefined) ||
       (node.messageId ? byMessageId.get(node.messageId) : undefined) ||
+      (node.messageAnchor
+        ? indexed.find((entry) => entry.anchor === node.messageAnchor && entry.role === node.role)
+        : undefined) ||
       (node.fingerprint ? byFingerprint.get(node.fingerprint) : undefined);
     if (!matched) continue;
     node.turnId = node.turnId || matched.turnId;
     node.messageId = node.messageId || matched.messageId;
     node.messageAnchor = matched.anchor || node.messageAnchor;
+    node.roleIndex = node.roleIndex || matched.roleIndex;
+    node.domIndexGlobal = matched.domIndexGlobal;
   }
 
   const matched = indexed.filter((entry) => entry.turnId || entry.messageId).length;
-  console.debug('[ChatGPT Voyager] 时间轴 DOM 映射完成', {
+  console.debug('[ChatGPT Ether Timeline] 时间轴 DOM 映射完成', {
     matched,
     captured: capturedNodes.length,
   });
@@ -320,17 +343,17 @@ function findRenderedIndexRange(role: ChatGPTTimelineNode['role']): { min: numbe
   const byTurnId = new Map(
     nodes
       .filter((node) => node.role === role && node.turnId)
-      .map((node) => [node.turnId, node.index]),
+      .map((node) => [node.turnId, node.roleIndex || node.index]),
   );
   const byMessageId = new Map(
     nodes
       .filter((node) => node.role === role && node.messageId)
-      .map((node) => [node.messageId, node.index]),
+      .map((node) => [node.messageId, node.roleIndex || node.index]),
   );
   const byFingerprint = new Map(
     nodes
       .filter((node) => node.role === role && node.fingerprint)
-      .map((node) => [node.fingerprint, node.index]),
+      .map((node) => [node.fingerprint, node.roleIndex || node.index]),
   );
   const indices: number[] = [];
 
@@ -352,23 +375,29 @@ function locateAnyTimelineNode(node: ChatGPTTimelineNode): {
   method?: string;
   domIndexCount: number;
   matchedCount: number;
+  ambiguous?: boolean;
+  reason?: string;
 } {
   return locateChatGPTTimelineTarget(node, nodes);
 }
 
 function resolveCanonicalTimelineNode(node: ChatGPTTimelineNode): ChatGPTTimelineNode {
+  const sameRoleNodes = nodes.filter((item) => item.role === node.role);
+  const fingerprintMatches = node.fingerprint
+    ? sameRoleNodes.filter((item) => item.fingerprint === node.fingerprint)
+    : [];
   const canonical =
-    nodes.find((item) => node.turnId && item.role === node.role && item.turnId === node.turnId) ||
-    nodes.find(
-      (item) => node.messageId && item.role === node.role && item.messageId === node.messageId,
-    ) ||
-    nodes.find(
+    sameRoleNodes.find((item) => node.turnId && item.turnId === node.turnId) ||
+    sameRoleNodes.find((item) => node.messageId && item.messageId === node.messageId) ||
+    sameRoleNodes.find(
       (item) =>
-        node.messageAnchor && item.role === node.role && item.messageAnchor === node.messageAnchor,
+        node.messageAnchor && item.messageAnchor === node.messageAnchor,
     ) ||
-    nodes.find(
-      (item) => node.fingerprint && item.role === node.role && item.fingerprint === node.fingerprint,
-    );
+    sameRoleNodes.find((item) => node.roleIndex && item.roleIndex === node.roleIndex) ||
+    sameRoleNodes.find(
+      (item) => node.domIndexGlobal && item.domIndexGlobal === node.domIndexGlobal,
+    ) ||
+    (fingerprintMatches.length === 1 ? fingerprintMatches[0] : undefined);
 
   if (!canonical) return node;
 
@@ -377,17 +406,23 @@ function resolveCanonicalTimelineNode(node: ChatGPTTimelineNode): ChatGPTTimelin
     ...canonical,
     searchText: node.searchText || canonical.searchText,
     summary: canonical.summary || node.summary,
+    roleIndex: node.roleIndex || canonical.roleIndex,
+    domIndexGlobal: node.domIndexGlobal || canonical.domIndexGlobal,
   };
 }
 
 async function tryDirectLocateTimelineNode(node: ChatGPTTimelineNode): Promise<boolean> {
   const target = resolveCanonicalTimelineNode(node);
   const located = locateAnyTimelineNode(target);
+  if (located.ambiguous) {
+    if (statusEl) statusEl.textContent = '定位结果不唯一，请手动滚动到附近后再试';
+    return false;
+  }
   if (!located.found || !located.element) return false;
 
   await scrollChatGPTMessageIntoView(located.element);
   highlightChatGPTMessageElement(located.element);
-  console.debug('[ChatGPT Voyager] 时间轴直接定位完成', {
+  console.debug('[ChatGPT Ether Timeline] 时间轴直接定位完成', {
     role: target.role,
     method: located.method,
     domIndexCount: located.domIndexCount,
@@ -398,9 +433,10 @@ async function tryDirectLocateTimelineNode(node: ChatGPTTimelineNode): Promise<b
 
 async function progressiveScrollToNode(node: ChatGPTTimelineNode): Promise<boolean> {
   const target = resolveCanonicalTimelineNode(node);
-  let indexed = indexChatGPTMessageDom(node.role, nodes);
+  let indexed = buildChatGPTMessageRegistry(nodes).filter((entry) => entry.role === target.role);
   let container = getChatGPTMainScrollContainer(indexed);
   let locateResult = locateAnyTimelineNode(target);
+  if (locateResult.ambiguous) return false;
   if (locateResult.found && locateResult.element) {
     await scrollChatGPTMessageIntoView(locateResult.element);
     highlightChatGPTMessageElement(locateResult.element);
@@ -409,10 +445,12 @@ async function progressiveScrollToNode(node: ChatGPTTimelineNode): Promise<boole
 
   const visibleRange = findRenderedIndexRange(target.role);
   let direction: -1 | 1 | null = null;
-  if (visibleRange && target.index > 0) {
-    if (target.index < visibleRange.min) direction = -1;
-    if (target.index > visibleRange.max) direction = 1;
+  const targetOrder = target.roleIndex || target.index;
+  if (visibleRange && targetOrder > 0) {
+    if (targetOrder < visibleRange.min) direction = -1;
+    if (targetOrder > visibleRange.max) direction = 1;
   }
+  if (direction === null) return false;
 
   let attempts = 0;
   const maxAttempts = 100;
@@ -428,13 +466,14 @@ async function progressiveScrollToNode(node: ChatGPTTimelineNode): Promise<boole
     attempts += 1;
     await wait(180);
     requestCurrentChatGPTConversationCapture();
-    indexed = indexChatGPTMessageDom(target.role, nodes);
+    indexed = buildChatGPTMessageRegistry(nodes).filter((entry) => entry.role === target.role);
     container = getChatGPTMainScrollContainer(indexed);
     locateResult = locateAnyTimelineNode(target);
+    if (locateResult.ambiguous) return false;
     if (locateResult.found && locateResult.element) {
       await scrollChatGPTMessageIntoView(locateResult.element);
       highlightChatGPTMessageElement(locateResult.element);
-      console.debug('[ChatGPT Voyager] 时间轴渐进定位完成', {
+      console.debug('[ChatGPT Ether Timeline] 时间轴渐进定位完成', {
         success: true,
         attempts,
         method: locateResult.method,
@@ -445,23 +484,6 @@ async function progressiveScrollToNode(node: ChatGPTTimelineNode): Promise<boole
     }
     return false;
   };
-
-  if (direction === null) {
-    locatingText = '向上查找...';
-    if (statusEl) statusEl.textContent = locatingText;
-    scrollChatGPTContainerToTop(container);
-    attempts += 1;
-    await wait(200);
-    indexed = indexChatGPTMessageDom(target.role, nodes);
-    container = getChatGPTMainScrollContainer(indexed);
-    locateResult = locateAnyTimelineNode(target);
-    if (locateResult.found && locateResult.element) {
-      await scrollChatGPTMessageIntoView(locateResult.element);
-      highlightChatGPTMessageElement(locateResult.element);
-      return true;
-    }
-    direction = 1;
-  }
 
   while (attempts < maxAttempts) {
     const metrics = getChatGPTScrollMetrics(container);
@@ -474,7 +496,7 @@ async function progressiveScrollToNode(node: ChatGPTTimelineNode): Promise<boole
     if (await searchStep(direction)) return true;
   }
 
-  console.debug('[ChatGPT Voyager] 时间轴渐进定位完成', {
+  console.debug('[ChatGPT Ether Timeline] 时间轴渐进定位完成', {
     success: false,
     attempts,
     container: container.debug,
@@ -488,34 +510,37 @@ function readTimelineNodes(): ChatGPTTimelineNode[] {
   const capturedNodes = getCapturedChatGPTTimelineNodes();
   if (capturedNodes.length > 0) {
     reconcileDomMessageIds(capturedNodes);
-    console.debug('[ChatGPT Voyager] 时间轴使用捕获数据', {
+    console.debug('[ChatGPT Ether Timeline] 时间轴使用捕获数据', {
       total: capturedNodes.length,
       user: capturedNodes.filter((node) => node.role === 'user').length,
       assistant: capturedNodes.filter((node) => node.role === 'assistant').length,
       hasConversationData: true,
     });
-    return capturedNodes.map((node, index) => ({ ...node, index: index + 1 }));
+    return withRoleIndices(capturedNodes.map((node, index) => ({ ...node, index: index + 1 })));
   }
 
   const messageNodes = chatgptAdapter.getMessageNodes();
   const userCount = messageNodes.filter((node) => node.role === 'user').length;
   const assistantCount = messageNodes.filter((node) => node.role === 'assistant').length;
-  console.debug('[ChatGPT Voyager] 时间轴扫描完成', {
+  console.debug('[ChatGPT Ether Timeline] 时间轴扫描完成', {
     total: messageNodes.length,
     user: userCount,
     assistant: assistantCount,
   });
 
-  return messageNodes.map((node, index) => ({
+  return withRoleIndices(messageNodes.map((node, index) => ({
     index: index + 1,
+    roleIndex: (node as { roleIndex?: number }).roleIndex,
+    domIndexGlobal: (node as { domIndexGlobal?: number }).domIndexGlobal,
     role: node.role,
     summary: summarize(node.snippet),
+    snippet: node.snippet,
     turnId: (node as { turnId?: string }).turnId,
     messageAnchor: node.anchor,
     messageId: (node as { messageId?: string }).messageId,
     fingerprint: (node as { fingerprint?: string }).fingerprint,
     source: 'dom',
-  }));
+  })));
 }
 
 function formatMessageTimestamp(value: number): string | null {
@@ -586,30 +611,31 @@ function readSearchCorpus(): ChatGPTTimelineSearchResult[] {
     byKey.set(key, { ...node, resultIndex });
   };
 
-  for (const node of getCapturedChatGPTTimelineNodes()) {
+  const capturedTimelineNodes = withRoleIndices(getCapturedChatGPTTimelineNodes());
+  reconcileDomMessageIds(capturedTimelineNodes);
+  for (const node of capturedTimelineNodes) {
     addResult({
       ...node,
+      snippet: node.snippet || node.summary,
       searchText: normalizeSearchText(node.searchText || node.summary),
     });
   }
 
-  const domNodes = chatgptAdapter.getMessageNodes();
-  domNodes.forEach((ref, index) => {
-    const extended = ref as typeof ref & {
-      turnId?: string;
-      messageId?: string;
-      fingerprint?: string;
-    };
-    const searchText = normalizeSearchText(ref.element.textContent || ref.snippet);
+  const registry = buildChatGPTMessageRegistry(capturedTimelineNodes);
+  registry.forEach((entry) => {
+    const searchText = normalizeSearchText(entry.normalizedText || entry.snippet);
     if (!searchText) return;
     addResult({
-      index: index + 1,
-      role: ref.role,
+      index: entry.domIndexGlobal,
+      domIndexGlobal: entry.domIndexGlobal,
+      roleIndex: entry.roleIndex,
+      role: entry.role,
       summary: summarize(searchText),
-      turnId: extended.turnId,
-      messageAnchor: ref.anchor,
-      messageId: extended.messageId,
-      fingerprint: extended.fingerprint,
+      snippet: entry.snippet,
+      turnId: entry.turnId,
+      messageAnchor: entry.anchor,
+      messageId: entry.messageId,
+      fingerprint: entry.fingerprint,
       source: 'dom',
       searchText,
     });
@@ -621,7 +647,7 @@ function readSearchCorpus(): ChatGPTTimelineSearchResult[] {
   }));
   performanceLog('搜索索引构建耗时', startedAt, {
     count: results.length,
-    captured: getCapturedChatGPTTimelineNodes().length,
+    captured: capturedTimelineNodes.length,
   });
   return results;
 }
@@ -869,11 +895,15 @@ function injectStyles(): void {
       padding: 0;
       transition: background 120ms ease, transform 120ms ease, width 120ms ease;
     }
+    .cg-voyager-timeline-marker-user {
+      background: rgba(37, 99, 235, 0.66);
+    }
     .cg-voyager-timeline-marker-assistant {
       width: 14px;
       height: 3px;
       min-height: 3px;
       border-radius: 999px;
+      background: rgba(20, 184, 166, 0.64);
     }
     .cg-voyager-timeline-marker:hover,
     .cg-voyager-timeline-marker-active {
@@ -987,6 +1017,12 @@ function injectStyles(): void {
       padding: 7px 8px;
       text-align: left;
     }
+    .cg-voyager-timeline-node-user {
+      border-left-color: rgba(37, 99, 235, 0.24);
+    }
+    .cg-voyager-timeline-node-assistant {
+      border-left-color: rgba(20, 184, 166, 0.22);
+    }
     .cg-voyager-timeline-node:hover,
     .cg-voyager-timeline-node-active {
       border-left-color: #2563eb;
@@ -1005,7 +1041,21 @@ function injectStyles(): void {
       font-weight: 700;
     }
     .cg-voyager-timeline-node-role {
-      color: #6b7280;
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1.35;
+      padding: 1px 6px;
+    }
+    .cg-voyager-timeline-node-role-user {
+      background: rgba(37, 99, 235, 0.1);
+      color: #1d4ed8;
+    }
+    .cg-voyager-timeline-node-role-assistant {
+      background: rgba(20, 184, 166, 0.12);
+      color: #0f766e;
     }
     .cg-voyager-timeline-star {
       border: 0;
@@ -1082,8 +1132,11 @@ function injectStyles(): void {
     .cg-voyager-timeline-root.cg-voyager-timeline-dark .cg-voyager-timeline-marker {
       background: rgba(148, 163, 184, 0.7);
     }
+    .cg-voyager-timeline-root.cg-voyager-timeline-dark .cg-voyager-timeline-marker-user {
+      background: rgba(96, 165, 250, 0.82);
+    }
     .cg-voyager-timeline-root.cg-voyager-timeline-dark .cg-voyager-timeline-marker-assistant {
-      background: rgba(100, 116, 139, 0.82);
+      background: rgba(45, 212, 191, 0.78);
     }
     .cg-voyager-timeline-root.cg-voyager-timeline-dark .cg-voyager-timeline-marker:hover,
     .cg-voyager-timeline-root.cg-voyager-timeline-dark .cg-voyager-timeline-marker-active {
@@ -1116,6 +1169,12 @@ function injectStyles(): void {
     .cg-voyager-timeline-root.cg-voyager-timeline-dark .cg-voyager-timeline-node {
       color: #e5e7eb;
     }
+    .cg-voyager-timeline-root.cg-voyager-timeline-dark .cg-voyager-timeline-node-user {
+      border-left-color: rgba(96, 165, 250, 0.3);
+    }
+    .cg-voyager-timeline-root.cg-voyager-timeline-dark .cg-voyager-timeline-node-assistant {
+      border-left-color: rgba(45, 212, 191, 0.28);
+    }
     .cg-voyager-timeline-root.cg-voyager-timeline-dark .cg-voyager-timeline-node:hover,
     .cg-voyager-timeline-root.cg-voyager-timeline-dark .cg-voyager-timeline-node-active {
       border-left-color: #60a5fa;
@@ -1128,9 +1187,16 @@ function injectStyles(): void {
       color: #cbd5e1;
     }
     .cg-voyager-timeline-root.cg-voyager-timeline-dark .cg-voyager-timeline-status,
-    .cg-voyager-timeline-root.cg-voyager-timeline-dark .cg-voyager-timeline-hint,
-    .cg-voyager-timeline-root.cg-voyager-timeline-dark .cg-voyager-timeline-node-role {
+    .cg-voyager-timeline-root.cg-voyager-timeline-dark .cg-voyager-timeline-hint {
       color: #94a3b8;
+    }
+    .cg-voyager-timeline-root.cg-voyager-timeline-dark .cg-voyager-timeline-node-role-user {
+      background: rgba(96, 165, 250, 0.16);
+      color: #93c5fd;
+    }
+    .cg-voyager-timeline-root.cg-voyager-timeline-dark .cg-voyager-timeline-node-role-assistant {
+      background: rgba(45, 212, 191, 0.14);
+      color: #5eead4;
     }
     .cg-voyager-timeline-root.cg-voyager-timeline-dark .cg-voyager-timeline-star {
       color: #94a3b8;
@@ -1196,6 +1262,7 @@ function renderList(): void {
       const item = document.createElement('div');
       item.className = [
         'cg-voyager-timeline-node',
+        `cg-voyager-timeline-node-${result.role}`,
         result.messageAnchor === activeAnchor ? 'cg-voyager-timeline-node-active' : '',
       ]
         .filter(Boolean)
@@ -1217,7 +1284,7 @@ function renderList(): void {
       index.textContent = `#${result.resultIndex}`;
 
       const role = document.createElement('span');
-      role.className = 'cg-voyager-timeline-node-role';
+      role.className = `cg-voyager-timeline-node-role cg-voyager-timeline-node-role-${result.role}`;
       role.textContent = searchRoleLabel(result.role);
 
       const summary = document.createElement('p');
@@ -1264,6 +1331,7 @@ function renderList(): void {
     const item = document.createElement('div');
     item.className = [
       'cg-voyager-timeline-node',
+      `cg-voyager-timeline-node-${node.role}`,
       node.messageAnchor === activeAnchor ? 'cg-voyager-timeline-node-active' : '',
     ]
       .filter(Boolean)
@@ -1285,7 +1353,7 @@ function renderList(): void {
     index.textContent = `#${node.index}`;
 
     const role = document.createElement('span');
-    role.className = 'cg-voyager-timeline-node-role';
+    role.className = `cg-voyager-timeline-node-role cg-voyager-timeline-node-role-${node.role}`;
     role.textContent = roleLabel(node.role);
 
     const summary = document.createElement('p');
@@ -1326,7 +1394,8 @@ async function handleNodeClick(node: ChatGPTTimelineNode): Promise<void> {
   renderList();
   if (statusEl) statusEl.textContent = '正在定位...';
 
-  const scrolled = await progressiveScrollToNode(node);
+  const target = resolveCanonicalTimelineNode(node);
+  const scrolled = (await tryDirectLocateTimelineNode(target)) || (await progressiveScrollToNode(target));
   if (!scrolled && statusEl) {
     locatingAnchor = null;
     locatingText = '正在定位...';
@@ -1378,10 +1447,12 @@ export async function scrollChatGPTTimelineToMessage(
       messageAnchor: target.messageAnchor || (target.turnId ? `chatgpt-turn:${target.turnId}` : ''),
       messageId: target.messageId,
       fingerprint: target.fingerprint,
+      roleIndex: target.roleIndex,
+      domIndexGlobal: target.domIndexGlobal,
       source: 'captured',
     } satisfies ChatGPTTimelineNode);
 
-  const scrolled = await progressiveScrollToNode(node);
+  const scrolled = (await tryDirectLocateTimelineNode(node)) || (await progressiveScrollToNode(node));
   if (scrolled) {
     activeAnchor = node.messageAnchor;
     locatingAnchor = null;
