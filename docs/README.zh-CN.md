@@ -1,26 +1,24 @@
-\# ChatGPT Ether 文档
+# ChatGPT以太 文档
 
+[English](./README.md)
 
+ChatGPT以太 是一个个人自用的 Chrome 扩展，用于管理 ChatGPT 对话和提示词。
 
-本目录下的文档正在为 ChatGPT Ether / ChatGPT以太 重新整理。
+当前范围：
 
+- 提示词库
+- 对话文件夹与对话索引
+- 时间轴与当前对话搜索
+- 收藏消息元数据
+- Google Drive 安全数据手动同步
+- 诊断信息
 
+隐私边界：
 
-部分现有指南页面可能仍在描述原 Gemini Voyager 项目，或描述当前 ChatGPT 专用扩展中尚未包含的功能。在这些文档被替换前，请将其视为历史实现背景，而不是当前产品说明。
+- 不读取 cookies。
+- 不读取浏览历史。
+- 不申请 `all_urls`。
+- 不同步完整聊天正文。
+- 不上传附件、图片、截图或原始对话 JSON。
 
-
-
-如需查看当前公开项目信息，请先阅读：
-
-
-
-\* \[README](../README.zh-CN.md)
-
-\* \[CREDITS](../CREDITS.zh-CN.md)
-
-\* \[PRIVACY](../PRIVACY.zh-CN.md)
-
-\* \[NOTICE](../NOTICE.zh-CN.md)
-
-
-
+项目级署名、声明和隐私说明请查看仓库根目录的 `CREDITS`、`NOTICE` 和 `PRIVACY` 文件。
