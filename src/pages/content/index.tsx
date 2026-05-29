@@ -29,6 +29,7 @@ import { startDraftSave } from './draftSave/index';
 import { startEdgeFinalVersionNotice } from './edgeFinalVersionNotice';
 import { startEditInputWidthAdjuster } from './editInputWidth/index';
 import { startExportButton } from './export/index';
+import { startChatGPTFloatingQuickAccess } from './floatingQuickAccess';
 import { startAIStudioFolderManager } from './folder/aistudio';
 import { startFolderManager } from './folder/index';
 import { startFolderItemFontSizeAdjuster } from './folderItemFontSize/index';
@@ -291,6 +292,7 @@ function initializeChatGPTStatusOnly(): void {
   registerChatGPTStatusListener();
   startChatGPTConversationCapture();
   startChatGPTTimelineFloatingPanel();
+  startChatGPTFloatingQuickAccess();
   if (!chatgptTimeContextCleanup) {
     chatgptTimeContextCleanup = startChatGPTTimeContextInjection({
       getTimelineNodes: getCapturedChatGPTTimelineNodes,

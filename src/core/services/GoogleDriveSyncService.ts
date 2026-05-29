@@ -28,7 +28,6 @@ import type {
   TimelineHierarchyExportPayload,
 } from '@/core/types/sync';
 import { DEFAULT_SYNC_STATE } from '@/core/types/sync';
-import { isBrave } from '@/core/utils/browser';
 import { hashString } from '@/core/utils/hash';
 import { EXTENSION_VERSION } from '@/core/utils/version';
 
@@ -48,6 +47,19 @@ const DRIVE_UPLOAD_BASE = 'https://www.googleapis.com/upload/drive/v3';
 const MAX_RETRIES = 3;
 const INITIAL_RETRY_DELAY_MS = 1000;
 const IDENTITY_TOKEN_TTL_SECONDS = 55 * 60;
+const LEGACY_WEB_AUTH_FLOW_ENABLED = false;
+const GOOGLE_AUTH_FAILED_MESSAGE =
+  'Google 授权失败。请确认 Chrome 已登录 Google 账号，并在 chrome://extensions 刷新插件后重试。';
+const CHROME_NATIVE_AUTH_FAILED_100_MESSAGE =
+  'Chrome 原生授权失败（-100）。请刷新插件、重新打开页面后重试。';
+const CHATGPT_CLOUD_NEWER_UPLOAD_BLOCKED_MESSAGE =
+  '云端数据可能比本机更新。请先从云端拉取并合并，确认无误后再上传。';
+
+type AppDataFileMetadata = {
+  id: string;
+  name: string;
+  modifiedTime?: string;
+};
 
 function getStringValue(value: unknown): string | null {
   return typeof value === 'string' ? value : null;
@@ -76,6 +88,7 @@ export class GoogleDriveSyncService {
   private accessToken: string | null = null;
   private tokenExpiry: number = 0;
   private stateLoadPromise: Promise<void> | null = null;
+  private lastAuthError: string | null = null;
 
   constructor() {
     this.stateLoadPromise = this.loadState();
@@ -111,7 +124,7 @@ export class GoogleDriveSyncService {
           this.updateState({ isAuthenticated: false, isSyncing: false });
           return false;
         }
-        throw new Error('Failed to obtain auth token');
+        throw new Error(this.getAuthFailureMessage());
       }
       this.updateState({ isAuthenticated: true, isSyncing: false });
       return true;
@@ -163,10 +176,16 @@ export class GoogleDriveSyncService {
           this.updateState({ isSyncing: false, isAuthenticated: false });
           return false;
         }
-        throw new Error('Not authenticated');
+        throw new Error(this.getAuthFailureMessage());
       }
 
-      const fileId = await this.ensureAppDataFileId(token, CHATGPT_SYNC_FILE_NAME);
+      const safety = await this.checkChatGPTUploadSafety(token);
+      if (!safety.allowed) {
+        throw new Error(CHATGPT_CLOUD_NEWER_UPLOAD_BLOCKED_MESSAGE);
+      }
+
+      const fileId =
+        safety.fileId || (await this.ensureAppDataFileId(token, CHATGPT_SYNC_FILE_NAME));
       await this.uploadFileWithRetry(token, fileId, payload);
       const syncTime = Date.now();
       this.updateState({
@@ -194,7 +213,7 @@ export class GoogleDriveSyncService {
           this.updateState({ isSyncing: false, isAuthenticated: false });
           return null;
         }
-        throw new Error('Not authenticated');
+        throw new Error(this.getAuthFailureMessage());
       }
 
       const fileId = await this.findAppDataFile(token, CHATGPT_SYNC_FILE_NAME);
@@ -299,7 +318,7 @@ export class GoogleDriveSyncService {
           this.updateState({ isSyncing: false, isAuthenticated: false });
           return false;
         }
-        throw new Error('Not authenticated');
+        throw new Error(this.getAuthFailureMessage());
       }
 
       const now = new Date();
@@ -478,7 +497,7 @@ export class GoogleDriveSyncService {
           this.updateState({ isSyncing: false, isAuthenticated: false });
           return null;
         }
-        throw new Error('Not authenticated');
+        throw new Error(this.getAuthFailureMessage());
       }
 
       // Download folders file (platform-specific)
@@ -611,6 +630,17 @@ export class GoogleDriveSyncService {
     );
   }
 
+  private normalizeAuthErrorMessage(message: string): string {
+    if (message.includes('Connection failed (-100)') || message.includes('(-100)')) {
+      return CHROME_NATIVE_AUTH_FAILED_100_MESSAGE;
+    }
+    return GOOGLE_AUTH_FAILED_MESSAGE;
+  }
+
+  private getAuthFailureMessage(): string {
+    return this.lastAuthError || GOOGLE_AUTH_FAILED_MESSAGE;
+  }
+
   private extractIdentityToken(result: unknown): string | null {
     if (typeof result === 'string' && result.trim()) {
       return result;
@@ -656,6 +686,7 @@ export class GoogleDriveSyncService {
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       const userDenied = this.isUserDeniedAuthError(message);
+      this.lastAuthError = this.normalizeAuthErrorMessage(message);
       if (!userDenied) {
         console.warn('[GoogleDriveSyncService] identity.getAuthToken failed:', error);
       }
@@ -744,6 +775,8 @@ export class GoogleDriveSyncService {
   }
 
   private async getAuthToken(interactive: boolean): Promise<string | null> {
+    this.lastAuthError = null;
+
     if (this.accessToken && this.tokenExpiry > Date.now()) {
       return this.accessToken;
     }
@@ -758,10 +791,7 @@ export class GoogleDriveSyncService {
       return this.accessToken;
     }
 
-    // Brave supports the identity API but chrome.identity.getAuthToken shows
-    // an "Access blocked" error popup before failing, causing user confusion.
-    // Skip it entirely on Brave and go directly to launchWebAuthFlow.
-    const supportsIdentityApi = !!chrome.identity?.getAuthToken && !isBrave();
+    const supportsIdentityApi = !!chrome.identity?.getAuthToken;
     if (supportsIdentityApi) {
       const identityResult = await this.getTokenFromIdentity(interactive);
       if (identityResult.token) {
@@ -772,18 +802,24 @@ export class GoogleDriveSyncService {
         return null;
       }
 
-      // Fallback: always try launchWebAuthFlow when getAuthToken fails.
-      // Some browsers (Arc) or Chrome versions may show an OAuth error page
-      // during getAuthToken, which looks like "user denied" when dismissed,
-      // but launchWebAuthFlow with a registered redirect URI can still succeed.
-      return this.getTokenFromLegacyWebAuthFlow();
+      console.warn(
+        '[GoogleDriveSyncService] Native identity auth failed; legacy web auth fallback is disabled for Chrome-extension OAuth clients.',
+      );
+      return null;
     }
 
     if (!interactive) {
       return null;
     }
 
-    return this.getTokenFromLegacyWebAuthFlow();
+    this.lastAuthError = GOOGLE_AUTH_FAILED_MESSAGE;
+    if (LEGACY_WEB_AUTH_FLOW_ENABLED) {
+      return this.getTokenFromLegacyWebAuthFlow();
+    }
+    console.warn(
+      '[GoogleDriveSyncService] chrome.identity.getAuthToken is unavailable; legacy web auth fallback is disabled.',
+    );
+    return null;
   }
 
   private async findFile(token: string, fileName: string): Promise<string | null> {
@@ -798,14 +834,74 @@ export class GoogleDriveSyncService {
   }
 
   private async findAppDataFile(token: string, fileName: string): Promise<string | null> {
+    const file = await this.findAppDataFileMetadata(token, fileName);
+    return file?.id || null;
+  }
+
+  private async findAppDataFileMetadata(
+    token: string,
+    fileName: string,
+  ): Promise<AppDataFileMetadata | null> {
     const query = encodeURIComponent(`name='${fileName}' and trashed=false`);
-    const url = `${DRIVE_API_BASE}/files?q=${query}&spaces=appDataFolder&fields=files(id,name)`;
+    const url = `${DRIVE_API_BASE}/files?q=${query}&spaces=appDataFolder&fields=files(id,name,modifiedTime)`;
     const response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
     if (!response.ok) {
       throw new Error(`Failed to search appDataFolder files: ${response.status}`);
     }
     const result = await response.json();
-    return result.files?.[0]?.id || null;
+    return result.files?.[0] || null;
+  }
+
+  private getChatGPTLastKnownCloudTime(): number {
+    return Math.max(this.state.lastSyncTimeChatGPT || 0, this.state.lastUploadTimeChatGPT || 0);
+  }
+
+  private async readChatGPTCloudExportedAt(
+    token: string,
+    fileId: string,
+  ): Promise<number | null> {
+    try {
+      const payload = await this.downloadFileWithRetry<Partial<ChatGPTSyncPayload>>(token, fileId);
+      const exportedAt = typeof payload?.exportedAt === 'string' ? Date.parse(payload.exportedAt) : 0;
+      return Number.isFinite(exportedAt) && exportedAt > 0 ? exportedAt : null;
+    } catch (error) {
+      console.warn('[GoogleDriveSyncService] Failed to read ChatGPT cloud exportedAt:', error);
+      return null;
+    }
+  }
+
+  private async checkChatGPTUploadSafety(
+    token: string,
+  ): Promise<{ allowed: boolean; fileId: string | null }> {
+    const cloudFile = await this.findAppDataFileMetadata(token, CHATGPT_SYNC_FILE_NAME);
+    if (!cloudFile?.id) {
+      return { allowed: true, fileId: null };
+    }
+
+    const lastKnownCloudTime = this.getChatGPTLastKnownCloudTime();
+    if (!lastKnownCloudTime) {
+      console.warn(
+        '[GoogleDriveSyncService] ChatGPT upload blocked: cloud file exists but this device has no prior sync/upload timestamp.',
+      );
+      return { allowed: false, fileId: cloudFile.id };
+    }
+
+    const modifiedTime = cloudFile.modifiedTime ? Date.parse(cloudFile.modifiedTime) : 0;
+    const exportedAt = await this.readChatGPTCloudExportedAt(token, cloudFile.id);
+    const cloudTime = Math.max(
+      Number.isFinite(modifiedTime) ? modifiedTime : 0,
+      exportedAt || 0,
+    );
+
+    if (cloudTime > lastKnownCloudTime) {
+      console.warn('[GoogleDriveSyncService] ChatGPT upload blocked: cloud data is newer.', {
+        cloudTime,
+        lastKnownCloudTime,
+      });
+      return { allowed: false, fileId: cloudFile.id };
+    }
+
+    return { allowed: true, fileId: cloudFile.id };
   }
 
   private async ensureAppDataFileId(token: string, fileName: string): Promise<string> {
