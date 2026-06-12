@@ -2339,6 +2339,18 @@
     "message": "移动对话失败。",
     "description": "Popup UI: foldersConversationMoveFailed"
   },
+  "foldersConversationDeleteConfirm": {
+    "message": "从插件的对话索引中删除「{name}」？这不会删除 ChatGPT 中的原始对话。",
+    "description": "Popup UI: foldersConversationDeleteConfirm"
+  },
+  "foldersConversationDeleted": {
+    "message": "已从对话索引中删除。",
+    "description": "Popup UI: foldersConversationDeleted"
+  },
+  "foldersConversationDeleteFailed": {
+    "message": "删除已保存对话失败。",
+    "description": "Popup UI: foldersConversationDeleteFailed"
+  },
   "foldersRenamed": {
     "message": "文件夹已重命名。",
     "description": "Popup UI: foldersRenamed"

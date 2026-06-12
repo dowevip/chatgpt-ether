@@ -4,6 +4,7 @@ import browser from 'webextension-polyfill';
 
 import {
   createChatGPTFolder,
+  deleteChatGPTConversation,
   deleteChatGPTFolder,
   listChatGPTConversations,
   listChatGPTFolders,
@@ -60,7 +61,11 @@ function matchesConversationQuery(conversation: ChatGPTConversationIndex, query:
     .includes(normalized);
 }
 
-function folderMatchesQuery(folder: ChatGPTFolder, folders: ChatGPTFolder[], query: string): boolean {
+function folderMatchesQuery(
+  folder: ChatGPTFolder,
+  folders: ChatGPTFolder[],
+  query: string,
+): boolean {
   const normalized = query.trim().toLowerCase();
   if (!normalized) return true;
 
@@ -207,6 +212,21 @@ export function FoldersPanel({ currentStatus, onBack }: FoldersPanelProps) {
       setMessage(t('foldersConversationMoved'));
     } catch {
       setMessage(t('foldersConversationMoveFailed'));
+    }
+  };
+
+  const handleDeleteConversation = async (conversation: ChatGPTConversationIndex) => {
+    if (
+      !window.confirm(t('foldersConversationDeleteConfirm').replace('{name}', conversation.title))
+    ) {
+      return;
+    }
+
+    try {
+      setConversations(await deleteChatGPTConversation(conversation.conversationId));
+      setMessage(t('foldersConversationDeleted'));
+    } catch {
+      setMessage(t('foldersConversationDeleteFailed'));
     }
   };
 
@@ -482,14 +502,25 @@ export function FoldersPanel({ currentStatus, onBack }: FoldersPanelProps) {
                   key={conversation.conversationId}
                   className="border-border rounded-md border p-3"
                 >
-                  <button
-                    type="button"
-                    onClick={() => void handleOpenConversation(conversation.url)}
-                    className="text-primary w-full truncate text-left text-sm font-semibold"
-                    title={conversation.title}
-                  >
-                    {conversation.title}
-                  </button>
+                  <div className="flex items-start gap-2">
+                    <button
+                      type="button"
+                      onClick={() => void handleOpenConversation(conversation.url)}
+                      className="text-primary min-w-0 flex-1 truncate text-left text-sm font-semibold"
+                      title={conversation.title}
+                    >
+                      {conversation.title}
+                    </button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-7 shrink-0 px-2 text-xs"
+                      onClick={() => void handleDeleteConversation(conversation)}
+                    >
+                      {t('delete')}
+                    </Button>
+                  </div>
                   <p className="text-muted-foreground mt-1 text-xs">
                     {t('foldersCurrentFolder').replace(
                       '{name}',

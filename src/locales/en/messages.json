@@ -2339,6 +2339,18 @@
     "message": "Failed to move conversation.",
     "description": "Popup UI: foldersConversationMoveFailed"
   },
+  "foldersConversationDeleteConfirm": {
+    "message": "Remove \"{name}\" from the extension's conversation index? This will not delete the original ChatGPT conversation.",
+    "description": "Popup UI: foldersConversationDeleteConfirm"
+  },
+  "foldersConversationDeleted": {
+    "message": "Removed from the conversation index.",
+    "description": "Popup UI: foldersConversationDeleted"
+  },
+  "foldersConversationDeleteFailed": {
+    "message": "Failed to remove the saved conversation.",
+    "description": "Popup UI: foldersConversationDeleteFailed"
+  },
   "foldersRenamed": {
     "message": "Folder renamed.",
     "description": "Popup UI: foldersRenamed"

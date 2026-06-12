@@ -152,6 +152,18 @@ export async function saveCurrentChatGPTConversation(
   return listChatGPTConversations();
 }
 
+export async function deleteChatGPTConversation(
+  conversationId: string,
+): Promise<ChatGPTConversationIndex[]> {
+  const conversations = await listChatGPTConversations();
+  const nextConversations = conversations.filter(
+    (conversation) => conversation.conversationId !== conversationId,
+  );
+
+  await browser.storage.local.set({ [CHATGPT_CONVERSATIONS_STORAGE_KEY]: nextConversations });
+  return listChatGPTConversations();
+}
+
 export async function moveChatGPTConversationToFolder(
   conversationId: string,
   folderId: string | null,

@@ -386,6 +386,14 @@ function injectStyles(): void {
     .cg-voyager-quick-module-link:hover {
       background: rgba(15, 23, 42, 0.1);
     }
+    .cg-voyager-quick-module-delete {
+      background: rgba(220, 38, 38, 0.08);
+      color: #b91c1c;
+      padding: 6px 10px;
+    }
+    .cg-voyager-quick-module-delete:hover {
+      background: rgba(220, 38, 38, 0.14);
+    }
     .cg-voyager-quick-module-empty {
       border: 1px dashed rgba(15, 23, 42, 0.16);
       border-radius: 10px;
@@ -468,6 +476,10 @@ function injectStyles(): void {
       background: rgba(148, 163, 184, 0.12);
       color: #e2e8f0;
     }
+    .cg-voyager-quick-module-dark .cg-voyager-quick-module-delete {
+      background: rgba(248, 113, 113, 0.12);
+      color: #fca5a5;
+    }
     .cg-voyager-quick-access-dark .cg-voyager-quick-access-toast {
       border-color: rgba(148, 163, 184, 0.22);
       background: rgba(20, 24, 31, 0.96);
@@ -523,7 +535,9 @@ function createEl<K extends keyof HTMLElementTagNameMap>(
 }
 
 function normalizeText(value: unknown): string {
-  return String(value || '').replace(/\s+/g, ' ').trim();
+  return String(value || '')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 function shortText(value: unknown, limit: number): string {
@@ -563,7 +577,10 @@ async function readStorageArray<T>(key: string): Promise<T[]> {
   }
 }
 
-function createSearchInput(placeholder: string, onInput: (query: string) => void): HTMLInputElement {
+function createSearchInput(
+  placeholder: string,
+  onInput: (query: string) => void,
+): HTMLInputElement {
   const input = createEl('input', 'cg-voyager-quick-module-search') as HTMLInputElement;
   input.placeholder = placeholder;
   input.addEventListener('input', () => onInput(input.value));
@@ -586,8 +603,9 @@ async function renderPromptVaultPanel(query = ''): Promise<void> {
 
   const toolbar = createEl('div', 'cg-voyager-quick-module-toolbar');
   const list = createEl('div', 'cg-voyager-quick-module-section');
-  const searchInput = createSearchInput('搜索提示词', (nextQuery) =>
-    void renderPromptVaultPanel(nextQuery),
+  const searchInput = createSearchInput(
+    '搜索提示词',
+    (nextQuery) => void renderPromptVaultPanel(nextQuery),
   );
   searchInput.value = query;
   toolbar.append(searchInput);
@@ -597,14 +615,25 @@ async function renderPromptVaultPanel(query = ''): Promise<void> {
   const normalizedQuery = normalizeText(query).toLowerCase();
   const filtered = prompts
     .filter((prompt) => {
-      const haystack = `${prompt.title} ${prompt.content} ${(prompt.tags || []).join(' ')}`.toLowerCase();
+      const haystack =
+        `${prompt.title} ${prompt.content} ${(prompt.tags || []).join(' ')}`.toLowerCase();
       return !normalizedQuery || haystack.includes(normalizedQuery);
     })
-    .sort((left, right) => Number(Boolean(right.favorite)) - Number(Boolean(left.favorite)) || (right.updatedAt || 0) - (left.updatedAt || 0));
+    .sort(
+      (left, right) =>
+        Number(Boolean(right.favorite)) - Number(Boolean(left.favorite)) ||
+        (right.updatedAt || 0) - (left.updatedAt || 0),
+    );
 
   list.textContent = '';
   if (!filtered.length) {
-    list.append(createEl('div', 'cg-voyager-quick-module-empty', prompts.length ? '未找到匹配提示词。' : '暂无提示词。'));
+    list.append(
+      createEl(
+        'div',
+        'cg-voyager-quick-module-empty',
+        prompts.length ? '未找到匹配提示词。' : '暂无提示词。',
+      ),
+    );
     setStatus(`共 ${prompts.length} 条提示词。`);
     return;
   }
@@ -612,7 +641,11 @@ async function renderPromptVaultPanel(query = ''): Promise<void> {
   for (const prompt of filtered) {
     const item = createEl('div', 'cg-voyager-quick-module-item');
     item.append(
-      createEl('div', 'cg-voyager-quick-module-item-title', `${prompt.favorite ? '★ ' : ''}${prompt.title || '未命名提示词'}`),
+      createEl(
+        'div',
+        'cg-voyager-quick-module-item-title',
+        `${prompt.favorite ? '★ ' : ''}${prompt.title || '未命名提示词'}`,
+      ),
       createEl('div', 'cg-voyager-quick-module-item-preview', shortText(prompt.content, 120)),
     );
     if (prompt.tags?.length) {
@@ -650,13 +683,22 @@ async function renderFoldersPanel(): Promise<void> {
     return;
   }
 
-  const sorted = [...conversations].sort((left, right) => (right.lastOpenedAt || right.updatedAt || 0) - (left.lastOpenedAt || left.updatedAt || 0));
+  const sorted = [...conversations].sort(
+    (left, right) =>
+      (right.lastOpenedAt || right.updatedAt || 0) - (left.lastOpenedAt || left.updatedAt || 0),
+  );
   for (const conversation of sorted) {
-    const folderName = conversation.folderId ? folderNameById.get(conversation.folderId) || '未知文件夹' : '未分类';
+    const folderName = conversation.folderId
+      ? folderNameById.get(conversation.folderId) || '未知文件夹'
+      : '未分类';
     const item = createEl('div', 'cg-voyager-quick-module-item');
     item.append(
       createEl('div', 'cg-voyager-quick-module-item-title', conversation.title || '未命名对话'),
-      createEl('div', 'cg-voyager-quick-module-item-meta', `${folderName}${conversation.note ? ` · ${shortText(conversation.note, 48)}` : ''}`),
+      createEl(
+        'div',
+        'cg-voyager-quick-module-item-meta',
+        `${folderName}${conversation.note ? ` · ${shortText(conversation.note, 48)}` : ''}`,
+      ),
     );
     const actions = createEl('div', 'cg-voyager-quick-module-item-actions');
     const openButton = createEl('button', 'cg-voyager-quick-module-link', '打开对话');
@@ -667,7 +709,27 @@ async function renderFoldersPanel(): Promise<void> {
         setStatus('该对话缺少 URL，无法打开。');
       }
     });
-    actions.append(openButton);
+    const deleteButton = createEl('button', 'cg-voyager-quick-module-delete', '删除');
+    deleteButton.addEventListener('click', async () => {
+      const title = conversation.title || '未命名对话';
+      if (
+        !window.confirm(`从插件的对话索引中删除「${title}」？这不会删除 ChatGPT 中的原始对话。`)
+      ) {
+        return;
+      }
+
+      try {
+        const nextConversations = conversations.filter(
+          (item) => item.conversationId !== conversation.conversationId,
+        );
+        await chrome.storage?.local?.set({ [CONVERSATIONS_STORAGE_KEY]: nextConversations });
+        setStatus('已从对话索引中删除。');
+        await renderFoldersPanel();
+      } catch {
+        setStatus('删除已保存对话失败。');
+      }
+    });
+    actions.append(openButton, deleteButton);
     item.append(actions);
     section.append(item);
   }
@@ -716,10 +778,16 @@ async function renderStarredPanel(): Promise<void> {
     return;
   }
 
-  for (const message of messages.sort((left, right) => (right.createdAt || 0) - (left.createdAt || 0))) {
+  for (const message of messages.sort(
+    (left, right) => (right.createdAt || 0) - (left.createdAt || 0),
+  )) {
     const item = createEl('div', 'cg-voyager-quick-module-item');
     item.append(
-      createEl('div', 'cg-voyager-quick-module-item-title', message.conversationTitle || '未命名对话'),
+      createEl(
+        'div',
+        'cg-voyager-quick-module-item-title',
+        message.conversationTitle || '未命名对话',
+      ),
       createEl('div', 'cg-voyager-quick-module-item-preview', shortText(message.snippet, 100)),
       createEl('div', 'cg-voyager-quick-module-item-meta', formatTime(message.createdAt)),
     );
