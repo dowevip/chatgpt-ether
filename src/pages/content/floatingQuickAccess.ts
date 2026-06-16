@@ -37,6 +37,7 @@ type PromptItem = {
   content: string;
   tags?: string[];
   favorite?: boolean;
+  createdAt?: number;
   updatedAt?: number;
 };
 
@@ -80,6 +81,7 @@ let position: FloatingPosition | null = null;
 let panelPosition: FloatingPosition | null = null;
 let panelOpen = false;
 let activePanel: QuickPanelTarget = 'promptVault';
+let editingPromptId: string | null = null;
 let draggedDuringPointer = false;
 let toastTimer: number | null = null;
 
@@ -282,7 +284,9 @@ function injectStyles(): void {
     .cg-voyager-quick-module-tab,
     .cg-voyager-quick-module-close,
     .cg-voyager-quick-module-action,
-    .cg-voyager-quick-module-link {
+    .cg-voyager-quick-module-link,
+    .cg-voyager-quick-module-secondary,
+    .cg-voyager-quick-module-delete {
       border: 0;
       border-radius: 8px;
       cursor: pointer;
@@ -324,6 +328,40 @@ function injectStyles(): void {
       color: #202124;
       outline: none;
       padding: 0 10px;
+      font-size: 12px;
+    }
+    .cg-voyager-quick-module-form {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      border: 1px solid rgba(5, 150, 105, 0.16);
+      border-radius: 10px;
+      background: rgba(240, 253, 250, 0.68);
+      padding: 10px;
+      margin-bottom: 10px;
+    }
+    .cg-voyager-quick-module-field,
+    .cg-voyager-quick-module-textarea {
+      width: 100%;
+      border: 1px solid rgba(15, 23, 42, 0.14);
+      border-radius: 9px;
+      background: #fff;
+      color: #202124;
+      outline: none;
+      padding: 8px 10px;
+      font-size: 12px;
+      box-sizing: border-box;
+    }
+    .cg-voyager-quick-module-textarea {
+      min-height: 110px;
+      resize: vertical;
+      line-height: 1.45;
+    }
+    .cg-voyager-quick-module-check {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: #475569;
       font-size: 12px;
     }
     .cg-voyager-quick-module-body {
@@ -384,6 +422,14 @@ function injectStyles(): void {
       padding: 6px 10px;
     }
     .cg-voyager-quick-module-link:hover {
+      background: rgba(15, 23, 42, 0.1);
+    }
+    .cg-voyager-quick-module-secondary {
+      background: rgba(15, 23, 42, 0.06);
+      color: #334155;
+      padding: 6px 10px;
+    }
+    .cg-voyager-quick-module-secondary:hover {
       background: rgba(15, 23, 42, 0.1);
     }
     .cg-voyager-quick-module-delete {
@@ -458,6 +504,19 @@ function injectStyles(): void {
       background: rgba(15, 23, 42, 0.95);
       color: #f8fafc;
     }
+    .cg-voyager-quick-module-dark .cg-voyager-quick-module-form {
+      border-color: rgba(45, 212, 191, 0.18);
+      background: rgba(15, 23, 42, 0.78);
+    }
+    .cg-voyager-quick-module-dark .cg-voyager-quick-module-field,
+    .cg-voyager-quick-module-dark .cg-voyager-quick-module-textarea {
+      border-color: rgba(148, 163, 184, 0.24);
+      background: rgba(15, 23, 42, 0.95);
+      color: #f8fafc;
+    }
+    .cg-voyager-quick-module-dark .cg-voyager-quick-module-check {
+      color: #cbd5e1;
+    }
     .cg-voyager-quick-module-dark .cg-voyager-quick-module-item {
       border-color: rgba(148, 163, 184, 0.18);
       background: rgba(15, 23, 42, 0.78);
@@ -472,6 +531,7 @@ function injectStyles(): void {
       color: #94a3b8;
     }
     .cg-voyager-quick-module-dark .cg-voyager-quick-module-link,
+    .cg-voyager-quick-module-dark .cg-voyager-quick-module-secondary,
     .cg-voyager-quick-module-dark .cg-voyager-quick-module-close {
       background: rgba(148, 163, 184, 0.12);
       color: #e2e8f0;
@@ -545,6 +605,32 @@ function shortText(value: unknown, limit: number): string {
   return text.length > limit ? `${text.slice(0, Math.max(0, limit - 1))}…` : text;
 }
 
+function normalizePromptTags(tagsText: string): string[] {
+  return Array.from(
+    new Set(
+      tagsText
+        .split(',')
+        .map((tag) => tag.trim())
+        .filter(Boolean)
+        .map((tag) => tag.slice(0, 40)),
+    ),
+  );
+}
+
+function sortPromptItems(prompts: PromptItem[]): PromptItem[] {
+  return [...prompts].sort(
+    (left, right) =>
+      Number(Boolean(right.favorite)) - Number(Boolean(left.favorite)) ||
+      (right.updatedAt || 0) - (left.updatedAt || 0),
+  );
+}
+
+async function writePromptItems(prompts: PromptItem[]): Promise<PromptItem[]> {
+  const nextPrompts = sortPromptItems(prompts);
+  await chrome.storage?.local?.set({ [PROMPTS_STORAGE_KEY]: nextPrompts });
+  return nextPrompts;
+}
+
 function formatTime(timestamp?: number): string {
   if (!timestamp) return '';
   try {
@@ -602,6 +688,7 @@ async function renderPromptVaultPanel(query = ''): Promise<void> {
   if (!panelBodyEl) return;
 
   const toolbar = createEl('div', 'cg-voyager-quick-module-toolbar');
+  const form = createEl('div', 'cg-voyager-quick-module-form');
   const list = createEl('div', 'cg-voyager-quick-module-section');
   const searchInput = createSearchInput(
     '搜索提示词',
@@ -609,9 +696,73 @@ async function renderPromptVaultPanel(query = ''): Promise<void> {
   );
   searchInput.value = query;
   toolbar.append(searchInput);
-  panelBodyEl.append(toolbar, list);
 
   const prompts = await readStorageArray<PromptItem>(PROMPTS_STORAGE_KEY);
+  const editingPrompt = prompts.find((prompt) => prompt.id === editingPromptId) || null;
+
+  if (editingPrompt) {
+    const titleInput = createEl('input', 'cg-voyager-quick-module-field') as HTMLInputElement;
+    titleInput.value = editingPrompt.title || '';
+    titleInput.placeholder = '标题';
+
+    const contentInput = createEl(
+      'textarea',
+      'cg-voyager-quick-module-textarea',
+    ) as HTMLTextAreaElement;
+    contentInput.value = editingPrompt.content || '';
+    contentInput.placeholder = '提示词内容';
+
+    const tagsInput = createEl('input', 'cg-voyager-quick-module-field') as HTMLInputElement;
+    tagsInput.value = (editingPrompt.tags || []).join(', ');
+    tagsInput.placeholder = '标签，用英文逗号分隔';
+
+    const favoriteLabel = createEl('label', 'cg-voyager-quick-module-check');
+    const favoriteInput = createEl('input') as HTMLInputElement;
+    favoriteInput.type = 'checkbox';
+    favoriteInput.checked = Boolean(editingPrompt.favorite);
+    favoriteLabel.append(favoriteInput, document.createTextNode('收藏 / 置顶'));
+
+    const formActions = createEl('div', 'cg-voyager-quick-module-item-actions');
+    const saveButton = createEl('button', 'cg-voyager-quick-module-action', '保存修改');
+    saveButton.addEventListener('click', async () => {
+      if (!contentInput.value.trim()) {
+        setStatus('提示词内容不能为空。');
+        return;
+      }
+
+      const timestamp = Date.now();
+      await writePromptItems(
+        prompts.map((prompt) =>
+          prompt.id === editingPrompt.id
+            ? {
+                ...prompt,
+                title: titleInput.value.trim().slice(0, 120) || '未命名提示词',
+                content: contentInput.value,
+                tags: normalizePromptTags(tagsInput.value),
+                favorite: favoriteInput.checked,
+                updatedAt: timestamp,
+              }
+            : prompt,
+        ),
+      );
+      editingPromptId = null;
+      setStatus('提示词已修改。');
+      await renderPromptVaultPanel(query);
+    });
+
+    const cancelButton = createEl('button', 'cg-voyager-quick-module-secondary', '取消');
+    cancelButton.addEventListener('click', () => {
+      editingPromptId = null;
+      void renderPromptVaultPanel(query);
+    });
+
+    formActions.append(saveButton, cancelButton);
+    form.append(titleInput, contentInput, tagsInput, favoriteLabel, formActions);
+  } else {
+    form.style.display = 'none';
+  }
+
+  panelBodyEl.append(toolbar, form, list);
   const normalizedQuery = normalizeText(query).toLowerCase();
   const filtered = prompts
     .filter((prompt) => {
@@ -658,7 +809,26 @@ async function renderPromptVaultPanel(query = ''): Promise<void> {
       setStatus(result.ok ? '已插入到 ChatGPT 输入框。' : result.error || '插入失败。');
       if (!result.ok) showTemporaryMessage(result.error || '插入失败。');
     });
-    actions.append(insertButton);
+    const editButton = createEl('button', 'cg-voyager-quick-module-secondary', '修改');
+    editButton.addEventListener('click', () => {
+      editingPromptId = prompt.id;
+      void renderPromptVaultPanel(query);
+    });
+    const deleteButton = createEl('button', 'cg-voyager-quick-module-delete', '删除');
+    deleteButton.addEventListener('click', async () => {
+      const title = prompt.title || '未命名提示词';
+      if (!window.confirm(`删除提示词「${title}」？`)) return;
+
+      try {
+        await writePromptItems(prompts.filter((item) => item.id !== prompt.id));
+        if (editingPromptId === prompt.id) editingPromptId = null;
+        setStatus('提示词已删除。');
+        await renderPromptVaultPanel(query);
+      } catch {
+        setStatus('删除提示词失败。');
+      }
+    });
+    actions.append(insertButton, editButton, deleteButton);
     item.append(actions);
     list.append(item);
   }
@@ -678,7 +848,7 @@ async function renderFoldersPanel(): Promise<void> {
   panelBodyEl.append(section);
 
   if (!conversations.length) {
-    appendEmpty('暂无已保存对话。请先在弹窗的对话文件夹中保存当前对话。');
+    appendEmpty('暂无已保存对话。请先在弹窗的对话管理中保存当前对话。');
     setStatus(`文件夹 ${folders.length} 个，对话 0 个。`);
     return;
   }
@@ -853,7 +1023,7 @@ function createPanel(): void {
   const tabs = createEl('div', 'cg-voyager-quick-module-tabs');
   tabs.append(
     createTab('提示词库', 'promptVault'),
-    createTab('对话文件夹', 'folders'),
+    createTab('对话管理', 'folders'),
     createTab('收藏消息', 'starred'),
   );
   const closeButton = createEl('button', 'cg-voyager-quick-module-close', '×');

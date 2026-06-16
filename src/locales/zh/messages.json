@@ -2152,7 +2152,7 @@
     "description": "Popup UI: cgEntryPromptVault"
   },
   "cgEntryFolders": {
-    "message": "对话文件夹",
+    "message": "对话管理",
     "description": "Popup UI: cgEntryFolders"
   },
   "cgEntryTimeline": {
@@ -2327,6 +2327,10 @@
     "message": "当前对话已保存。",
     "description": "Popup UI: foldersCurrentSaved"
   },
+  "foldersCurrentSavedBadge": {
+    "message": "已保存",
+    "description": "Popup UI: foldersCurrentSavedBadge"
+  },
   "foldersCurrentSaveFailed": {
     "message": "保存当前对话失败。",
     "description": "Popup UI: foldersCurrentSaveFailed"
@@ -2387,9 +2391,17 @@
     "message": "已保存对话",
     "description": "Popup UI: foldersSavedConversations"
   },
+  "foldersPanelSubtitle": {
+    "message": "管理文件夹、备注和已保存对话",
+    "description": "Popup UI: foldersPanelSubtitle"
+  },
   "foldersNewFolder": {
     "message": "新建文件夹",
     "description": "Popup UI: foldersNewFolder"
+  },
+  "foldersQuickCreate": {
+    "message": "新建",
+    "description": "Popup UI: foldersQuickCreate"
   },
   "foldersNamePlaceholder": {
     "message": "文件夹名称",
@@ -2424,8 +2436,12 @@
     "description": "Popup UI: foldersSaveCurrent"
   },
   "foldersFolderList": {
-    "message": "文件夹列表",
+    "message": "对话管理",
     "description": "Popup UI: foldersFolderList"
+  },
+  "foldersConversationCount": {
+    "message": "{count} 个对话",
+    "description": "Popup UI: foldersConversationCount"
   },
   "foldersEmpty": {
     "message": "暂无文件夹。",
@@ -2442,6 +2458,26 @@
   "foldersNoSavedConversations": {
     "message": "暂无已保存对话。",
     "description": "Popup UI: foldersNoSavedConversations"
+  },
+  "foldersNoConversationsInFolder": {
+    "message": "这个文件夹里还没有对话。",
+    "description": "Popup UI: foldersNoConversationsInFolder"
+  },
+  "foldersSearchResults": {
+    "message": "找到 {count} 个匹配对话",
+    "description": "Popup UI: foldersSearchResults"
+  },
+  "foldersDetails": {
+    "message": "详情",
+    "description": "Popup UI: foldersDetails"
+  },
+  "foldersHideDetails": {
+    "message": "收起",
+    "description": "Popup UI: foldersHideDetails"
+  },
+  "foldersOpenConversation": {
+    "message": "打开对话",
+    "description": "Popup UI: foldersOpenConversation"
   },
   "foldersCurrentFolder": {
     "message": "当前文件夹：{name}",

@@ -2152,7 +2152,7 @@
     "description": "Popup UI: cgEntryPromptVault"
   },
   "cgEntryFolders": {
-    "message": "Folders",
+    "message": "Conversation Manager",
     "description": "Popup UI: cgEntryFolders"
   },
   "cgEntryTimeline": {
@@ -2327,6 +2327,10 @@
     "message": "Current conversation saved.",
     "description": "Popup UI: foldersCurrentSaved"
   },
+  "foldersCurrentSavedBadge": {
+    "message": "Saved",
+    "description": "Popup UI: foldersCurrentSavedBadge"
+  },
   "foldersCurrentSaveFailed": {
     "message": "Failed to save current conversation.",
     "description": "Popup UI: foldersCurrentSaveFailed"
@@ -2387,9 +2391,17 @@
     "message": "Saved conversations",
     "description": "Popup UI: foldersSavedConversations"
   },
+  "foldersPanelSubtitle": {
+    "message": "Manage folders, notes, and saved conversations",
+    "description": "Popup UI: foldersPanelSubtitle"
+  },
   "foldersNewFolder": {
     "message": "New folder",
     "description": "Popup UI: foldersNewFolder"
+  },
+  "foldersQuickCreate": {
+    "message": "New",
+    "description": "Popup UI: foldersQuickCreate"
   },
   "foldersNamePlaceholder": {
     "message": "Folder name",
@@ -2424,8 +2436,12 @@
     "description": "Popup UI: foldersSaveCurrent"
   },
   "foldersFolderList": {
-    "message": "Folder list",
+    "message": "Conversation Manager",
     "description": "Popup UI: foldersFolderList"
+  },
+  "foldersConversationCount": {
+    "message": "{count} conversations",
+    "description": "Popup UI: foldersConversationCount"
   },
   "foldersEmpty": {
     "message": "No folders yet.",
@@ -2442,6 +2458,26 @@
   "foldersNoSavedConversations": {
     "message": "No saved conversations yet.",
     "description": "Popup UI: foldersNoSavedConversations"
+  },
+  "foldersNoConversationsInFolder": {
+    "message": "No conversations in this folder yet.",
+    "description": "Popup UI: foldersNoConversationsInFolder"
+  },
+  "foldersSearchResults": {
+    "message": "{count} matching conversations",
+    "description": "Popup UI: foldersSearchResults"
+  },
+  "foldersDetails": {
+    "message": "Details",
+    "description": "Popup UI: foldersDetails"
+  },
+  "foldersHideDetails": {
+    "message": "Collapse",
+    "description": "Popup UI: foldersHideDetails"
+  },
+  "foldersOpenConversation": {
+    "message": "Open conversation",
+    "description": "Popup UI: foldersOpenConversation"
   },
   "foldersCurrentFolder": {
     "message": "Current folder: {name}",

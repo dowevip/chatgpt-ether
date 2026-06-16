@@ -82,8 +82,11 @@ export function FoldersPanel({ currentStatus, onBack }: FoldersPanelProps) {
   const [editingFolderId, setEditingFolderId] = useState<string | null>(null);
   const [editingFolderName, setEditingFolderName] = useState('');
   const [conversationQuery, setConversationQuery] = useState('');
-  const [folderFilterId, setFolderFilterId] = useState('');
+  const [showConversationSearch, setShowConversationSearch] = useState(false);
   const [folderMoveQueries, setFolderMoveQueries] = useState<Record<string, string>>({});
+  const [expandedConversationIds, setExpandedConversationIds] = useState<Record<string, boolean>>(
+    {},
+  );
   const [collapsedFolderIds, setCollapsedFolderIds] = useState<Record<string, boolean>>(() => {
     try {
       const raw = localStorage.getItem(COLLAPSED_FOLDERS_STORAGE_KEY);
@@ -134,15 +137,40 @@ export function FoldersPanel({ currentStatus, onBack }: FoldersPanelProps) {
 
   const filteredConversations = useMemo(
     () =>
-      conversations.filter((conversation) => {
-        const matchesFolder = folderFilterId
-          ? folderFilterId === '__uncategorized__'
-            ? !conversation.folderId
-            : conversation.folderId === folderFilterId
-          : true;
-        return matchesFolder && matchesConversationQuery(conversation, conversationQuery);
-      }),
-    [conversations, conversationQuery, folderFilterId],
+      conversations.filter((conversation) =>
+        matchesConversationQuery(conversation, conversationQuery),
+      ),
+    [conversations, conversationQuery],
+  );
+
+  const currentIndexedConversation = useMemo(() => {
+    if (!currentConversation) return null;
+    return (
+      conversations.find(
+        (conversation) => conversation.conversationId === currentConversation.conversationId,
+      ) || null
+    );
+  }, [conversations, currentConversation]);
+
+  const folderConversationCounts = useMemo(
+    () =>
+      conversations.reduce<Record<string, number>>((counts, conversation) => {
+        const key = conversation.folderId || '__uncategorized__';
+        return { ...counts, [key]: (counts[key] || 0) + 1 };
+      }, {}),
+    [conversations],
+  );
+
+  const conversationsByFolderId = useMemo(
+    () =>
+      conversations.reduce<Record<string, ChatGPTConversationIndex[]>>((groups, conversation) => {
+        const key = conversation.folderId || '__uncategorized__';
+        return {
+          ...groups,
+          [key]: [...(groups[key] || []), conversation],
+        };
+      }, {}),
+    [conversations],
   );
 
   const rootFolders = useMemo(() => folders.filter((folder) => !folder.parentId), [folders]);
@@ -271,6 +299,10 @@ export function FoldersPanel({ currentStatus, onBack }: FoldersPanelProps) {
     setCollapsedFolderIds((prev) => ({ ...prev, [folderId]: !prev[folderId] }));
   };
 
+  const toggleConversationExpanded = (conversationId: string) => {
+    setExpandedConversationIds((prev) => ({ ...prev, [conversationId]: !prev[conversationId] }));
+  };
+
   const handleUpdateNote = async (conversationId: string, note: string) => {
     try {
       setConversations(await updateChatGPTConversationNote(conversationId, note));
@@ -288,299 +320,448 @@ export function FoldersPanel({ currentStatus, onBack }: FoldersPanelProps) {
     }
   };
 
+  const renderConversationItem = (conversation: ChatGPTConversationIndex, nested = false) => {
+    const isExpanded = Boolean(expandedConversationIds[conversation.conversationId]);
+
+    return (
+      <div
+        key={conversation.conversationId}
+        className={`border-border rounded-md border p-3 ${nested ? 'bg-muted/20' : ''}`}
+      >
+        <div className="flex items-start gap-2">
+          <button
+            type="button"
+            onClick={() => void handleOpenConversation(conversation.url)}
+            className="text-primary min-w-0 flex-1 truncate text-left text-sm font-semibold"
+            title={conversation.title}
+          >
+            {conversation.title}
+          </button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-7 shrink-0 px-2 text-xs"
+            onClick={() => toggleConversationExpanded(conversation.conversationId)}
+          >
+            {isExpanded ? t('foldersHideDetails') : t('foldersDetails')}
+          </Button>
+        </div>
+        <div className="text-muted-foreground mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs">
+          <span>
+            {folderName(conversation.folderId, folders, {
+              uncategorized: t('foldersUncategorized'),
+              unknownFolder: t('foldersUnknownFolder'),
+            })}
+          </span>
+          <span>{formatTime(conversation.updatedAt)}</span>
+        </div>
+        {conversation.note && !isExpanded && (
+          <p className="mt-2 line-clamp-2 text-xs whitespace-pre-wrap">{conversation.note}</p>
+        )}
+
+        {isExpanded && (
+          <div className="mt-3 space-y-2 rounded-md border border-dashed p-2">
+            <textarea
+              value={conversation.note}
+              onChange={(event) =>
+                setConversations((prev) =>
+                  prev.map((item) =>
+                    item.conversationId === conversation.conversationId
+                      ? { ...item, note: event.target.value }
+                      : item,
+                  ),
+                )
+              }
+              onBlur={(event) =>
+                void handleUpdateNote(conversation.conversationId, event.target.value)
+              }
+              placeholder={t('foldersNotePlaceholder')}
+              rows={2}
+              className="border-border bg-background w-full resize-y rounded-md border px-2 py-1 text-xs"
+            />
+            <input
+              value={folderMoveQueries[conversation.conversationId] || ''}
+              onChange={(event) =>
+                setFolderMoveQueries((prev) => ({
+                  ...prev,
+                  [conversation.conversationId]: event.target.value,
+                }))
+              }
+              placeholder={t('foldersSearchFolderPlaceholder')}
+              className="border-border bg-background w-full rounded-md border px-2 py-1 text-xs"
+            />
+            <select
+              value={conversation.folderId || ''}
+              onChange={(event) => void handleMove(conversation.conversationId, event.target.value)}
+              className="border-border bg-background w-full rounded-md border px-2 py-1 text-xs"
+            >
+              <option value="">{t('foldersUncategorized')}</option>
+              {getMoveFolderOptions(conversation.conversationId).map((option) => (
+                <option key={option.folder.id} value={option.folder.id}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => void handleOpenConversation(conversation.url)}
+              >
+                {t('foldersOpenConversation')}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => void handleDeleteConversation(conversation)}
+              >
+                {t('delete')}
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderChildFolder = (folder: ChatGPTFolder) => {
+    const folderConversations = conversationsByFolderId[folder.id] || [];
+
+    return (
+      <div key={folder.id} className="space-y-2">
+        {editingFolderId === folder.id ? (
+          <div className="space-y-2 rounded-md border p-2">
+            <input
+              value={editingFolderName}
+              onChange={(event) => setEditingFolderName(event.target.value)}
+              className="border-border bg-background w-full rounded-md border px-2 py-1 text-sm"
+            />
+            <div className="flex gap-2">
+              <Button type="button" size="sm" onClick={() => void handleRenameFolder()}>
+                {t('save')}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setEditingFolderId(null)}
+              >
+                {t('cancel')}
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="rounded-md border px-2 py-2">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => toggleFolderCollapsed(folder.id)}
+                className="text-muted-foreground shrink-0 text-xs"
+                title={collapsedFolderIds[folder.id] ? t('expand') : t('collapse')}
+              >
+                {collapsedFolderIds[folder.id] ? '▶' : '▼'}
+              </button>
+              <span className="min-w-0 flex-1 truncate text-sm">{folder.name}</span>
+              <span className="text-muted-foreground shrink-0 text-xs">
+                {folderConversationCounts[folder.id] || 0}
+              </span>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => handleStartRename(folder)}
+              >
+                {t('rename')}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => void handleDeleteFolder(folder)}
+              >
+                {t('delete')}
+              </Button>
+            </div>
+            {!collapsedFolderIds[folder.id] && (
+              <div className="mt-2 space-y-2 pl-5">
+                {folderConversations.length === 0 ? (
+                  <p className="text-muted-foreground text-xs">
+                    {t('foldersNoConversationsInFolder')}
+                  </p>
+                ) : (
+                  folderConversations.map((conversation) =>
+                    renderConversationItem(conversation, true),
+                  )
+                )}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderRootFolder = (folder: ChatGPTFolder) => {
+    const childFolders = childFoldersByParentId[folder.id] || [];
+    const folderConversations = conversationsByFolderId[folder.id] || [];
+
+    return (
+      <div key={folder.id} className="border-border rounded-md border px-3 py-2 text-sm">
+        {editingFolderId === folder.id ? (
+          <div className="space-y-2">
+            <input
+              value={editingFolderName}
+              onChange={(event) => setEditingFolderName(event.target.value)}
+              className="border-border bg-background w-full rounded-md border px-2 py-1 text-sm"
+            />
+            <div className="flex gap-2">
+              <Button type="button" size="sm" onClick={() => void handleRenameFolder()}>
+                {t('save')}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setEditingFolderId(null)}
+              >
+                {t('cancel')}
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => toggleFolderCollapsed(folder.id)}
+                className="text-muted-foreground shrink-0 text-xs"
+                title={collapsedFolderIds[folder.id] ? t('expand') : t('collapse')}
+              >
+                {collapsedFolderIds[folder.id] ? '▶' : '▼'}
+              </button>
+              <span className="min-w-0 flex-1 truncate">{folder.name}</span>
+              <span className="text-muted-foreground shrink-0 text-xs">
+                {folderConversationCounts[folder.id] || 0}
+              </span>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => handleStartRename(folder)}
+              >
+                {t('rename')}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => void handleDeleteFolder(folder)}
+              >
+                {t('delete')}
+              </Button>
+            </div>
+
+            {!collapsedFolderIds[folder.id] && (
+              <div className="border-border/60 mt-2 space-y-2 border-l pl-4">
+                {childFolders.map(renderChildFolder)}
+                {folderConversations.map((conversation) =>
+                  renderConversationItem(conversation, true),
+                )}
+                {childFolders.length === 0 && folderConversations.length === 0 && (
+                  <p className="text-muted-foreground text-xs">
+                    {t('foldersNoConversationsInFolder')}
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const uncategorizedConversations = conversationsByFolderId.__uncategorized__ || [];
+  const isSearching = showConversationSearch && conversationQuery.trim().length > 0;
+
   return (
-    <div className="bg-background text-foreground w-[360px]">
+    <div className="bg-background text-foreground w-[380px]">
       <div className="border-border/50 flex items-center justify-between border-b px-5 py-4">
         <div>
           <h1 className="text-primary text-xl font-bold">{t('cgEntryFolders')}</h1>
-          <p className="text-muted-foreground text-xs">{t('foldersSavedConversations')}</p>
+          <p className="text-muted-foreground text-xs">{t('foldersPanelSubtitle')}</p>
         </div>
         <Button type="button" variant="outline" size="sm" onClick={onBack}>
           {t('back')}
         </Button>
       </div>
 
-      <div className="flex max-h-[560px] flex-col gap-4 overflow-y-auto p-5">
-        <Card className="p-4">
-          <CardTitle className="mb-3 text-base">{t('foldersNewFolder')}</CardTitle>
-          <CardContent className="space-y-3 p-0">
-            <input
-              value={newFolderName}
-              onChange={(event) => setNewFolderName(event.target.value)}
-              placeholder={t('foldersNamePlaceholder')}
-              className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
-            />
-            <select
-              value={newFolderParentId}
-              onChange={(event) => setNewFolderParentId(event.target.value)}
-              className="border-border bg-background w-full rounded-md border px-2 py-1 text-xs"
-            >
-              <option value="">{t('foldersCreateAsRoot')}</option>
-              {rootFolders.map((folder) => (
-                <option key={folder.id} value={folder.id}>
-                  {t('foldersParentFolder').replace('{name}', folder.name)}
-                </option>
-              ))}
-            </select>
-            <Button type="button" size="sm" onClick={() => void handleCreateFolder()}>
-              {newFolderParentId ? t('foldersCreateChild') : t('foldersCreateRoot')}
-            </Button>
-          </CardContent>
-        </Card>
-
+      <div className="flex max-h-[590px] flex-col gap-4 overflow-y-auto p-5">
         <Card className="p-4">
           <CardTitle className="mb-3 text-base">{t('foldersCurrentConversation')}</CardTitle>
-          <CardContent className="space-y-2 p-0 text-sm">
-            <p className="text-muted-foreground truncate">
-              {currentConversation?.title || t('foldersCurrentNotChatGPT')}
-            </p>
-            <Button
-              type="button"
-              size="sm"
-              disabled={!canSaveCurrent}
-              onClick={() => void handleSaveCurrent()}
-            >
-              {t('foldersSaveCurrent')}
-            </Button>
+          <CardContent className="space-y-3 p-0 text-sm">
+            <div className="min-w-0">
+              <p className="truncate font-medium">
+                {currentConversation?.title || t('foldersCurrentNotChatGPT')}
+              </p>
+              {currentIndexedConversation && (
+                <p className="text-muted-foreground mt-1 text-xs">
+                  {t('foldersCurrentFolder').replace(
+                    '{name}',
+                    folderName(currentIndexedConversation.folderId, folders, {
+                      uncategorized: t('foldersUncategorized'),
+                      unknownFolder: t('foldersUnknownFolder'),
+                    }),
+                  )}
+                </p>
+              )}
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                size="sm"
+                disabled={!canSaveCurrent}
+                onClick={() => void handleSaveCurrent()}
+              >
+                {currentIndexedConversation
+                  ? t('foldersCurrentSavedBadge')
+                  : t('foldersSaveCurrent')}
+              </Button>
+              {currentIndexedConversation && (
+                <select
+                  value={currentIndexedConversation.folderId || ''}
+                  onChange={(event) =>
+                    void handleMove(currentIndexedConversation.conversationId, event.target.value)
+                  }
+                  className="border-border bg-background min-w-0 flex-1 rounded-md border px-2 py-1 text-xs"
+                >
+                  <option value="">{t('foldersUncategorized')}</option>
+                  {folderOptions.map((option) => (
+                    <option key={option.folder.id} value={option.folder.id}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
             {message && <p className="text-muted-foreground text-xs">{message}</p>}
           </CardContent>
         </Card>
 
         <Card className="p-4">
-          <CardTitle className="mb-3 text-base">{t('foldersFolderList')}</CardTitle>
-          <CardContent className="space-y-2 p-0">
-            {folders.length === 0 ? (
-              <p className="text-muted-foreground text-sm">{t('foldersEmpty')}</p>
-            ) : (
-              rootFolders.map((folder) => (
-                <div key={folder.id} className="border-border rounded-md border px-3 py-2 text-sm">
-                  {editingFolderId === folder.id ? (
-                    <div className="space-y-2">
-                      <input
-                        value={editingFolderName}
-                        onChange={(event) => setEditingFolderName(event.target.value)}
-                        className="border-border bg-background w-full rounded-md border px-2 py-1 text-sm"
-                      />
-                      <div className="flex gap-2">
-                        <Button type="button" size="sm" onClick={() => void handleRenameFolder()}>
-                          {t('save')}
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setEditingFolderId(null)}
-                        >
-                          {t('cancel')}
-                        </Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div>
-                      <div className="flex items-center justify-between gap-2">
-                        <button
-                          type="button"
-                          onClick={() => toggleFolderCollapsed(folder.id)}
-                          className="text-muted-foreground shrink-0 text-xs"
-                          title={collapsedFolderIds[folder.id] ? t('expand') : t('collapse')}
-                        >
-                          {collapsedFolderIds[folder.id] ? '▶' : '▼'}
-                        </button>
-                        <span className="min-w-0 flex-1 truncate">{folder.name}</span>
-                        <div className="flex shrink-0 gap-2">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleStartRename(folder)}
-                          >
-                            {t('rename')}
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => void handleDeleteFolder(folder)}
-                          >
-                            {t('delete')}
-                          </Button>
-                        </div>
-                      </div>
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <CardTitle className="text-base">{t('foldersFolderList')}</CardTitle>
+            <div className="flex items-center gap-2">
+              <span className="text-muted-foreground text-xs">
+                {t('foldersConversationCount').replace('{count}', String(conversations.length))}
+              </span>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-8 w-8 px-0"
+                onClick={() => {
+                  setShowConversationSearch((value) => !value);
+                  if (showConversationSearch) setConversationQuery('');
+                }}
+                title={t('foldersSearchConversationPlaceholder')}
+              >
+                🔍
+              </Button>
+            </div>
+          </div>
+          <CardContent className="space-y-3 p-0">
+            {showConversationSearch && (
+              <input
+                value={conversationQuery}
+                onChange={(event) => setConversationQuery(event.target.value)}
+                placeholder={t('foldersSearchConversationPlaceholder')}
+                className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
+              />
+            )}
 
-                      {!collapsedFolderIds[folder.id] && (
-                        <div className="border-border/60 mt-2 space-y-2 border-l pl-4">
-                          {(childFoldersByParentId[folder.id] || []).map((childFolder) => (
-                            <div key={childFolder.id}>
-                              {editingFolderId === childFolder.id ? (
-                                <div className="space-y-2">
-                                  <input
-                                    value={editingFolderName}
-                                    onChange={(event) => setEditingFolderName(event.target.value)}
-                                    className="border-border bg-background w-full rounded-md border px-2 py-1 text-sm"
-                                  />
-                                  <div className="flex gap-2">
-                                    <Button
-                                      type="button"
-                                      size="sm"
-                                      onClick={() => void handleRenameFolder()}
-                                    >
-                                      {t('save')}
-                                    </Button>
-                                    <Button
-                                      type="button"
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => setEditingFolderId(null)}
-                                    >
-                                      {t('cancel')}
-                                    </Button>
-                                  </div>
-                                </div>
-                              ) : (
-                                <div className="flex items-center justify-between gap-2">
-                                  <span className="min-w-0 truncate">{childFolder.name}</span>
-                                  <div className="flex shrink-0 gap-2">
-                                    <Button
-                                      type="button"
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => handleStartRename(childFolder)}
-                                    >
-                                      {t('rename')}
-                                    </Button>
-                                    <Button
-                                      type="button"
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => void handleDeleteFolder(childFolder)}
-                                    >
-                                      {t('delete')}
-                                    </Button>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                        </div>
+            <div className="space-y-2 rounded-md border border-dashed p-2">
+              <input
+                value={newFolderName}
+                onChange={(event) => setNewFolderName(event.target.value)}
+                placeholder={t('foldersNamePlaceholder')}
+                className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
+              />
+              <div className="flex gap-2">
+                <select
+                  value={newFolderParentId}
+                  onChange={(event) => setNewFolderParentId(event.target.value)}
+                  className="border-border bg-background min-w-0 flex-1 rounded-md border px-2 py-1 text-xs"
+                >
+                  <option value="">{t('foldersCreateAsRoot')}</option>
+                  {rootFolders.map((folder) => (
+                    <option key={folder.id} value={folder.id}>
+                      {t('foldersParentFolder').replace('{name}', folder.name)}
+                    </option>
+                  ))}
+                </select>
+                <Button type="button" size="sm" onClick={() => void handleCreateFolder()}>
+                  {t('foldersQuickCreate')}
+                </Button>
+              </div>
+            </div>
+
+            {isSearching ? (
+              <div className="space-y-2">
+                <p className="text-muted-foreground text-xs">
+                  {t('foldersSearchResults').replace(
+                    '{count}',
+                    String(filteredConversations.length),
+                  )}
+                </p>
+                {filteredConversations.length === 0 ? (
+                  <p className="text-muted-foreground text-sm">
+                    {t('foldersNoSavedConversations')}
+                  </p>
+                ) : (
+                  filteredConversations.map((conversation) => renderConversationItem(conversation))
+                )}
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <div className="border-border rounded-md border px-3 py-2 text-sm">
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => toggleFolderCollapsed('__uncategorized__')}
+                      className="text-muted-foreground shrink-0 text-xs"
+                      title={collapsedFolderIds.__uncategorized__ ? t('expand') : t('collapse')}
+                    >
+                      {collapsedFolderIds.__uncategorized__ ? '▶' : '▼'}
+                    </button>
+                    <span className="min-w-0 flex-1 truncate">{t('foldersUncategorized')}</span>
+                    <span className="text-muted-foreground shrink-0 text-xs">
+                      {folderConversationCounts.__uncategorized__ || 0}
+                    </span>
+                  </div>
+                  {!collapsedFolderIds.__uncategorized__ && (
+                    <div className="mt-2 space-y-2 pl-5">
+                      {uncategorizedConversations.length === 0 ? (
+                        <p className="text-muted-foreground text-xs">
+                          {t('foldersNoConversationsInFolder')}
+                        </p>
+                      ) : (
+                        uncategorizedConversations.map((conversation) =>
+                          renderConversationItem(conversation, true),
+                        )
                       )}
                     </div>
                   )}
                 </div>
-              ))
-            )}
-          </CardContent>
-        </Card>
 
-        <Card className="p-4">
-          <CardTitle className="mb-3 text-base">{t('foldersSavedConversations')}</CardTitle>
-          <CardContent className="space-y-3 p-0">
-            <input
-              value={conversationQuery}
-              onChange={(event) => setConversationQuery(event.target.value)}
-              placeholder={t('foldersSearchConversationPlaceholder')}
-              className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
-            />
-            <select
-              value={folderFilterId}
-              onChange={(event) => setFolderFilterId(event.target.value)}
-              className="border-border bg-background w-full rounded-md border px-2 py-1 text-xs"
-            >
-              <option value="">{t('foldersAllFolders')}</option>
-              <option value="__uncategorized__">{t('foldersUncategorized')}</option>
-              {folderOptions.map((option) => (
-                <option key={option.folder.id} value={option.folder.id}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-
-            {filteredConversations.length === 0 ? (
-              <p className="text-muted-foreground text-sm">{t('foldersNoSavedConversations')}</p>
-            ) : (
-              filteredConversations.map((conversation) => (
-                <div
-                  key={conversation.conversationId}
-                  className="border-border rounded-md border p-3"
-                >
-                  <div className="flex items-start gap-2">
-                    <button
-                      type="button"
-                      onClick={() => void handleOpenConversation(conversation.url)}
-                      className="text-primary min-w-0 flex-1 truncate text-left text-sm font-semibold"
-                      title={conversation.title}
-                    >
-                      {conversation.title}
-                    </button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="h-7 shrink-0 px-2 text-xs"
-                      onClick={() => void handleDeleteConversation(conversation)}
-                    >
-                      {t('delete')}
-                    </Button>
-                  </div>
-                  <p className="text-muted-foreground mt-1 text-xs">
-                    {t('foldersCurrentFolder').replace(
-                      '{name}',
-                      folderName(conversation.folderId, folders, {
-                        uncategorized: t('foldersUncategorized'),
-                        unknownFolder: t('foldersUnknownFolder'),
-                      }),
-                    )}
-                  </p>
-                  <p className="text-muted-foreground mt-1 text-xs">
-                    {t('foldersUpdatedAt').replace('{time}', formatTime(conversation.updatedAt))}
-                  </p>
-                  {conversation.note && (
-                    <p className="mt-2 text-xs whitespace-pre-wrap">{conversation.note}</p>
-                  )}
-                  <textarea
-                    value={conversation.note}
-                    onChange={(event) =>
-                      setConversations((prev) =>
-                        prev.map((item) =>
-                          item.conversationId === conversation.conversationId
-                            ? { ...item, note: event.target.value }
-                            : item,
-                        ),
-                      )
-                    }
-                    onBlur={(event) =>
-                      void handleUpdateNote(conversation.conversationId, event.target.value)
-                    }
-                    placeholder={t('foldersNotePlaceholder')}
-                    rows={2}
-                    className="border-border bg-background mt-2 w-full resize-y rounded-md border px-2 py-1 text-xs"
-                  />
-                  <input
-                    value={folderMoveQueries[conversation.conversationId] || ''}
-                    onChange={(event) =>
-                      setFolderMoveQueries((prev) => ({
-                        ...prev,
-                        [conversation.conversationId]: event.target.value,
-                      }))
-                    }
-                    placeholder={t('foldersSearchFolderPlaceholder')}
-                    className="border-border bg-background mt-2 w-full rounded-md border px-2 py-1 text-xs"
-                  />
-                  <select
-                    value={conversation.folderId || ''}
-                    onChange={(event) =>
-                      void handleMove(conversation.conversationId, event.target.value)
-                    }
-                    className="border-border bg-background mt-2 w-full rounded-md border px-2 py-1 text-xs"
-                  >
-                    <option value="">{t('foldersUncategorized')}</option>
-                    {getMoveFolderOptions(conversation.conversationId).map((option) => (
-                      <option key={option.folder.id} value={option.folder.id}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              ))
+                {rootFolders.length === 0 ? (
+                  <p className="text-muted-foreground text-sm">{t('foldersEmpty')}</p>
+                ) : (
+                  rootFolders.map(renderRootFolder)
+                )}
+              </div>
             )}
           </CardContent>
         </Card>
