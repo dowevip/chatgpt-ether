@@ -13,8 +13,11 @@ import {
 } from '@/core/services/ChatGPTTimelineService';
 import { StorageKeys } from '@/core/types/common';
 import type { ConversationReference, Folder } from '@/core/types/folder';
+import { cn } from '@/lib/utils';
 import { getModifierKey, isFirefox, isSafari } from '@/core/utils/browser';
 import { resolveWatermarkSettings } from '@/core/utils/watermarkSettings';
+import { ActionBar, ListView, PageSection, Panel } from '@/ui/components';
+import { uiTokens } from '@/ui/tokens';
 
 import { DarkModeToggle } from '../../components/DarkModeToggle';
 import { LanguageSwitcher } from '../../components/LanguageSwitcher';
@@ -1432,25 +1435,81 @@ export default function Popup() {
     return <DiagnosticsPanel onBack={() => setActivePanel('dashboard')} />;
   }
 
+  const dashboardEntryActions = CHATGPT_DASHBOARD_ENTRIES.map((label) => {
+    const isTimeline = label === 'Timeline';
+    const enabled =
+      label === 'Prompt Vault' ||
+      label === 'Folders' ||
+      label === 'Starred' ||
+      label === 'Sync' ||
+      label === 'Diagnostics' ||
+      (isTimeline && Boolean(chatgptStatus?.isChatGPTPage));
+    const entryName = isTimeline
+      ? pageTimelineVisible
+        ? t('cgHidePageTimeline')
+        : t('cgShowPageTimeline')
+      : t(
+          label === 'Prompt Vault'
+            ? 'cgEntryPromptVault'
+            : label === 'Folders'
+              ? 'cgEntryFolders'
+              : label === 'Starred'
+                ? 'cgEntryStarred'
+                : label === 'Sync'
+                  ? 'cgEntrySync'
+                  : 'cgEntryDiagnostics',
+        );
+
+    return {
+      id: label,
+      label: entryName,
+      tone: 'ghost' as const,
+      disabled: !enabled,
+      title:
+        isTimeline && !chatgptStatus?.isChatGPTPage
+          ? t('cgStatusNotChatGPT')
+          : isTimeline
+            ? entryName
+            : enabled
+              ? t('cgOpenEntry').replace('{name}', entryName)
+              : t('cgPlaceholderEntry'),
+      onClick: () => {
+        if (label === 'Prompt Vault') setActivePanel('promptVault');
+        if (label === 'Folders') setActivePanel('folders');
+        if (label === 'Starred') setActivePanel('starred');
+        if (label === 'Sync') setActivePanel('sync');
+        if (label === 'Diagnostics') setActivePanel('diagnostics');
+        if (isTimeline) void handleTogglePageTimeline();
+      },
+    };
+  });
+
   return (
-    <div className="bg-background text-foreground w-[360px]">
-      {/* Header */}
-      <div className="border-border/50 flex items-center justify-between border-b px-5 py-5">
-        <h1 className="text-primary text-2xl font-extrabold tracking-tight">{t('extName')}</h1>
+    <Panel
+      title={t('extName')}
+      headerAccessory={
         <div className="flex items-center gap-1">
           <LanguageSwitcher />
           <DarkModeToggle />
         </div>
-      </div>
-
-      <div className="flex flex-col gap-4 p-5">
-        <Card className="p-4">
-          <CardTitle className="mb-3">{t('cgHomeTitle')}</CardTitle>
-          <CardContent className="space-y-3 p-0">
+      }
+    >
+        <PageSection
+          title={t('cgHomeTitle')}
+          actions={[
+            {
+              id: 'refresh',
+              label: t('cgRefreshCurrentConversation'),
+              tone: 'primary',
+              disabled: chatgptDashboard.loading,
+              onClick: () => void refreshChatGPTDashboard(),
+            },
+          ]}
+        >
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-sm font-semibold">{t('cgCurrentPageStatus')}</p>
-                <p className="text-muted-foreground text-xs">
+                <p className={cn(uiTokens.color.textMuted, uiTokens.typography.caption)}>
                   {chatgptDashboard.loading
                     ? t('cgReadingCurrentTab')
                     : chatgptStatus?.isChatGPTPage
@@ -1458,129 +1517,84 @@ export default function Popup() {
                       : t('cgStatusNotChatGPT')}
                 </p>
               </div>
-              <Button
-                type="button"
-                onClick={() => void refreshChatGPTDashboard()}
-                disabled={chatgptDashboard.loading}
-                className="shrink-0 px-3 py-1.5 text-xs"
-              >
-                {t('cgRefreshCurrentConversation')}
-              </Button>
             </div>
 
             {chatgptDashboard.error && (
-              <p className="rounded-md bg-red-50 px-3 py-2 text-xs text-red-700">
+              <p className={cn(uiTokens.color.textDanger, uiTokens.typography.caption)}>
                 {chatgptDashboard.error}
               </p>
             )}
 
-            <div className="grid gap-2 text-xs">
-              <div className="flex justify-between gap-3">
-                <span className="text-muted-foreground">{t('cgIsChatGPTPage')}</span>
-                <span className="font-medium">
-                  {chatgptStatus?.isChatGPTPage ? t('yes') : t('no')}
-                </span>
-              </div>
-              <div className="flex justify-between gap-3">
-                <span className="text-muted-foreground">{t('cgConversationId')}</span>
-                <span className="max-w-[180px] truncate font-mono">
-                  {chatgptStatus?.conversationId || '-'}
-                </span>
-              </div>
-              <div className="flex justify-between gap-3">
-                <span className="text-muted-foreground">{t('cgConversationTitle')}</span>
-                <span className="max-w-[180px] truncate font-medium">
-                  {chatgptStatus?.conversationTitle || '-'}
-                </span>
-              </div>
-              <div className="flex justify-between gap-3">
-                <span className="text-muted-foreground">{t('cgUserMessageCount')}</span>
-                <span className="font-medium">{chatgptStatus?.userMessageCount ?? '-'}</span>
-              </div>
-              <div className="flex justify-between gap-3">
-                <span className="text-muted-foreground">{t('cgAssistantMessageCount')}</span>
-                <span className="font-medium">{chatgptStatus?.assistantMessageCount ?? '-'}</span>
-              </div>
-              <div className="flex justify-between gap-3">
-                <span className="text-muted-foreground">{t('cgTotalMessageCount')}</span>
-                <span className="font-medium">{chatgptStatus?.totalMessageCount ?? '-'}</span>
-              </div>
-            </div>
+            <ListView
+              variant="divided"
+              emptyText="-"
+              items={[
+                {
+                  id: 'is-chatgpt',
+                  title: <span className={uiTokens.color.textMuted}>{t('cgIsChatGPTPage')}</span>,
+                  meta: chatgptStatus?.isChatGPTPage ? t('yes') : t('no'),
+                },
+                {
+                  id: 'conversation-id',
+                  title: <span className={uiTokens.color.textMuted}>{t('cgConversationId')}</span>,
+                  meta: (
+                    <span className={cn('max-w-[180px] truncate', uiTokens.typography.mono)}>
+                      {chatgptStatus?.conversationId || '-'}
+                    </span>
+                  ),
+                },
+                {
+                  id: 'conversation-title',
+                  title: (
+                    <span className={uiTokens.color.textMuted}>{t('cgConversationTitle')}</span>
+                  ),
+                  meta: chatgptStatus?.conversationTitle || '-',
+                },
+                {
+                  id: 'user-count',
+                  title: (
+                    <span className={uiTokens.color.textMuted}>{t('cgUserMessageCount')}</span>
+                  ),
+                  meta: chatgptStatus?.userMessageCount ?? '-',
+                },
+                {
+                  id: 'assistant-count',
+                  title: (
+                    <span className={uiTokens.color.textMuted}>{t('cgAssistantMessageCount')}</span>
+                  ),
+                  meta: chatgptStatus?.assistantMessageCount ?? '-',
+                },
+                {
+                  id: 'total-count',
+                  title: (
+                    <span className={uiTokens.color.textMuted}>{t('cgTotalMessageCount')}</span>
+                  ),
+                  meta: chatgptStatus?.totalMessageCount ?? '-',
+                },
+              ]}
+            />
 
-            <div className="grid grid-cols-2 gap-2 pt-1">
-              {CHATGPT_DASHBOARD_ENTRIES.map((label) => {
-                const isTimeline = label === 'Timeline';
-                const enabled =
-                  label === 'Prompt Vault' ||
-                  label === 'Folders' ||
-                  label === 'Starred' ||
-                  label === 'Sync' ||
-                  label === 'Diagnostics' ||
-                  (isTimeline && Boolean(chatgptStatus?.isChatGPTPage));
-
-                return (
-                  <button
-                    key={label}
-                    type="button"
-                    disabled={!enabled}
-                    onClick={() => {
-                      if (label === 'Prompt Vault') setActivePanel('promptVault');
-                      if (label === 'Folders') setActivePanel('folders');
-                      if (label === 'Starred') setActivePanel('starred');
-                      if (label === 'Sync') setActivePanel('sync');
-                      if (label === 'Diagnostics') setActivePanel('diagnostics');
-                      if (isTimeline) void handleTogglePageTimeline();
-                    }}
-                    className="border-border bg-secondary/40 text-muted-foreground enabled:text-foreground rounded-md border px-2 py-2 text-xs font-medium"
-                    title={
-                      isTimeline && !chatgptStatus?.isChatGPTPage
-                        ? t('cgStatusNotChatGPT')
-                        : isTimeline
-                          ? pageTimelineVisible
-                            ? t('cgHidePageTimeline')
-                            : t('cgShowPageTimeline')
-                          : enabled
-                            ? t('cgOpenEntry').replace(
-                                '{name}',
-                                t(
-                                  label === 'Prompt Vault'
-                                    ? 'cgEntryPromptVault'
-                                    : label === 'Folders'
-                                      ? 'cgEntryFolders'
-                                      : label === 'Starred'
-                                        ? 'cgEntryStarred'
-                                        : label === 'Sync'
-                                          ? 'cgEntrySync'
-                                          : 'cgEntryDiagnostics',
-                                ),
-                              )
-                            : t('cgPlaceholderEntry')
-                    }
-                  >
-                    {isTimeline
-                      ? pageTimelineVisible
-                        ? t('cgHidePageTimeline')
-                        : t('cgShowPageTimeline')
-                      : t(
-                          label === 'Prompt Vault'
-                            ? 'cgEntryPromptVault'
-                            : label === 'Folders'
-                              ? 'cgEntryFolders'
-                              : label === 'Starred'
-                                ? 'cgEntryStarred'
-                                : label === 'Sync'
-                                  ? 'cgEntrySync'
-                                  : 'cgEntryDiagnostics',
-                        )}
-                  </button>
-                );
-              })}
+            <div className="grid grid-cols-2 gap-2">
+              {dashboardEntryActions.map((action) => (
+                <Button
+                  key={action.id}
+                  type="button"
+                  variant="outline"
+                  disabled={action.disabled}
+                  title={action.title}
+                  onClick={action.onClick}
+                  className="h-9 justify-center px-3 text-[13px]"
+                >
+                  {action.label}
+                </Button>
+              ))}
             </div>
             {pageTimelineMessage && (
-              <p className="text-muted-foreground text-xs">{pageTimelineMessage}</p>
+              <p className={cn(uiTokens.color.textMuted, uiTokens.typography.caption)}>
+                {pageTimelineMessage}
+              </p>
             )}
-          </CardContent>
-        </Card>
+        </PageSection>
 
         {false && (
           <>
@@ -2930,7 +2944,6 @@ export default function Popup() {
           )}
           </>
         )}
-      </div>
 
       {false && (
         <>
@@ -2986,6 +2999,6 @@ export default function Popup() {
       </div>
           </>
         )}
-    </div>
+    </Panel>
   );
 }

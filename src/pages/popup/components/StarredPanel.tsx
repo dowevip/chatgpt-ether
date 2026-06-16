@@ -7,9 +7,10 @@ import {
   removeChatGPTStarredMessage,
 } from '@/core/services/ChatGPTStarredService';
 import type { ChatGPTStarredMessage } from '@/core/types/starred';
+import { ListView, Panel } from '@/ui/components';
+import { uiTokens } from '@/ui/tokens';
+import { cn } from '@/lib/utils';
 
-import { Button } from '../../../components/ui/button';
-import { Card, CardContent, CardTitle } from '../../../components/ui/card';
 import { useLanguage } from '../../../contexts/LanguageContext';
 
 type StarredPanelProps = {
@@ -125,62 +126,41 @@ export function StarredPanel({ onBack }: StarredPanelProps) {
   };
 
   return (
-    <div className="w-[360px] p-4">
-      <div className="mb-3 flex items-center justify-between gap-3">
-        <div>
-          <h1 className="text-base font-semibold">{t('cgEntryStarred')}</h1>
-          <p className="text-muted-foreground text-xs">{t('starredSubtitle')}</p>
-        </div>
-        <Button type="button" onClick={onBack} variant="outline" className="px-3 py-1.5 text-xs">
-          {t('back')}
-        </Button>
-      </div>
-
-      {status && <p className="text-muted-foreground mb-3 text-xs">{status}</p>}
-
-      <div className="space-y-2">
-        {messages.length === 0 ? (
-          <Card>
-            <CardContent className="text-muted-foreground p-4 text-sm">
-              {t('starredEmpty')}
-            </CardContent>
-          </Card>
-        ) : (
-          messages.map((message) => (
-            <Card key={message.id}>
-              <CardContent className="space-y-2 p-3">
-                <div>
-                  <CardTitle className="truncate text-sm">{message.conversationTitle}</CardTitle>
-                  <p className="text-muted-foreground mt-1 text-xs">{message.snippet || '-'}</p>
-                </div>
-                <p className="text-muted-foreground text-[11px]">
-                  {t('starredCreatedAt').replace('{time}', formatTime(message.createdAt))}
-                </p>
-                {messageStatuses[message.id] && (
-                  <p className="text-muted-foreground text-[11px]">{messageStatuses[message.id]}</p>
-                )}
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    onClick={() => void handleOpen(message)}
-                    className="px-3 py-1.5 text-xs"
-                  >
-                    {t('starredOpenJump')}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => void handleRemove(message.id)}
-                    className="px-3 py-1.5 text-xs"
-                  >
-                    {t('starredRemove')}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))
-        )}
-      </div>
-    </div>
+    <Panel
+      title={t('cgEntryStarred')}
+      subtitle={t('starredSubtitle')}
+      onBack={onBack}
+      backLabel={t('back')}
+    >
+      {status && <p className={cn(uiTokens.color.textMuted, uiTokens.typography.caption)}>{status}</p>}
+      <ListView
+        emptyText={t('starredEmpty')}
+        items={messages.map((message) => ({
+          id: message.id,
+          title: message.conversationTitle,
+          subtitle: message.snippet || '-',
+          meta: t('starredCreatedAt').replace('{time}', formatTime(message.createdAt)),
+          body: messageStatuses[message.id] ? (
+            <p className={cn(uiTokens.color.textMuted, uiTokens.typography.caption)}>
+              {messageStatuses[message.id]}
+            </p>
+          ) : null,
+          actions: [
+            {
+              id: 'open',
+              label: t('starredOpenJump'),
+              tone: 'primary',
+              onClick: () => void handleOpen(message),
+            },
+            {
+              id: 'remove',
+              label: t('starredRemove'),
+              tone: 'danger',
+              onClick: () => void handleRemove(message.id),
+            },
+          ],
+        }))}
+      />
+    </Panel>
   );
 }

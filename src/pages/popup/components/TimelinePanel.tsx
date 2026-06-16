@@ -5,9 +5,10 @@ import {
   scrollToChatGPTTimelineMessage,
 } from '@/core/services/ChatGPTTimelineService';
 import type { ChatGPTTimelineNode, ChatGPTTimelineSnapshot } from '@/core/types/timeline';
+import { ListView, PageSection, Panel } from '@/ui/components';
+import { uiTokens } from '@/ui/tokens';
+import { cn } from '@/lib/utils';
 
-import { Button } from '../../../components/ui/button';
-import { Card, CardContent, CardTitle } from '../../../components/ui/card';
 import { useLanguage } from '../../../contexts/LanguageContext';
 
 type TimelinePanelProps = {
@@ -48,65 +49,56 @@ export function TimelinePanel({ onBack }: TimelinePanelProps) {
   };
 
   return (
-    <div className="bg-background text-foreground w-[360px]">
-      <div className="border-border/50 flex items-center justify-between border-b px-5 py-4">
-        <div>
-          <h1 className="text-primary text-xl font-bold">{t('cgEntryTimeline')}</h1>
-          <p className="text-muted-foreground text-xs">{t('timelineSubtitle')}</p>
-        </div>
-        <Button type="button" variant="outline" size="sm" onClick={onBack}>
-          {t('back')}
-        </Button>
-      </div>
-
-      <div className="flex max-h-[560px] flex-col gap-4 overflow-y-auto p-5">
-        <Card className="p-4">
-          <CardContent className="flex items-center justify-between gap-3 p-0">
-            <div>
-              <CardTitle className="text-base">{t('timelineBasic')}</CardTitle>
-              <p className="text-muted-foreground mt-1 text-xs">
-                {loading
-                  ? t('timelineRefreshing')
-                  : t('timelineMessageTotal').replace('{count}', String(timeline?.nodes.length || 0))}
-              </p>
-            </div>
-            <Button type="button" size="sm" disabled={loading} onClick={() => void refreshTimeline()}>
-              {t('timelineRefresh')}
-            </Button>
-          </CardContent>
-        </Card>
-
-        {message && <p className="text-muted-foreground text-xs">{message}</p>}
-
+    <Panel
+      title={t('cgEntryTimeline')}
+      subtitle={t('timelineSubtitle')}
+      onBack={onBack}
+      backLabel={t('back')}
+    >
+      <PageSection
+        title={t('timelineBasic')}
+        description={
+          loading
+            ? t('timelineRefreshing')
+            : t('timelineMessageTotal').replace('{count}', String(timeline?.nodes.length || 0))
+        }
+        actions={[
+          {
+            id: 'refresh',
+            label: t('timelineRefresh'),
+            tone: 'primary',
+            disabled: loading,
+            onClick: () => void refreshTimeline(),
+          },
+        ]}
+      >
+        {message && (
+          <p className={cn(uiTokens.color.textMuted, uiTokens.typography.caption)}>{message}</p>
+        )}
         {timeline && !timeline.isChatGPTPage && (
-          <p className="text-muted-foreground text-sm">{t('cgStatusNotChatGPT')}</p>
+          <p className={cn(uiTokens.color.textMuted, uiTokens.typography.body)}>
+            {t('cgStatusNotChatGPT')}
+          </p>
         )}
+      </PageSection>
 
-        {timeline?.isChatGPTPage && timeline.nodes.length === 0 && (
-          <p className="text-muted-foreground text-sm">{t('timelineNoMessages')}</p>
-        )}
-
-        {timeline?.isChatGPTPage && timeline.nodes.length > 0 && (
-          <div className="space-y-2">
-            {timeline.nodes.map((node) => (
-              <button
-                key={node.messageAnchor}
-                type="button"
-                onClick={() => void handleScrollToNode(node)}
-                className="border-border bg-background hover:bg-secondary/60 w-full rounded-md border px-3 py-2 text-left text-sm"
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-primary font-semibold">#{node.index}</span>
-                  <span className="text-muted-foreground shrink-0 text-xs">
-                    {node.role === 'user' ? t('roleUser') : t('roleAssistant')}
-                  </span>
-                </div>
-                <p className="mt-1 line-clamp-2 text-xs">{node.summary || t('emptyMessage')}</p>
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
+      <ListView
+        emptyText={timeline?.isChatGPTPage ? t('timelineNoMessages') : t('cgStatusNotChatGPT')}
+        items={(timeline?.isChatGPTPage ? timeline.nodes : []).map((node) => ({
+          id: node.messageAnchor,
+          title: `#${node.index}`,
+          meta: node.role === 'user' ? t('roleUser') : t('roleAssistant'),
+          subtitle: node.summary || t('emptyMessage'),
+          actions: [
+            {
+              id: 'jump',
+              label: t('jump'),
+              tone: 'secondary',
+              onClick: () => void handleScrollToNode(node),
+            },
+          ],
+        }))}
+      />
+    </Panel>
   );
 }

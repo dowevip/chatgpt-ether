@@ -190,21 +190,30 @@ function injectStyles(): void {
   style.id = STYLE_ID;
   style.textContent = `
     .cg-voyager-quick-access-root {
+      --cg-surface: #ffffff;
+      --cg-surface-subtle: #F7F6FC;
+      --cg-border: #E7E4F8;
+      --cg-text: #202332;
+      --cg-muted: #667085;
+      --cg-soft: #F4F2FF;
+      --cg-soft-hover: #E7E4F8;
+      --cg-accent: #7C6FF6;
+      --cg-accent-hover: #6E61E8;
       position: fixed;
       z-index: 2147483000;
       width: 44px;
       height: 44px;
       font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      color: #202124;
+      color: var(--cg-text);
     }
     .cg-voyager-quick-access-button {
       width: 44px;
       height: 44px;
-      border: 1px solid rgba(15, 23, 42, 0.14);
+      border: 1px solid var(--cg-border);
       border-radius: 999px;
       background: rgba(255, 255, 255, 0.94);
-      color: #047857;
-      box-shadow: 0 10px 28px rgba(15, 23, 42, 0.18);
+      color: #3D365C;
+      box-shadow: 0 8px 22px rgba(32, 35, 50, 0.12);
       cursor: grab;
       display: grid;
       place-items: center;
@@ -219,46 +228,55 @@ function injectStyles(): void {
     }
     .cg-voyager-quick-access-button:hover {
       transform: translateY(-1px);
-      box-shadow: 0 14px 34px rgba(15, 23, 42, 0.22);
+      box-shadow: 0 10px 24px rgba(32, 35, 50, 0.16);
     }
     .cg-voyager-quick-access-button:active {
       cursor: grabbing;
       transform: scale(0.98);
     }
     .cg-voyager-quick-module {
+      --cg-surface: #ffffff;
+      --cg-surface-subtle: #F7F6FC;
+      --cg-border: #E7E4F8;
+      --cg-text: #202332;
+      --cg-muted: #667085;
+      --cg-soft: #F4F2FF;
+      --cg-soft-hover: #E7E4F8;
+      --cg-accent: #7C6FF6;
+      --cg-accent-hover: #6E61E8;
       position: fixed;
       z-index: 2147482999;
       width: ${PANEL_WIDTH}px;
       height: ${PANEL_HEIGHT}px;
-      border: 1px solid rgba(15, 23, 42, 0.12);
-      border-radius: 14px;
-      background: rgba(255, 255, 255, 0.98);
-      box-shadow: 0 18px 44px rgba(15, 23, 42, 0.2);
+      border: 1px solid var(--cg-border);
+      border-radius: 12px;
+      background: rgba(251, 250, 255, 0.98);
+      box-shadow: 0 16px 36px rgba(32, 35, 50, 0.13);
       display: none;
       overflow: hidden;
       backdrop-filter: blur(14px);
       font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      color: #202124;
+      color: var(--cg-text);
     }
     .cg-voyager-quick-module-open {
       display: flex;
       flex-direction: column;
     }
     .cg-voyager-quick-module-header {
-      min-height: 48px;
-      border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+      min-height: 44px;
+      border-bottom: 1px solid var(--cg-border);
       display: flex;
       align-items: center;
       gap: 8px;
-      padding: 8px 10px;
-      background: rgba(248, 250, 252, 0.9);
+      padding: 7px 10px;
+      background: rgba(251, 250, 255, 0.92);
     }
     .cg-voyager-quick-module-grip {
       width: 26px;
       height: 30px;
       border: 0;
       background: transparent;
-      color: #64748b;
+      color: var(--cg-muted);
       cursor: grab;
       display: flex;
       align-items: center;
@@ -272,14 +290,14 @@ function injectStyles(): void {
     }
     .cg-voyager-quick-module-title {
       font-size: 14px;
-      font-weight: 750;
-      color: #047857;
+      font-weight: 650;
+      color: #3D365C;
       margin-right: auto;
       white-space: nowrap;
     }
     .cg-voyager-quick-module-tabs {
       display: flex;
-      gap: 4px;
+      gap: 8px;
     }
     .cg-voyager-quick-module-tab,
     .cg-voyager-quick-module-close,
@@ -287,70 +305,128 @@ function injectStyles(): void {
     .cg-voyager-quick-module-link,
     .cg-voyager-quick-module-secondary,
     .cg-voyager-quick-module-delete {
-      border: 0;
+      appearance: none;
+      border: 1px solid transparent;
       border-radius: 8px;
       cursor: pointer;
       font-size: 12px;
       line-height: 1.3;
+      box-sizing: border-box;
+      user-select: none;
+      box-shadow: 0 1px 0 rgba(32, 35, 50, 0.03);
+    }
+    .cg-voyager-quick-module-tab:focus-visible,
+    .cg-voyager-quick-module-close:focus-visible,
+    .cg-voyager-quick-module-action:focus-visible,
+    .cg-voyager-quick-module-link:focus-visible,
+    .cg-voyager-quick-module-secondary:focus-visible,
+    .cg-voyager-quick-module-delete:focus-visible {
+      outline: none;
+      border-color: rgba(124, 111, 246, 0.58);
+      box-shadow: 0 0 0 3px rgba(124, 111, 246, 0.13);
+    }
+    .cg-voyager-quick-module-tab:active,
+    .cg-voyager-quick-module-close:active,
+    .cg-voyager-quick-module-action:active,
+    .cg-voyager-quick-module-link:active,
+    .cg-voyager-quick-module-secondary:active,
+    .cg-voyager-quick-module-delete:active {
+      transform: translateY(1px);
     }
     .cg-voyager-quick-module-tab {
-      background: transparent;
-      color: #475569;
-      padding: 6px 8px;
+      min-height: 36px;
+      border-color: rgba(231, 228, 248, 0.72);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.72);
+      color: #667085;
+      padding: 7px 14px;
+      font-weight: 600;
+      transition:
+        background 140ms ease,
+        border-color 140ms ease,
+        color 140ms ease;
     }
     .cg-voyager-quick-module-tab-active,
     .cg-voyager-quick-module-tab:hover {
-      background: rgba(5, 150, 105, 0.1);
-      color: #047857;
+      border-color: rgba(124, 111, 246, 0.34);
+      background: #fff;
+      color: #7C6FF6;
+      box-shadow: 0 0 0 1px rgba(124, 111, 246, 0.08), 0 3px 8px rgba(124, 111, 246, 0.08);
     }
     .cg-voyager-quick-module-close {
       width: 28px;
       height: 28px;
+      border-color: transparent;
       background: transparent;
-      color: #64748b;
+      color: #667085;
       font-size: 18px;
+      box-shadow: none;
     }
     .cg-voyager-quick-module-close:hover {
-      background: rgba(15, 23, 42, 0.08);
-      color: #0f172a;
+      background: var(--cg-soft-hover);
+      color: var(--cg-text);
     }
     .cg-voyager-quick-module-toolbar {
       display: flex;
+      align-items: center;
       gap: 8px;
-      padding: 10px 12px 0;
+      padding: 0 0 12px;
     }
     .cg-voyager-quick-module-search {
       flex: 1;
-      height: 34px;
-      border: 1px solid rgba(15, 23, 42, 0.14);
-      border-radius: 9px;
+      height: 38px;
+      border: 1px solid var(--cg-border);
+      border-radius: 10px;
       background: #fff;
-      color: #202124;
+      color: var(--cg-text);
       outline: none;
-      padding: 0 10px;
-      font-size: 12px;
+      padding: 0 12px;
+      font-size: 13px;
+      box-shadow: 0 1px 0 rgba(32, 35, 50, 0.02);
+      transition:
+        border-color 140ms ease,
+        box-shadow 140ms ease,
+        background 140ms ease;
+    }
+    .cg-voyager-quick-module-search::placeholder {
+      color: #98A2B3;
+    }
+    .cg-voyager-quick-module-search:focus {
+      border-color: rgba(124, 111, 246, 0.54);
+      box-shadow: 0 0 0 3px rgba(124, 111, 246, 0.12);
+    }
+    .cg-voyager-quick-module-timeline-button {
+      min-height: 38px;
+      border-radius: 10px;
+      padding: 0 12px;
+      white-space: nowrap;
     }
     .cg-voyager-quick-module-form {
       display: flex;
       flex-direction: column;
       gap: 8px;
-      border: 1px solid rgba(5, 150, 105, 0.16);
-      border-radius: 10px;
-      background: rgba(240, 253, 250, 0.68);
-      padding: 10px;
+      border: 1px solid var(--cg-border);
+      border-radius: 12px;
+      background: var(--cg-surface-subtle);
+      padding: 12px;
       margin-bottom: 10px;
     }
     .cg-voyager-quick-module-field,
     .cg-voyager-quick-module-textarea {
       width: 100%;
-      border: 1px solid rgba(15, 23, 42, 0.14);
-      border-radius: 9px;
+      border: 1px solid var(--cg-border);
+      border-radius: 10px;
       background: #fff;
-      color: #202124;
+      color: var(--cg-text);
       outline: none;
-      padding: 8px 10px;
-      font-size: 12px;
+      padding: 9px 11px;
+      font-size: 13px;
       box-sizing: border-box;
+    }
+    .cg-voyager-quick-module-field:focus,
+    .cg-voyager-quick-module-textarea:focus {
+      border-color: rgba(124, 111, 246, 0.54);
+      box-shadow: 0 0 0 3px rgba(124, 111, 246, 0.1);
     }
     .cg-voyager-quick-module-textarea {
       min-height: 110px;
@@ -361,90 +437,152 @@ function injectStyles(): void {
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      color: #475569;
+      color: var(--cg-muted);
       font-size: 12px;
     }
     .cg-voyager-quick-module-body {
       flex: 1;
       overflow: auto;
-      padding: 10px 12px 12px;
+      padding: 20px 22px 18px;
+      background:
+        linear-gradient(180deg, rgba(244, 242, 255, 0.52), rgba(251, 250, 255, 0) 88px),
+        #FBFAFF;
     }
     .cg-voyager-quick-module-status {
       min-height: 24px;
-      border-top: 1px solid rgba(15, 23, 42, 0.08);
-      padding: 6px 12px;
-      color: #64748b;
-      font-size: 11px;
-      background: rgba(248, 250, 252, 0.88);
+      border-top: 1px solid var(--cg-border);
+      padding: 7px 16px;
+      color: var(--cg-muted);
+      font-size: 12px;
+      background: #F7F6FC;
     }
     .cg-voyager-quick-module-section {
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 9px;
     }
     .cg-voyager-quick-module-item {
-      border: 1px solid rgba(15, 23, 42, 0.1);
-      border-radius: 10px;
-      padding: 10px;
-      background: rgba(255, 255, 255, 0.82);
+      border: 1px solid var(--cg-border);
+      border-radius: 12px;
+      padding: 12px 13px;
+      background: rgba(255, 255, 255, 0.92);
+      box-shadow: 0 1px 0 rgba(32, 35, 50, 0.03);
+      transition:
+        border-color 140ms ease,
+        background 140ms ease,
+        box-shadow 140ms ease;
+    }
+    .cg-voyager-quick-module-item:hover {
+      border-color: rgba(124, 111, 246, 0.28);
+      background: #fff;
+      box-shadow: 0 8px 20px rgba(32, 35, 50, 0.06);
     }
     .cg-voyager-quick-module-item-title {
-      font-size: 13px;
-      font-weight: 700;
-      color: #0f172a;
-      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 15px;
+      font-weight: 650;
+      color: var(--cg-text);
+      margin-bottom: 5px;
       word-break: break-word;
+    }
+    .cg-voyager-quick-module-favorite {
+      color: #7C6FF6;
+      font-size: 12px;
+      line-height: 1;
     }
     .cg-voyager-quick-module-item-meta,
     .cg-voyager-quick-module-item-preview {
-      color: #64748b;
-      font-size: 11px;
+      color: var(--cg-muted);
+      font-size: 12px;
       line-height: 1.45;
       word-break: break-word;
     }
+    .cg-voyager-quick-module-item-preview {
+      display: -webkit-box;
+      overflow: hidden;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 3;
+    }
+    .cg-voyager-quick-module-tags {
+      display: flex;
+      gap: 5px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+    .cg-voyager-quick-module-tag {
+      border-radius: 999px;
+      background: var(--cg-soft);
+      color: #3D365C;
+      font-size: 11px;
+      line-height: 1.35;
+      padding: 2px 7px;
+    }
     .cg-voyager-quick-module-item-actions {
       display: flex;
-      gap: 8px;
-      margin-top: 8px;
+      gap: 6px;
+      margin-top: 10px;
       flex-wrap: wrap;
     }
-    .cg-voyager-quick-module-action {
-      background: #047857;
-      color: #fff;
+    .cg-voyager-quick-module-action,
+    .cg-voyager-quick-module-link,
+    .cg-voyager-quick-module-secondary,
+    .cg-voyager-quick-module-delete {
+      min-height: 30px;
       padding: 6px 10px;
+      font-weight: 600;
+      border-radius: 9px;
+      transition:
+        background 140ms ease,
+        border-color 140ms ease,
+        color 140ms ease,
+        box-shadow 140ms ease,
+        transform 80ms ease;
+    }
+    .cg-voyager-quick-module-action {
+      border-color: transparent;
+      background: var(--cg-accent);
+      color: #fff;
+      box-shadow: 0 1px 2px rgba(124, 111, 246, 0.18);
     }
     .cg-voyager-quick-module-action:hover {
-      background: #065f46;
+      background: var(--cg-accent-hover);
+      box-shadow: 0 3px 8px rgba(124, 111, 246, 0.18);
     }
     .cg-voyager-quick-module-link {
-      background: rgba(15, 23, 42, 0.06);
-      color: #334155;
-      padding: 6px 10px;
+      border: 1px solid var(--cg-border);
+      background: #fff;
+      color: #202332;
     }
     .cg-voyager-quick-module-link:hover {
-      background: rgba(15, 23, 42, 0.1);
+      border-color: rgba(124, 111, 246, 0.22);
+      background: var(--cg-soft);
     }
     .cg-voyager-quick-module-secondary {
-      background: rgba(15, 23, 42, 0.06);
-      color: #334155;
-      padding: 6px 10px;
+      border: 1px solid var(--cg-border);
+      background: #fff;
+      color: #202332;
     }
     .cg-voyager-quick-module-secondary:hover {
-      background: rgba(15, 23, 42, 0.1);
+      border-color: rgba(124, 111, 246, 0.22);
+      background: var(--cg-soft);
     }
     .cg-voyager-quick-module-delete {
-      background: rgba(220, 38, 38, 0.08);
-      color: #b91c1c;
-      padding: 6px 10px;
+      border-color: #FFE0E4;
+      background: rgba(255, 241, 242, 0.35);
+      color: #E5484D;
     }
     .cg-voyager-quick-module-delete:hover {
-      background: rgba(220, 38, 38, 0.14);
+      border-color: #FFC9D0;
+      background: #FFF1F2;
     }
     .cg-voyager-quick-module-empty {
-      border: 1px dashed rgba(15, 23, 42, 0.16);
+      border: 1px dashed var(--cg-border);
       border-radius: 10px;
-      padding: 20px 12px;
-      color: #64748b;
+      background: rgba(255, 255, 255, 0.72);
+      padding: 24px 14px;
+      color: var(--cg-muted);
       font-size: 12px;
       text-align: center;
     }
@@ -453,11 +591,11 @@ function injectStyles(): void {
       right: 0;
       bottom: 52px;
       width: 220px;
-      border: 1px solid rgba(15, 23, 42, 0.12);
+      border: 1px solid var(--cg-border);
       border-radius: 10px;
       background: rgba(255, 255, 255, 0.98);
-      color: #202124;
-      box-shadow: 0 18px 44px rgba(15, 23, 42, 0.2);
+      color: var(--cg-text);
+      box-shadow: 0 12px 30px rgba(32, 35, 50, 0.14);
       padding: 10px 12px;
       display: none;
       font-size: 12px;
@@ -468,83 +606,144 @@ function injectStyles(): void {
       display: block;
     }
     .cg-voyager-quick-access-dark {
-      color: #f8fafc;
-    }
-    .cg-voyager-quick-access-dark .cg-voyager-quick-access-button {
-      border-color: rgba(148, 163, 184, 0.22);
-      background: rgba(20, 24, 31, 0.96);
-      color: #7dd3fc;
-      box-shadow: 0 18px 44px rgba(0, 0, 0, 0.34);
+      --cg-surface: #171821;
+      --cg-surface-subtle: #20212B;
+      --cg-border: rgba(220, 220, 230, 0.12);
+      --cg-text: #F4F4F5;
+      --cg-muted: #A1A1AA;
+      --cg-soft: rgba(169, 155, 255, 0.14);
+      --cg-soft-hover: rgba(169, 155, 255, 0.2);
+      --cg-accent: #A99BFF;
+      --cg-accent-hover: #B8ADFF;
+      color: #F4F4F5;
     }
     .cg-voyager-quick-module-dark {
-      border-color: rgba(148, 163, 184, 0.22);
-      background: rgba(20, 24, 31, 0.98);
-      color: #f8fafc;
-      box-shadow: 0 18px 44px rgba(0, 0, 0, 0.34);
+      --cg-surface: #171821;
+      --cg-surface-subtle: #20212B;
+      --cg-border: rgba(220, 220, 230, 0.12);
+      --cg-text: #F4F4F5;
+      --cg-muted: #A1A1AA;
+      --cg-soft: rgba(169, 155, 255, 0.14);
+      --cg-soft-hover: rgba(169, 155, 255, 0.2);
+      --cg-accent: #A99BFF;
+      --cg-accent-hover: #B8ADFF;
+    }
+    .cg-voyager-quick-access-dark .cg-voyager-quick-access-button {
+      border-color: rgba(220, 220, 230, 0.12);
+      background: rgba(23, 24, 33, 0.96);
+      color: #A99BFF;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.28);
+    }
+    .cg-voyager-quick-module-dark {
+      border-color: rgba(220, 220, 230, 0.12);
+      background: rgba(23, 24, 33, 0.98);
+      color: #F4F4F5;
+      box-shadow: 0 14px 34px rgba(0, 0, 0, 0.3);
     }
     .cg-voyager-quick-module-dark .cg-voyager-quick-module-header,
     .cg-voyager-quick-module-dark .cg-voyager-quick-module-status {
-      border-color: rgba(148, 163, 184, 0.18);
-      background: rgba(15, 23, 42, 0.82);
+      border-color: rgba(220, 220, 230, 0.12);
+      background: rgba(16, 16, 20, 0.82);
     }
     .cg-voyager-quick-module-dark .cg-voyager-quick-module-title,
     .cg-voyager-quick-module-dark .cg-voyager-quick-module-tab-active,
     .cg-voyager-quick-module-dark .cg-voyager-quick-module-tab:hover {
-      color: #7dd3fc;
+      color: #F4F4F5;
     }
     .cg-voyager-quick-module-dark .cg-voyager-quick-module-tab {
-      color: #cbd5e1;
+      color: #A1A1AA;
+      background: rgba(23, 24, 33, 0.72);
     }
     .cg-voyager-quick-module-dark .cg-voyager-quick-module-tab-active,
     .cg-voyager-quick-module-dark .cg-voyager-quick-module-tab:hover {
-      background: rgba(125, 211, 252, 0.12);
+      border-color: rgba(169, 155, 255, 0.42);
+      background: rgba(23, 24, 33, 0.92);
+      color: #A99BFF;
     }
     .cg-voyager-quick-module-dark .cg-voyager-quick-module-search {
-      border-color: rgba(148, 163, 184, 0.24);
-      background: rgba(15, 23, 42, 0.95);
-      color: #f8fafc;
+      border-color: rgba(220, 220, 230, 0.16);
+      background: rgba(16, 16, 20, 0.95);
+      color: #F4F4F5;
+    }
+    .cg-voyager-quick-module-dark .cg-voyager-quick-module-search::placeholder {
+      color: #71717A;
     }
     .cg-voyager-quick-module-dark .cg-voyager-quick-module-form {
-      border-color: rgba(45, 212, 191, 0.18);
-      background: rgba(15, 23, 42, 0.78);
+      border-color: var(--cg-border);
+      background: rgba(16, 16, 20, 0.78);
+    }
+    .cg-voyager-quick-module-dark .cg-voyager-quick-module-body {
+      background:
+        linear-gradient(180deg, rgba(169, 155, 255, 0.12), rgba(16, 16, 20, 0) 88px),
+        #101014;
+    }
+    .cg-voyager-quick-module-dark .cg-voyager-quick-module-status {
+      background: #171821;
     }
     .cg-voyager-quick-module-dark .cg-voyager-quick-module-field,
     .cg-voyager-quick-module-dark .cg-voyager-quick-module-textarea {
-      border-color: rgba(148, 163, 184, 0.24);
-      background: rgba(15, 23, 42, 0.95);
-      color: #f8fafc;
+      border-color: rgba(220, 220, 230, 0.16);
+      background: rgba(16, 16, 20, 0.95);
+      color: #F4F4F5;
     }
     .cg-voyager-quick-module-dark .cg-voyager-quick-module-check {
-      color: #cbd5e1;
+      color: #A1A1AA;
     }
     .cg-voyager-quick-module-dark .cg-voyager-quick-module-item {
-      border-color: rgba(148, 163, 184, 0.18);
-      background: rgba(15, 23, 42, 0.78);
+      border-color: rgba(220, 220, 230, 0.12);
+      background: rgba(23, 24, 33, 0.82);
+    }
+    .cg-voyager-quick-module-dark .cg-voyager-quick-module-item:hover {
+      border-color: rgba(169, 155, 255, 0.28);
+      background: rgba(32, 33, 43, 0.94);
     }
     .cg-voyager-quick-module-dark .cg-voyager-quick-module-item-title {
-      color: #f8fafc;
+      color: #F4F4F5;
     }
     .cg-voyager-quick-module-dark .cg-voyager-quick-module-item-meta,
     .cg-voyager-quick-module-dark .cg-voyager-quick-module-item-preview,
     .cg-voyager-quick-module-dark .cg-voyager-quick-module-empty,
     .cg-voyager-quick-module-dark .cg-voyager-quick-module-status {
-      color: #94a3b8;
+      color: #A1A1AA;
+    }
+    .cg-voyager-quick-module-dark .cg-voyager-quick-module-link,
+    .cg-voyager-quick-module-dark .cg-voyager-quick-module-secondary {
+      background: rgba(23, 24, 33, 0.72);
+      color: #F4F4F5;
     }
     .cg-voyager-quick-module-dark .cg-voyager-quick-module-link,
     .cg-voyager-quick-module-dark .cg-voyager-quick-module-secondary,
     .cg-voyager-quick-module-dark .cg-voyager-quick-module-close {
-      background: rgba(148, 163, 184, 0.12);
-      color: #e2e8f0;
+      border-color: rgba(220, 220, 230, 0.12);
+      background: rgba(23, 24, 33, 0.72);
+    }
+    .cg-voyager-quick-module-dark .cg-voyager-quick-module-close {
+      border-color: transparent;
+      background: transparent;
+      box-shadow: none;
+    }
+    .cg-voyager-quick-module-dark .cg-voyager-quick-module-link:hover,
+    .cg-voyager-quick-module-dark .cg-voyager-quick-module-secondary:hover,
+    .cg-voyager-quick-module-dark .cg-voyager-quick-module-close:hover {
+      background: rgba(169, 155, 255, 0.14);
+    }
+    .cg-voyager-quick-module-dark .cg-voyager-quick-module-tag {
+      background: rgba(169, 155, 255, 0.14);
+      color: #F4F4F5;
     }
     .cg-voyager-quick-module-dark .cg-voyager-quick-module-delete {
-      background: rgba(248, 113, 113, 0.12);
+      border-color: rgba(229, 72, 77, 0.22);
+      background: rgba(229, 72, 77, 0.08);
       color: #fca5a5;
     }
+    .cg-voyager-quick-module-dark .cg-voyager-quick-module-delete:hover {
+      background: rgba(229, 72, 77, 0.14);
+    }
     .cg-voyager-quick-access-dark .cg-voyager-quick-access-toast {
-      border-color: rgba(148, 163, 184, 0.22);
-      background: rgba(20, 24, 31, 0.96);
-      color: #f8fafc;
-      box-shadow: 0 18px 44px rgba(0, 0, 0, 0.34);
+      border-color: rgba(220, 220, 230, 0.12);
+      background: rgba(23, 24, 33, 0.96);
+      color: #F4F4F5;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
     }
   `;
   document.documentElement.appendChild(style);
@@ -683,6 +882,25 @@ function appendEmpty(message: string): void {
   panelBodyEl?.append(createEl('div', 'cg-voyager-quick-module-empty', message));
 }
 
+function createTags(tags: string[]): HTMLDivElement {
+  const container = createEl('div', 'cg-voyager-quick-module-tags');
+  for (const tag of tags.slice(0, 5)) {
+    container.append(createEl('span', 'cg-voyager-quick-module-tag', tag));
+  }
+  return container;
+}
+
+function createTimelineButton(): HTMLButtonElement {
+  const timelineButton = createEl(
+    'button',
+    'cg-voyager-quick-module-link cg-voyager-quick-module-timeline-button',
+    '显示/隐藏时间轴',
+  );
+  timelineButton.type = 'button';
+  timelineButton.addEventListener('click', () => void toggleTimelineVisibility());
+  return timelineButton;
+}
+
 async function renderPromptVaultPanel(query = ''): Promise<void> {
   resetPanelContent();
   if (!panelBodyEl) return;
@@ -695,7 +913,7 @@ async function renderPromptVaultPanel(query = ''): Promise<void> {
     (nextQuery) => void renderPromptVaultPanel(nextQuery),
   );
   searchInput.value = query;
-  toolbar.append(searchInput);
+  toolbar.append(searchInput, createTimelineButton());
 
   const prompts = await readStorageArray<PromptItem>(PROMPTS_STORAGE_KEY);
   const editingPrompt = prompts.find((prompt) => prompt.id === editingPromptId) || null;
@@ -791,16 +1009,12 @@ async function renderPromptVaultPanel(query = ''): Promise<void> {
 
   for (const prompt of filtered) {
     const item = createEl('div', 'cg-voyager-quick-module-item');
-    item.append(
-      createEl(
-        'div',
-        'cg-voyager-quick-module-item-title',
-        `${prompt.favorite ? '★ ' : ''}${prompt.title || '未命名提示词'}`,
-      ),
-      createEl('div', 'cg-voyager-quick-module-item-preview', shortText(prompt.content, 120)),
-    );
+    const title = createEl('div', 'cg-voyager-quick-module-item-title');
+    if (prompt.favorite) title.append(createEl('span', 'cg-voyager-quick-module-favorite', '★'));
+    title.append(document.createTextNode(prompt.title || '未命名提示词'));
+    item.append(title, createEl('div', 'cg-voyager-quick-module-item-preview', shortText(prompt.content, 140)));
     if (prompt.tags?.length) {
-      item.append(createEl('div', 'cg-voyager-quick-module-item-meta', prompt.tags.join(' · ')));
+      item.append(createTags(prompt.tags));
     }
     const actions = createEl('div', 'cg-voyager-quick-module-item-actions');
     const insertButton = createEl('button', 'cg-voyager-quick-module-action', '插入');
@@ -861,13 +1075,16 @@ async function renderFoldersPanel(): Promise<void> {
     const folderName = conversation.folderId
       ? folderNameById.get(conversation.folderId) || '未知文件夹'
       : '未分类';
+    const updatedText = formatTime(conversation.updatedAt || conversation.lastOpenedAt);
     const item = createEl('div', 'cg-voyager-quick-module-item');
     item.append(
       createEl('div', 'cg-voyager-quick-module-item-title', conversation.title || '未命名对话'),
       createEl(
         'div',
         'cg-voyager-quick-module-item-meta',
-        `${folderName}${conversation.note ? ` · ${shortText(conversation.note, 48)}` : ''}`,
+        `${folderName}${updatedText ? ` · ${updatedText}` : ''}${
+          conversation.note ? ` · ${shortText(conversation.note, 48)}` : ''
+        }`,
       ),
     );
     const actions = createEl('div', 'cg-voyager-quick-module-item-actions');
@@ -1033,14 +1250,9 @@ function createPanel(): void {
 
   header.append(grip, title, tabs, closeButton);
 
-  const quickToolbar = createEl('div', 'cg-voyager-quick-module-toolbar');
-  const timelineButton = createEl('button', 'cg-voyager-quick-module-link', '显示/隐藏时间轴');
-  timelineButton.addEventListener('click', () => void toggleTimelineVisibility());
-  quickToolbar.append(timelineButton);
-
   panelBodyEl = createEl('div', 'cg-voyager-quick-module-body') as HTMLDivElement;
   panelStatusEl = createEl('div', 'cg-voyager-quick-module-status', '') as HTMLDivElement;
-  panelEl.append(header, quickToolbar, panelBodyEl, panelStatusEl);
+  panelEl.append(header, panelBodyEl, panelStatusEl);
   document.documentElement.appendChild(panelEl);
   setupPanelDragging(grip);
 }

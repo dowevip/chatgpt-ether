@@ -15,9 +15,11 @@ import {
   updateChatGPTConversationNote,
 } from '@/core/services/ChatGPTConversationService';
 import type { ChatGPTConversationIndex, ChatGPTFolder } from '@/core/types/conversation';
+import { cn } from '@/lib/utils';
+import { ActionBar, PageSection, Panel, SelectField, TextAreaField, TextField } from '@/ui/components';
+import { uiTokens } from '@/ui/tokens';
 
 import { Button } from '../../../components/ui/button';
-import { Card, CardContent, CardTitle } from '../../../components/ui/card';
 import { useLanguage } from '../../../contexts/LanguageContext';
 
 type ChatGPTPageStatus = {
@@ -326,13 +328,21 @@ export function FoldersPanel({ currentStatus, onBack }: FoldersPanelProps) {
     return (
       <div
         key={conversation.conversationId}
-        className={`border-border rounded-md border p-3 ${nested ? 'bg-muted/20' : ''}`}
+        className={cn(
+          uiTokens.color.border,
+          uiTokens.radius.control,
+          'border p-3',
+          nested && uiTokens.color.surfaceMuted,
+        )}
       >
         <div className="flex items-start gap-2">
           <button
             type="button"
             onClick={() => void handleOpenConversation(conversation.url)}
-            className="text-primary min-w-0 flex-1 truncate text-left text-sm font-semibold"
+            className={cn(
+              uiTokens.color.textStrong,
+              'min-w-0 flex-1 truncate text-left text-sm font-semibold',
+            )}
             title={conversation.title}
           >
             {conversation.title}
@@ -347,7 +357,7 @@ export function FoldersPanel({ currentStatus, onBack }: FoldersPanelProps) {
             {isExpanded ? t('foldersHideDetails') : t('foldersDetails')}
           </Button>
         </div>
-        <div className="text-muted-foreground mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs">
+        <div className={cn(uiTokens.color.textMuted, 'mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs')}>
           <span>
             {folderName(conversation.folderId, folders, {
               uncategorized: t('foldersUncategorized'),
@@ -361,8 +371,8 @@ export function FoldersPanel({ currentStatus, onBack }: FoldersPanelProps) {
         )}
 
         {isExpanded && (
-          <div className="mt-3 space-y-2 rounded-md border border-dashed p-2">
-            <textarea
+          <div className={cn(uiTokens.radius.control, 'mt-3 space-y-2 border border-dashed p-2')}>
+            <TextAreaField
               value={conversation.note}
               onChange={(event) =>
                 setConversations((prev) =>
@@ -378,9 +388,9 @@ export function FoldersPanel({ currentStatus, onBack }: FoldersPanelProps) {
               }
               placeholder={t('foldersNotePlaceholder')}
               rows={2}
-              className="border-border bg-background w-full resize-y rounded-md border px-2 py-1 text-xs"
+              className="text-xs"
             />
-            <input
+            <TextField
               value={folderMoveQueries[conversation.conversationId] || ''}
               onChange={(event) =>
                 setFolderMoveQueries((prev) => ({
@@ -389,12 +399,11 @@ export function FoldersPanel({ currentStatus, onBack }: FoldersPanelProps) {
                 }))
               }
               placeholder={t('foldersSearchFolderPlaceholder')}
-              className="border-border bg-background w-full rounded-md border px-2 py-1 text-xs"
+              className="text-xs"
             />
-            <select
+            <SelectField
               value={conversation.folderId || ''}
               onChange={(event) => void handleMove(conversation.conversationId, event.target.value)}
-              className="border-border bg-background w-full rounded-md border px-2 py-1 text-xs"
             >
               <option value="">{t('foldersUncategorized')}</option>
               {getMoveFolderOptions(conversation.conversationId).map((option) => (
@@ -402,24 +411,23 @@ export function FoldersPanel({ currentStatus, onBack }: FoldersPanelProps) {
                   {option.label}
                 </option>
               ))}
-            </select>
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                size="sm"
-                onClick={() => void handleOpenConversation(conversation.url)}
-              >
-                {t('foldersOpenConversation')}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => void handleDeleteConversation(conversation)}
-              >
-                {t('delete')}
-              </Button>
-            </div>
+            </SelectField>
+            <ActionBar
+              actions={[
+                {
+                  id: 'open',
+                  label: t('foldersOpenConversation'),
+                  tone: 'primary',
+                  onClick: () => void handleOpenConversation(conversation.url),
+                },
+                {
+                  id: 'delete',
+                  label: t('delete'),
+                  tone: 'danger',
+                  onClick: () => void handleDeleteConversation(conversation),
+                },
+              ]}
+            />
           </div>
         )}
       </div>
@@ -432,39 +440,31 @@ export function FoldersPanel({ currentStatus, onBack }: FoldersPanelProps) {
     return (
       <div key={folder.id} className="space-y-2">
         {editingFolderId === folder.id ? (
-          <div className="space-y-2 rounded-md border p-2">
-            <input
+          <div className={cn(uiTokens.radius.control, uiTokens.color.border, 'space-y-2 border p-2')}>
+            <TextField
               value={editingFolderName}
               onChange={(event) => setEditingFolderName(event.target.value)}
-              className="border-border bg-background w-full rounded-md border px-2 py-1 text-sm"
             />
-            <div className="flex gap-2">
-              <Button type="button" size="sm" onClick={() => void handleRenameFolder()}>
-                {t('save')}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setEditingFolderId(null)}
-              >
-                {t('cancel')}
-              </Button>
-            </div>
+            <ActionBar
+              actions={[
+                { id: 'save', label: t('save'), tone: 'primary', onClick: () => void handleRenameFolder() },
+                { id: 'cancel', label: t('cancel'), tone: 'secondary', onClick: () => setEditingFolderId(null) },
+              ]}
+            />
           </div>
         ) : (
-          <div className="rounded-md border px-2 py-2">
+          <div className={cn(uiTokens.radius.control, uiTokens.color.border, 'border px-2 py-2')}>
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => toggleFolderCollapsed(folder.id)}
-                className="text-muted-foreground shrink-0 text-xs"
+                className={cn(uiTokens.color.textMuted, 'shrink-0 text-xs')}
                 title={collapsedFolderIds[folder.id] ? t('expand') : t('collapse')}
               >
                 {collapsedFolderIds[folder.id] ? '▶' : '▼'}
               </button>
               <span className="min-w-0 flex-1 truncate text-sm">{folder.name}</span>
-              <span className="text-muted-foreground shrink-0 text-xs">
+              <span className={cn(uiTokens.color.textMuted, 'shrink-0 text-xs')}>
                 {folderConversationCounts[folder.id] || 0}
               </span>
               <Button
@@ -487,7 +487,7 @@ export function FoldersPanel({ currentStatus, onBack }: FoldersPanelProps) {
             {!collapsedFolderIds[folder.id] && (
               <div className="mt-2 space-y-2 pl-5">
                 {folderConversations.length === 0 ? (
-                  <p className="text-muted-foreground text-xs">
+                  <p className={cn(uiTokens.color.textMuted, uiTokens.typography.caption)}>
                     {t('foldersNoConversationsInFolder')}
                   </p>
                 ) : (
@@ -508,27 +508,19 @@ export function FoldersPanel({ currentStatus, onBack }: FoldersPanelProps) {
     const folderConversations = conversationsByFolderId[folder.id] || [];
 
     return (
-      <div key={folder.id} className="border-border rounded-md border px-3 py-2 text-sm">
+      <div key={folder.id} className={cn(uiTokens.color.border, uiTokens.radius.control, 'border px-3 py-2 text-sm')}>
         {editingFolderId === folder.id ? (
           <div className="space-y-2">
-            <input
+            <TextField
               value={editingFolderName}
               onChange={(event) => setEditingFolderName(event.target.value)}
-              className="border-border bg-background w-full rounded-md border px-2 py-1 text-sm"
             />
-            <div className="flex gap-2">
-              <Button type="button" size="sm" onClick={() => void handleRenameFolder()}>
-                {t('save')}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setEditingFolderId(null)}
-              >
-                {t('cancel')}
-              </Button>
-            </div>
+            <ActionBar
+              actions={[
+                { id: 'save', label: t('save'), tone: 'primary', onClick: () => void handleRenameFolder() },
+                { id: 'cancel', label: t('cancel'), tone: 'secondary', onClick: () => setEditingFolderId(null) },
+              ]}
+            />
           </div>
         ) : (
           <div>
@@ -536,13 +528,13 @@ export function FoldersPanel({ currentStatus, onBack }: FoldersPanelProps) {
               <button
                 type="button"
                 onClick={() => toggleFolderCollapsed(folder.id)}
-                className="text-muted-foreground shrink-0 text-xs"
+                className={cn(uiTokens.color.textMuted, 'shrink-0 text-xs')}
                 title={collapsedFolderIds[folder.id] ? t('expand') : t('collapse')}
               >
                 {collapsedFolderIds[folder.id] ? '▶' : '▼'}
               </button>
               <span className="min-w-0 flex-1 truncate">{folder.name}</span>
-              <span className="text-muted-foreground shrink-0 text-xs">
+              <span className={cn(uiTokens.color.textMuted, 'shrink-0 text-xs')}>
                 {folderConversationCounts[folder.id] || 0}
               </span>
               <Button
@@ -564,13 +556,13 @@ export function FoldersPanel({ currentStatus, onBack }: FoldersPanelProps) {
             </div>
 
             {!collapsedFolderIds[folder.id] && (
-              <div className="border-border/60 mt-2 space-y-2 border-l pl-4">
+              <div className={cn(uiTokens.color.borderSubtle, 'mt-2 space-y-2 border-l pl-4')}>
                 {childFolders.map(renderChildFolder)}
                 {folderConversations.map((conversation) =>
                   renderConversationItem(conversation, true),
                 )}
                 {childFolders.length === 0 && folderConversations.length === 0 && (
-                  <p className="text-muted-foreground text-xs">
+                  <p className={cn(uiTokens.color.textMuted, uiTokens.typography.caption)}>
                     {t('foldersNoConversationsInFolder')}
                   </p>
                 )}
@@ -586,27 +578,19 @@ export function FoldersPanel({ currentStatus, onBack }: FoldersPanelProps) {
   const isSearching = showConversationSearch && conversationQuery.trim().length > 0;
 
   return (
-    <div className="bg-background text-foreground w-[380px]">
-      <div className="border-border/50 flex items-center justify-between border-b px-5 py-4">
-        <div>
-          <h1 className="text-primary text-xl font-bold">{t('cgEntryFolders')}</h1>
-          <p className="text-muted-foreground text-xs">{t('foldersPanelSubtitle')}</p>
-        </div>
-        <Button type="button" variant="outline" size="sm" onClick={onBack}>
-          {t('back')}
-        </Button>
-      </div>
-
-      <div className="flex max-h-[590px] flex-col gap-4 overflow-y-auto p-5">
-        <Card className="p-4">
-          <CardTitle className="mb-3 text-base">{t('foldersCurrentConversation')}</CardTitle>
-          <CardContent className="space-y-3 p-0 text-sm">
+    <Panel
+      title={t('cgEntryFolders')}
+      subtitle={t('foldersPanelSubtitle')}
+      onBack={onBack}
+      backLabel={t('back')}
+    >
+        <PageSection title={t('foldersCurrentConversation')}>
             <div className="min-w-0">
               <p className="truncate font-medium">
                 {currentConversation?.title || t('foldersCurrentNotChatGPT')}
               </p>
               {currentIndexedConversation && (
-                <p className="text-muted-foreground mt-1 text-xs">
+                <p className={cn(uiTokens.color.textMuted, 'mt-1 text-xs')}>
                   {t('foldersCurrentFolder').replace(
                     '{name}',
                     folderName(currentIndexedConversation.folderId, folders, {
@@ -619,23 +603,26 @@ export function FoldersPanel({ currentStatus, onBack }: FoldersPanelProps) {
             </div>
 
             <div className="flex flex-wrap gap-2">
-              <Button
-                type="button"
-                size="sm"
-                disabled={!canSaveCurrent}
-                onClick={() => void handleSaveCurrent()}
-              >
-                {currentIndexedConversation
-                  ? t('foldersCurrentSavedBadge')
-                  : t('foldersSaveCurrent')}
-              </Button>
+              <ActionBar
+                actions={[
+                  {
+                    id: 'save-current',
+                    label: currentIndexedConversation
+                      ? t('foldersCurrentSavedBadge')
+                      : t('foldersSaveCurrent'),
+                    tone: 'primary',
+                    disabled: !canSaveCurrent,
+                    onClick: () => void handleSaveCurrent(),
+                  },
+                ]}
+              />
               {currentIndexedConversation && (
-                <select
+                <SelectField
                   value={currentIndexedConversation.folderId || ''}
                   onChange={(event) =>
                     void handleMove(currentIndexedConversation.conversationId, event.target.value)
                   }
-                  className="border-border bg-background min-w-0 flex-1 rounded-md border px-2 py-1 text-xs"
+                  className="min-w-0 flex-1"
                 >
                   <option value="">{t('foldersUncategorized')}</option>
                   {folderOptions.map((option) => (
@@ -643,57 +630,47 @@ export function FoldersPanel({ currentStatus, onBack }: FoldersPanelProps) {
                       {option.label}
                     </option>
                   ))}
-                </select>
+                </SelectField>
               )}
             </div>
-            {message && <p className="text-muted-foreground text-xs">{message}</p>}
-          </CardContent>
-        </Card>
+            {message && <p className={cn(uiTokens.color.textMuted, uiTokens.typography.caption)}>{message}</p>}
+        </PageSection>
 
-        <Card className="p-4">
-          <div className="mb-3 flex items-center justify-between gap-2">
-            <CardTitle className="text-base">{t('foldersFolderList')}</CardTitle>
-            <div className="flex items-center gap-2">
-              <span className="text-muted-foreground text-xs">
-                {t('foldersConversationCount').replace('{count}', String(conversations.length))}
-              </span>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="h-8 w-8 px-0"
-                onClick={() => {
-                  setShowConversationSearch((value) => !value);
-                  if (showConversationSearch) setConversationQuery('');
-                }}
-                title={t('foldersSearchConversationPlaceholder')}
-              >
-                🔍
-              </Button>
-            </div>
-          </div>
-          <CardContent className="space-y-3 p-0">
+        <PageSection
+          title={t('foldersFolderList')}
+          actions={[
+            {
+              id: 'search',
+              label: '🔍',
+              tone: 'secondary',
+              title: t('foldersSearchConversationPlaceholder'),
+              onClick: () => {
+                setShowConversationSearch((value) => !value);
+                if (showConversationSearch) setConversationQuery('');
+              },
+            },
+          ]}
+          description={t('foldersConversationCount').replace('{count}', String(conversations.length))}
+        >
             {showConversationSearch && (
-              <input
+              <TextField
                 value={conversationQuery}
                 onChange={(event) => setConversationQuery(event.target.value)}
                 placeholder={t('foldersSearchConversationPlaceholder')}
-                className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
               />
             )}
 
-            <div className="space-y-2 rounded-md border border-dashed p-2">
-              <input
+            <div className={cn(uiTokens.radius.control, 'space-y-2 border border-dashed p-2')}>
+              <TextField
                 value={newFolderName}
                 onChange={(event) => setNewFolderName(event.target.value)}
                 placeholder={t('foldersNamePlaceholder')}
-                className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
               />
               <div className="flex gap-2">
-                <select
+                <SelectField
                   value={newFolderParentId}
                   onChange={(event) => setNewFolderParentId(event.target.value)}
-                  className="border-border bg-background min-w-0 flex-1 rounded-md border px-2 py-1 text-xs"
+                  className="min-w-0 flex-1"
                 >
                   <option value="">{t('foldersCreateAsRoot')}</option>
                   {rootFolders.map((folder) => (
@@ -701,23 +678,30 @@ export function FoldersPanel({ currentStatus, onBack }: FoldersPanelProps) {
                       {t('foldersParentFolder').replace('{name}', folder.name)}
                     </option>
                   ))}
-                </select>
-                <Button type="button" size="sm" onClick={() => void handleCreateFolder()}>
-                  {t('foldersQuickCreate')}
-                </Button>
+                </SelectField>
+                <ActionBar
+                  actions={[
+                    {
+                      id: 'create',
+                      label: t('foldersQuickCreate'),
+                      tone: 'primary',
+                      onClick: () => void handleCreateFolder(),
+                    },
+                  ]}
+                />
               </div>
             </div>
 
             {isSearching ? (
               <div className="space-y-2">
-                <p className="text-muted-foreground text-xs">
+                <p className={cn(uiTokens.color.textMuted, uiTokens.typography.caption)}>
                   {t('foldersSearchResults').replace(
                     '{count}',
                     String(filteredConversations.length),
                   )}
                 </p>
                 {filteredConversations.length === 0 ? (
-                  <p className="text-muted-foreground text-sm">
+                  <p className={cn(uiTokens.color.textMuted, uiTokens.typography.body)}>
                     {t('foldersNoSavedConversations')}
                   </p>
                 ) : (
@@ -726,25 +710,25 @@ export function FoldersPanel({ currentStatus, onBack }: FoldersPanelProps) {
               </div>
             ) : (
               <div className="space-y-2">
-                <div className="border-border rounded-md border px-3 py-2 text-sm">
+                <div className={cn(uiTokens.color.border, uiTokens.radius.control, 'border px-3 py-2 text-sm')}>
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
                       onClick={() => toggleFolderCollapsed('__uncategorized__')}
-                      className="text-muted-foreground shrink-0 text-xs"
+                      className={cn(uiTokens.color.textMuted, 'shrink-0 text-xs')}
                       title={collapsedFolderIds.__uncategorized__ ? t('expand') : t('collapse')}
                     >
                       {collapsedFolderIds.__uncategorized__ ? '▶' : '▼'}
                     </button>
                     <span className="min-w-0 flex-1 truncate">{t('foldersUncategorized')}</span>
-                    <span className="text-muted-foreground shrink-0 text-xs">
+                    <span className={cn(uiTokens.color.textMuted, 'shrink-0 text-xs')}>
                       {folderConversationCounts.__uncategorized__ || 0}
                     </span>
                   </div>
                   {!collapsedFolderIds.__uncategorized__ && (
                     <div className="mt-2 space-y-2 pl-5">
                       {uncategorizedConversations.length === 0 ? (
-                        <p className="text-muted-foreground text-xs">
+                        <p className={cn(uiTokens.color.textMuted, uiTokens.typography.caption)}>
                           {t('foldersNoConversationsInFolder')}
                         </p>
                       ) : (
@@ -757,15 +741,13 @@ export function FoldersPanel({ currentStatus, onBack }: FoldersPanelProps) {
                 </div>
 
                 {rootFolders.length === 0 ? (
-                  <p className="text-muted-foreground text-sm">{t('foldersEmpty')}</p>
+                  <p className={cn(uiTokens.color.textMuted, uiTokens.typography.body)}>{t('foldersEmpty')}</p>
                 ) : (
                   rootFolders.map(renderRootFolder)
                 )}
               </div>
             )}
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+        </PageSection>
+    </Panel>
   );
 }

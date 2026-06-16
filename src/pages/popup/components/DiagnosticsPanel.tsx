@@ -5,9 +5,10 @@ import {
   getChatGPTDiagnosticsStatus,
   type ChatGPTDiagnosticsStatus,
 } from '@/core/services/ChatGPTDiagnosticsService';
+import { ListView, PageSection, Panel } from '@/ui/components';
+import { uiTokens } from '@/ui/tokens';
+import { cn } from '@/lib/utils';
 
-import { Button } from '../../../components/ui/button';
-import { Card, CardContent, CardTitle } from '../../../components/ui/card';
 import { useLanguage } from '../../../contexts/LanguageContext';
 
 type DiagnosticsPanelProps = {
@@ -88,64 +89,46 @@ export function DiagnosticsPanel({ onBack }: DiagnosticsPanelProps) {
   }, []);
 
   return (
-    <div className="bg-background text-foreground w-[360px]">
-      <div className="border-border/50 flex items-center justify-between border-b px-5 py-4">
-        <div>
-          <h1 className="text-primary text-xl font-bold">{t('cgEntryDiagnostics')}</h1>
-          <p className="text-muted-foreground text-xs">{t('diagSubtitle')}</p>
-        </div>
-        <Button type="button" variant="outline" size="sm" onClick={onBack}>
-          {t('back')}
-        </Button>
-      </div>
+    <Panel
+      title={t('cgEntryDiagnostics')}
+      subtitle={t('diagSubtitle')}
+      onBack={onBack}
+      backLabel={t('back')}
+    >
+      <PageSection
+        title={t('diagRuntimeStatus')}
+        description={loading ? t('diagRefreshing') : t('diagNoChatBody')}
+        actions={[
+          {
+            id: 'refresh',
+            label: t('refresh'),
+            tone: 'secondary',
+            disabled: loading,
+            onClick: () => void refreshDiagnostics(),
+          },
+          {
+            id: 'copy',
+            label: t('copy'),
+            tone: 'primary',
+            disabled: !status || loading,
+            onClick: () => void copyDiagnostics(),
+          },
+        ]}
+      >
+        {message && (
+          <p className={cn(uiTokens.color.textMuted, uiTokens.typography.caption)}>{message}</p>
+        )}
+      </PageSection>
 
-      <div className="flex max-h-[560px] flex-col gap-4 overflow-y-auto p-5">
-        <Card className="p-4">
-          <CardContent className="flex items-center justify-between gap-3 p-0">
-            <div>
-              <CardTitle className="text-base">{t('diagRuntimeStatus')}</CardTitle>
-              <p className="text-muted-foreground mt-1 text-xs">
-                {loading ? t('diagRefreshing') : t('diagNoChatBody')}
-              </p>
-            </div>
-            <div className="flex shrink-0 gap-2">
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                disabled={loading}
-                onClick={() => void refreshDiagnostics()}
-              >
-                {t('refresh')}
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                disabled={!status || loading}
-                onClick={() => void copyDiagnostics()}
-              >
-                {t('copy')}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {message && <p className="text-muted-foreground text-xs">{message}</p>}
-
-        <Card className="p-4">
-          <CardContent className="space-y-2 p-0">
-            {rows.length === 0 && (
-              <p className="text-muted-foreground text-sm">{t('diagEmpty')}</p>
-            )}
-            {rows.map(([label, value]) => (
-              <div key={label} className="flex justify-between gap-3 text-xs">
-                <span className="text-muted-foreground shrink-0">{label}</span>
-                <span className="min-w-0 truncate text-right font-medium">{value}</span>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+      <ListView
+        variant="divided"
+        emptyText={t('diagEmpty')}
+        items={rows.map(([label, value]) => ({
+          id: label,
+          title: <span className={uiTokens.color.textMuted}>{label}</span>,
+          meta: value,
+        }))}
+      />
+    </Panel>
   );
 }

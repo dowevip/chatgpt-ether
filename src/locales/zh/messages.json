@@ -2172,11 +2172,11 @@
     "description": "Popup UI: cgEntryDiagnostics"
   },
   "cgHidePageTimeline": {
-    "message": "隐藏页面时间轴",
+    "message": "隐藏时间轴",
     "description": "Popup UI: cgHidePageTimeline"
   },
   "cgShowPageTimeline": {
-    "message": "显示页面时间轴",
+    "message": "显示时间轴",
     "description": "Popup UI: cgShowPageTimeline"
   },
   "cgOpenEntry": {

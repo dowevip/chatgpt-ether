@@ -27,6 +27,9 @@ import {
 } from '@/pages/content/timeline/hierarchyStorage';
 import type { TimelineHierarchyData } from '@/pages/content/timeline/hierarchyTypes';
 import type { StarredMessagesData } from '@/pages/content/timeline/starredTypes';
+import { ActionBar, ListView, PageSection, Panel } from '@/ui/components';
+import { uiTokens } from '@/ui/tokens';
+import { cn } from '@/lib/utils';
 
 import { Button } from '../../../components/ui/button';
 import { Card, CardContent, CardTitle } from '../../../components/ui/card';
@@ -875,140 +878,116 @@ export function CloudSyncSettings({ chatgptOnly = false, onBack }: CloudSyncSett
     const busy = isAuthorizing || isUploading || isDownloading || syncState.isSyncing;
 
     return (
-      <div className="bg-background text-foreground w-[360px]">
-        <div className="border-border/50 flex items-center justify-between border-b px-5 py-4">
-          <div>
-            <h1 className="text-lg font-bold">{t('syncTitle')}</h1>
-            <p className="text-muted-foreground text-xs">{t('syncSubtitle')}</p>
-          </div>
-          {onBack && (
-            <Button type="button" variant="ghost" size="sm" onClick={onBack}>
-              {t('back')}
-            </Button>
-          )}
-        </div>
+      <Panel title={t('syncTitle')} subtitle={t('syncSubtitle')} onBack={onBack} backLabel={t('back')}>
+        <PageSection title={t('syncStatus')}>
+          <ListView
+            variant="divided"
+            emptyText="-"
+            items={[
+              {
+                id: 'auth',
+                title: <span className={uiTokens.color.textMuted}>{t('syncGoogleDriveAuthStatus')}</span>,
+                meta: syncState.isAuthenticated ? t('syncAuthorized') : t('syncUnauthorized'),
+              },
+              {
+                id: 'syncing',
+                title: <span className={uiTokens.color.textMuted}>{t('syncCurrentlySyncing')}</span>,
+                meta: syncState.isSyncing ? t('yes') : t('no'),
+              },
+              {
+                id: 'last-upload',
+                title: <span className={uiTokens.color.textMuted}>{t('syncLastUploadTime')}</span>,
+                meta: formatChatGPTTime(syncState.lastUploadTimeChatGPT),
+              },
+              {
+                id: 'last-sync',
+                title: <span className={uiTokens.color.textMuted}>{t('syncLastSyncTime')}</span>,
+                meta: formatChatGPTTime(syncState.lastSyncTimeChatGPT),
+              },
+              {
+                id: 'error',
+                title: <span className={uiTokens.color.textMuted}>{t('syncRecentError')}</span>,
+                meta: syncState.error || t('none'),
+              },
+            ]}
+          />
+        </PageSection>
 
-        <div className="p-5">
-          <Card className="p-4">
-            <CardTitle className="mb-3">{t('syncStatus')}</CardTitle>
-            <CardContent className="space-y-4 p-0">
-              <div className="grid gap-2 text-xs">
-                <div className="flex justify-between gap-3">
-                  <span className="text-muted-foreground">{t('syncGoogleDriveAuthStatus')}</span>
-                  <span className="font-medium">
-                    {syncState.isAuthenticated ? t('syncAuthorized') : t('syncUnauthorized')}
-                  </span>
-                </div>
-                <div className="flex justify-between gap-3">
-                  <span className="text-muted-foreground">{t('syncCurrentlySyncing')}</span>
-                  <span className="font-medium">{syncState.isSyncing ? t('yes') : t('no')}</span>
-                </div>
-                <div className="flex justify-between gap-3">
-                  <span className="text-muted-foreground">{t('syncLastUploadTime')}</span>
-                  <span className="font-medium">
-                    {formatChatGPTTime(syncState.lastUploadTimeChatGPT)}
-                  </span>
-                </div>
-                <div className="flex justify-between gap-3">
-                  <span className="text-muted-foreground">{t('syncLastSyncTime')}</span>
-                  <span className="font-medium">
-                    {formatChatGPTTime(syncState.lastSyncTimeChatGPT)}
-                  </span>
-                </div>
-                <div className="flex justify-between gap-3">
-                  <span className="text-muted-foreground">{t('syncRecentError')}</span>
-                  <span className="max-w-[180px] truncate font-medium">
-                    {syncState.error || t('none')}
-                  </span>
-                </div>
-              </div>
-
-              {!syncState.isAuthenticated ? (
-                <div className="grid gap-2">
-                  <Button
-                    type="button"
-                    size="sm"
-                    onClick={handleAuthorizeGoogleDrive}
-                    disabled={busy}
-                    className="w-full"
-                  >
-                    {safeSyncCopy.authorizeGoogleDrive}
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => void refreshChatGPTSyncState()}
-                    disabled={busy}
-                    className="text-xs"
-                  >
-                    {t('syncRefreshStatus')}
-                  </Button>
-                </div>
-              ) : (
-                <div className="grid gap-2">
-                  <p className="text-muted-foreground text-xs">{safeSyncCopy.firstUseGuidance}</p>
-                  <Button
-                    type="button"
-                    size="sm"
-                    onClick={handleSyncNow}
-                    disabled={busy}
-                    className="w-full"
-                  >
-                    {isUploading ? t('syncUploading') : t('syncUploadToCloud')}
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleDownloadFromDrive('merge')}
-                    disabled={busy}
-                    className="w-full"
-                  >
-                    {downloadMode === 'merge' ? t('syncDownloading') : t('syncDownloadMerge')}
-                  </Button>
-                  <div className="grid grid-cols-2 gap-2">
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="ghost"
-                      onClick={handleSignOut}
-                      disabled={busy}
-                      className="text-xs"
-                    >
-                      {t('syncClearAuthReauth')}
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => void refreshChatGPTSyncState()}
-                      disabled={busy}
-                      className="text-xs"
-                    >
-                      {t('syncRefreshStatus')}
-                    </Button>
-                  </div>
-                </div>
-              )}
-
-              <p className="text-muted-foreground text-xs">
-                {t('syncPrivacyNote')}
+        <PageSection>
+          {!syncState.isAuthenticated ? (
+            <ActionBar
+              actions={[
+                {
+                  id: 'authorize',
+                  label: safeSyncCopy.authorizeGoogleDrive,
+                  tone: 'primary',
+                  disabled: busy,
+                  onClick: handleAuthorizeGoogleDrive,
+                },
+                {
+                  id: 'refresh',
+                  label: t('syncRefreshStatus'),
+                  tone: 'secondary',
+                  disabled: busy,
+                  onClick: () => void refreshChatGPTSyncState(),
+                },
+              ]}
+            />
+          ) : (
+            <>
+              <p className={cn(uiTokens.color.textMuted, uiTokens.typography.caption)}>
+                {safeSyncCopy.firstUseGuidance}
               </p>
-
-              {statusMessage && (
-                <p
-                  className={`text-center text-xs ${
-                    statusMessage.kind === 'ok' ? 'text-green-600' : 'text-destructive'
-                  }`}
-                >
-                  {statusMessage.text}
-                </p>
+              <ActionBar
+                actions={[
+                  {
+                    id: 'upload',
+                    label: isUploading ? t('syncUploading') : t('syncUploadToCloud'),
+                    tone: 'secondary',
+                    disabled: busy,
+                    onClick: handleSyncNow,
+                  },
+                  {
+                    id: 'download',
+                    label: downloadMode === 'merge' ? t('syncDownloading') : t('syncDownloadMerge'),
+                    tone: 'primary',
+                    disabled: busy,
+                    onClick: () => handleDownloadFromDrive('merge'),
+                  },
+                  {
+                    id: 'auth',
+                    label: t('syncClearAuthReauth'),
+                    tone: 'secondary',
+                    disabled: busy,
+                    onClick: handleSignOut,
+                  },
+                  {
+                    id: 'refresh',
+                    label: t('syncRefreshStatus'),
+                    tone: 'secondary',
+                    disabled: busy,
+                    onClick: () => void refreshChatGPTSyncState(),
+                  },
+                ]}
+              />
+            </>
+          )}
+          <p className={cn(uiTokens.color.textMuted, uiTokens.typography.caption)}>
+            {t('syncPrivacyNote')}
+          </p>
+          {statusMessage && (
+            <p
+              className={cn(
+                'text-center',
+                uiTokens.typography.caption,
+                statusMessage.kind === 'err' ? 'text-destructive' : uiTokens.color.text,
               )}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+            >
+              {statusMessage.text}
+            </p>
+          )}
+        </PageSection>
+      </Panel>
     );
   }
 
@@ -1250,7 +1229,7 @@ export function CloudSyncSettings({ chatgptOnly = false, onBack }: CloudSyncSett
         {statusMessage && (
           <p
             className={`text-center text-xs ${
-              statusMessage.kind === 'ok' ? 'text-green-600' : 'text-destructive'
+              statusMessage.kind === 'ok' ? 'text-foreground' : 'text-destructive'
             }`}
           >
             {statusMessage.text}

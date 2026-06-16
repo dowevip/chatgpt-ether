@@ -194,7 +194,7 @@ export function ContextSyncSettings() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div
-                  className={`h-2 w-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-red-500'}`}
+                  className={`h-2 w-2 rounded-full ${isOnline ? 'bg-primary' : 'bg-destructive'}`}
                 />
                 <span className="text-xs font-medium">
                   {isOnline ? t('ideOnline') : t('ideOffline')}
@@ -245,10 +245,10 @@ export function ContextSyncSettings() {
               <div
                 className={`text-xs ${
                   statusMessage.kind === 'ok'
-                    ? 'text-green-500'
+                    ? 'text-foreground'
                     : statusMessage.kind === 'err'
                       ? 'text-red-500'
-                      : 'text-blue-500'
+                      : 'text-muted-foreground'
                 }`}
               >
                 {statusMessage.text}

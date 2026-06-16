@@ -796,11 +796,11 @@ function injectStyles(): void {
       width: var(--cg-voyager-timeline-width);
     }
     .cg-voyager-timeline-toggle {
-      border: 1px solid rgba(148, 163, 184, 0.45);
+      border: 1px solid #E7E4F8;
       border-radius: 999px;
-      background: rgba(17, 24, 39, 0.92);
-      color: #fff;
-      box-shadow: 0 10px 28px rgba(15, 23, 42, 0.2);
+      background: rgba(255, 255, 255, 0.94);
+      color: #3D365C;
+      box-shadow: 0 8px 22px rgba(32, 35, 50, 0.12);
       cursor: pointer;
       font-size: 13px;
       font-weight: 600;
@@ -816,11 +816,11 @@ function injectStyles(): void {
       height: var(--cg-voyager-timeline-height);
       max-height: 90vh;
       overflow: hidden;
-      border: 1px solid rgba(148, 163, 184, 0.22);
+      border: 1px solid #E7E4F8;
       border-radius: 999px;
       background: rgba(255, 255, 255, 0.58);
-      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
-      color: #111827;
+      box-shadow: 0 8px 22px rgba(32, 35, 50, 0.1);
+      color: #202332;
       backdrop-filter: blur(10px);
       transition: border-radius 160ms ease, background 160ms ease, box-shadow 160ms ease;
     }
@@ -830,7 +830,7 @@ function injectStyles(): void {
     .cg-voyager-timeline-root.cg-voyager-timeline-resizing .cg-voyager-timeline-panel {
       border-radius: 16px;
       background: rgba(255, 255, 255, 0.88);
-      box-shadow: 0 14px 34px rgba(15, 23, 42, 0.16);
+      box-shadow: 0 12px 30px rgba(32, 35, 50, 0.12);
     }
     .cg-voyager-timeline-resize {
       width: 6px;
@@ -863,7 +863,7 @@ function injectStyles(): void {
     .cg-voyager-timeline-root:focus-within .cg-voyager-timeline-resize-corner,
     .cg-voyager-timeline-root.cg-voyager-timeline-resizing .cg-voyager-timeline-resize {
       opacity: 1;
-      background: rgba(37, 99, 235, 0.18);
+      background: rgba(124, 111, 246, 0.12);
     }
     .cg-voyager-timeline-rail {
       display: flex;
@@ -890,24 +890,24 @@ function injectStyles(): void {
       min-height: 8px;
       border: 0;
       border-radius: 999px;
-      background: rgba(100, 116, 139, 0.58);
+      background: rgba(124, 111, 246, 0.22);
       cursor: pointer;
       padding: 0;
       transition: background 120ms ease, transform 120ms ease, width 120ms ease;
     }
     .cg-voyager-timeline-marker-user {
-      background: rgba(37, 99, 235, 0.66);
+      background: rgba(124, 111, 246, 0.72);
     }
     .cg-voyager-timeline-marker-assistant {
       width: 14px;
       height: 3px;
       min-height: 3px;
       border-radius: 999px;
-      background: rgba(20, 184, 166, 0.64);
+      background: rgba(124, 111, 246, 0.32);
     }
     .cg-voyager-timeline-marker:hover,
     .cg-voyager-timeline-marker-active {
-      background: #2563eb;
+      background: #7C6FF6;
       transform: scale(1.2);
     }
     .cg-voyager-timeline-outline {
@@ -931,37 +931,42 @@ function injectStyles(): void {
       align-items: center;
       justify-content: space-between;
       gap: 8px;
-      border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+      border-bottom: 1px solid #E7E4F8;
       padding: 10px 12px 8px 4px;
     }
     .cg-voyager-timeline-title {
       margin: 0;
       font-size: 14px;
-      font-weight: 700;
+      font-weight: 650;
+      color: #3D365C;
     }
     .cg-voyager-timeline-actions {
       display: flex;
       gap: 6px;
     }
     .cg-voyager-timeline-action {
-      border: 1px solid rgba(148, 163, 184, 0.28);
+      border: 1px solid #E7E4F8;
       border-radius: 7px;
       background: rgba(255, 255, 255, 0.68);
-      color: #374151;
+      color: #202332;
       cursor: pointer;
       font-size: 12px;
       padding: 5px 7px;
     }
+    .cg-voyager-timeline-action:hover {
+      background: #F4F2FF;
+      color: #3D365C;
+    }
     .cg-voyager-timeline-status {
       margin: 0;
       padding: 10px 12px 4px;
-      color: #6b7280;
+      color: #667085;
       font-size: 12px;
     }
     .cg-voyager-timeline-hint {
       margin: 0;
       padding: 0 12px 10px;
-      color: #6b7280;
+      color: #667085;
       font-size: 11px;
       line-height: 1.4;
     }
@@ -974,30 +979,30 @@ function injectStyles(): void {
     .cg-voyager-timeline-search-input {
       min-width: 0;
       flex: 1;
-      border: 1px solid rgba(148, 163, 184, 0.28);
+      border: 1px solid #E7E4F8;
       border-radius: 7px;
       background: rgba(255, 255, 255, 0.72);
-      color: #111827;
+      color: #202332;
       font-size: 12px;
       outline: none;
       padding: 5px 7px;
     }
     .cg-voyager-timeline-search-input:focus {
-      border-color: rgba(37, 99, 235, 0.48);
-      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
+      border-color: rgba(124, 111, 246, 0.48);
+      box-shadow: 0 0 0 2px rgba(124, 111, 246, 0.12);
     }
     .cg-voyager-timeline-search-clear {
       border: 0;
       border-radius: 6px;
       background: transparent;
-      color: #6b7280;
+      color: #667085;
       cursor: pointer;
       font-size: 12px;
       padding: 4px 5px;
     }
     .cg-voyager-timeline-search-clear:hover {
-      background: rgba(148, 163, 184, 0.14);
-      color: #111827;
+      background: rgba(124, 111, 246, 0.08);
+      color: #202332;
     }
     .cg-voyager-timeline-list {
       display: flex;
@@ -1012,21 +1017,21 @@ function injectStyles(): void {
       border-left: 2px solid transparent;
       border-radius: 8px;
       background: transparent;
-      color: #111827;
+      color: #202332;
       cursor: pointer;
       padding: 7px 8px;
       text-align: left;
     }
     .cg-voyager-timeline-node-user {
-      border-left-color: rgba(37, 99, 235, 0.24);
+      border-left-color: rgba(124, 111, 246, 0.28);
     }
     .cg-voyager-timeline-node-assistant {
-      border-left-color: rgba(20, 184, 166, 0.22);
+      border-left-color: rgba(124, 111, 246, 0.16);
     }
     .cg-voyager-timeline-node:hover,
     .cg-voyager-timeline-node-active {
-      border-left-color: #2563eb;
-      background: rgba(37, 99, 235, 0.08);
+      border-left-color: #7C6FF6;
+      background: rgba(124, 111, 246, 0.09);
     }
     .cg-voyager-timeline-node-meta {
       display: flex;
@@ -1037,31 +1042,31 @@ function injectStyles(): void {
       font-size: 12px;
     }
     .cg-voyager-timeline-node-index {
-      color: #2563eb;
-      font-weight: 700;
+      color: #7C6FF6;
+      font-weight: 650;
     }
     .cg-voyager-timeline-node-role {
       display: inline-flex;
       align-items: center;
       border-radius: 999px;
       font-size: 11px;
-      font-weight: 700;
+      font-weight: 650;
       line-height: 1.35;
       padding: 1px 6px;
     }
     .cg-voyager-timeline-node-role-user {
-      background: rgba(37, 99, 235, 0.1);
-      color: #1d4ed8;
+      background: #F4F2FF;
+      color: #3D365C;
     }
     .cg-voyager-timeline-node-role-assistant {
-      background: rgba(20, 184, 166, 0.12);
-      color: #0f766e;
+      background: #F7F6FC;
+      color: #667085;
     }
     .cg-voyager-timeline-star {
       border: 0;
       border-radius: 6px;
       background: transparent;
-      color: #9ca3af;
+      color: #98A2B3;
       cursor: pointer;
       font-size: 14px;
       line-height: 1;
@@ -1076,7 +1081,7 @@ function injectStyles(): void {
       display: -webkit-box;
       margin: 0;
       overflow: hidden;
-      color: #374151;
+      color: #202332;
       font-size: 12px;
       line-height: 1.45;
       -webkit-box-orient: vertical;
@@ -1089,10 +1094,10 @@ function injectStyles(): void {
       padding: 0 1px;
     }
     .cg-voyager-message-highlight {
-      outline: 2px solid rgba(37, 99, 235, 0.8) !important;
+      outline: 2px solid rgba(124, 111, 246, 0.78) !important;
       outline-offset: 4px !important;
       border-radius: 12px !important;
-      box-shadow: 0 0 0 6px rgba(37, 99, 235, 0.16) !important;
+      box-shadow: 0 0 0 6px rgba(124, 111, 246, 0.14) !important;
       transition: outline-color 160ms ease, box-shadow 160ms ease;
     }
     .cg-voyager-message-timestamp {
@@ -1102,8 +1107,8 @@ function injectStyles(): void {
       max-width: 100%;
       margin: 0 0 4px;
       border-radius: 999px;
-      background: rgba(148, 163, 184, 0.12);
-      color: #6b7280;
+      background: rgba(124, 111, 246, 0.08);
+      color: #667085;
       font-size: 11px;
       line-height: 1.2;
       padding: 2px 6px;
@@ -1113,93 +1118,93 @@ function injectStyles(): void {
       margin-left: 0;
     }
     .cg-voyager-timeline-root.cg-voyager-timeline-dark .cg-voyager-timeline-panel {
-      border-color: rgba(148, 163, 184, 0.22);
-      background: rgba(15, 23, 42, 0.54);
-      color: #e5e7eb;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.24);
+      border-color: rgba(220, 220, 230, 0.12);
+      background: rgba(23, 24, 33, 0.54);
+      color: #F4F4F5;
+      box-shadow: 0 8px 22px rgba(0, 0, 0, 0.24);
     }
     .cg-voyager-timeline-root.cg-voyager-timeline-dark:hover .cg-voyager-timeline-panel,
     .cg-voyager-timeline-root.cg-voyager-timeline-dark:focus-within .cg-voyager-timeline-panel,
     .cg-voyager-timeline-root.cg-voyager-timeline-dark.cg-voyager-timeline-expanded .cg-voyager-timeline-panel,
     .cg-voyager-timeline-root.cg-voyager-timeline-dark.cg-voyager-timeline-resizing .cg-voyager-timeline-panel {
-      border-color: rgba(148, 163, 184, 0.28);
-      background: rgba(15, 23, 42, 0.9);
-      box-shadow: 0 14px 34px rgba(0, 0, 0, 0.32);
+      border-color: rgba(220, 220, 230, 0.12);
+      background: rgba(23, 24, 33, 0.9);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
     }
     .cg-voyager-timeline-root.cg-voyager-timeline-dark .cg-voyager-timeline-header {
-      border-bottom-color: rgba(148, 163, 184, 0.2);
+      border-bottom-color: rgba(220, 220, 230, 0.12);
     }
     .cg-voyager-timeline-root.cg-voyager-timeline-dark .cg-voyager-timeline-marker {
-      background: rgba(148, 163, 184, 0.7);
+      background: rgba(169, 155, 255, 0.34);
     }
     .cg-voyager-timeline-root.cg-voyager-timeline-dark .cg-voyager-timeline-marker-user {
-      background: rgba(96, 165, 250, 0.82);
+      background: rgba(169, 155, 255, 0.82);
     }
     .cg-voyager-timeline-root.cg-voyager-timeline-dark .cg-voyager-timeline-marker-assistant {
-      background: rgba(45, 212, 191, 0.78);
+      background: rgba(169, 155, 255, 0.42);
     }
     .cg-voyager-timeline-root.cg-voyager-timeline-dark .cg-voyager-timeline-marker:hover,
     .cg-voyager-timeline-root.cg-voyager-timeline-dark .cg-voyager-timeline-marker-active {
-      background: #60a5fa;
+      background: #A99BFF;
     }
     .cg-voyager-timeline-root.cg-voyager-timeline-dark .cg-voyager-timeline-action {
-      border-color: rgba(148, 163, 184, 0.28);
-      background: rgba(30, 41, 59, 0.82);
-      color: #e5e7eb;
+      border-color: rgba(220, 220, 230, 0.12);
+      background: rgba(32, 33, 43, 0.82);
+      color: #F4F4F5;
     }
     .cg-voyager-timeline-root.cg-voyager-timeline-dark .cg-voyager-timeline-action:hover {
-      background: rgba(51, 65, 85, 0.9);
+      background: rgba(169, 155, 255, 0.14);
     }
     .cg-voyager-timeline-root.cg-voyager-timeline-dark .cg-voyager-timeline-search-input {
-      border-color: rgba(148, 163, 184, 0.28);
-      background: rgba(30, 41, 59, 0.82);
-      color: #e5e7eb;
+      border-color: rgba(220, 220, 230, 0.12);
+      background: rgba(32, 33, 43, 0.82);
+      color: #F4F4F5;
     }
     .cg-voyager-timeline-root.cg-voyager-timeline-dark .cg-voyager-timeline-search-input:focus {
-      border-color: rgba(96, 165, 250, 0.58);
-      box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.16);
+      border-color: rgba(169, 155, 255, 0.58);
+      box-shadow: 0 0 0 2px rgba(169, 155, 255, 0.16);
     }
     .cg-voyager-timeline-root.cg-voyager-timeline-dark .cg-voyager-timeline-search-clear {
-      color: #94a3b8;
+      color: #A1A1AA;
     }
     .cg-voyager-timeline-root.cg-voyager-timeline-dark .cg-voyager-timeline-search-clear:hover {
-      background: rgba(148, 163, 184, 0.16);
-      color: #e5e7eb;
+      background: rgba(169, 155, 255, 0.14);
+      color: #F4F4F5;
     }
     .cg-voyager-timeline-root.cg-voyager-timeline-dark .cg-voyager-timeline-node {
-      color: #e5e7eb;
+      color: #F4F4F5;
     }
     .cg-voyager-timeline-root.cg-voyager-timeline-dark .cg-voyager-timeline-node-user {
-      border-left-color: rgba(96, 165, 250, 0.3);
+      border-left-color: rgba(169, 155, 255, 0.34);
     }
     .cg-voyager-timeline-root.cg-voyager-timeline-dark .cg-voyager-timeline-node-assistant {
-      border-left-color: rgba(45, 212, 191, 0.28);
+      border-left-color: rgba(169, 155, 255, 0.22);
     }
     .cg-voyager-timeline-root.cg-voyager-timeline-dark .cg-voyager-timeline-node:hover,
     .cg-voyager-timeline-root.cg-voyager-timeline-dark .cg-voyager-timeline-node-active {
-      border-left-color: #60a5fa;
-      background: rgba(96, 165, 250, 0.14);
+      border-left-color: #A99BFF;
+      background: rgba(169, 155, 255, 0.14);
     }
     .cg-voyager-timeline-root.cg-voyager-timeline-dark .cg-voyager-timeline-node-index {
-      color: #60a5fa;
+      color: #A99BFF;
     }
     .cg-voyager-timeline-root.cg-voyager-timeline-dark .cg-voyager-timeline-node-summary {
-      color: #cbd5e1;
+      color: #F4F4F5;
     }
     .cg-voyager-timeline-root.cg-voyager-timeline-dark .cg-voyager-timeline-status,
     .cg-voyager-timeline-root.cg-voyager-timeline-dark .cg-voyager-timeline-hint {
-      color: #94a3b8;
+      color: #A1A1AA;
     }
     .cg-voyager-timeline-root.cg-voyager-timeline-dark .cg-voyager-timeline-node-role-user {
-      background: rgba(96, 165, 250, 0.16);
-      color: #93c5fd;
+      background: rgba(169, 155, 255, 0.16);
+      color: #F4F4F5;
     }
     .cg-voyager-timeline-root.cg-voyager-timeline-dark .cg-voyager-timeline-node-role-assistant {
-      background: rgba(45, 212, 191, 0.14);
-      color: #5eead4;
+      background: rgba(169, 155, 255, 0.10);
+      color: #A1A1AA;
     }
     .cg-voyager-timeline-root.cg-voyager-timeline-dark .cg-voyager-timeline-star {
-      color: #94a3b8;
+      color: #A1A1AA;
     }
     .cg-voyager-timeline-root.cg-voyager-timeline-dark .cg-voyager-timeline-star:hover,
     .cg-voyager-timeline-root.cg-voyager-timeline-dark .cg-voyager-timeline-star-active {
@@ -1210,8 +1215,8 @@ function injectStyles(): void {
       background: rgba(250, 204, 21, 0.28);
     }
     html.cg-voyager-timeline-dark .cg-voyager-message-timestamp {
-      background: rgba(30, 41, 59, 0.86);
-      color: #cbd5e1;
+      background: rgba(16, 16, 20, 0.86);
+      color: #F4F4F5;
     }
     .cg-voyager-timeline-root.cg-voyager-timeline-dark:hover .cg-voyager-timeline-resize,
     .cg-voyager-timeline-root.cg-voyager-timeline-dark:hover .cg-voyager-timeline-resize-bottom,
@@ -1220,7 +1225,7 @@ function injectStyles(): void {
     .cg-voyager-timeline-root.cg-voyager-timeline-dark:focus-within .cg-voyager-timeline-resize-bottom,
     .cg-voyager-timeline-root.cg-voyager-timeline-dark:focus-within .cg-voyager-timeline-resize-corner,
     .cg-voyager-timeline-root.cg-voyager-timeline-dark.cg-voyager-timeline-resizing .cg-voyager-timeline-resize {
-      background: rgba(96, 165, 250, 0.22);
+      background: rgba(169, 155, 255, 0.22);
     }
   `;
   document.documentElement.appendChild(style);

@@ -10,9 +10,10 @@ import {
   saveChatGPTPrompt,
 } from '@/core/services/ChatGPTPromptVaultService';
 import type { ChatGPTPromptVaultItem } from '@/core/types/prompt';
+import { cn } from '@/lib/utils';
+import { ActionBar, ListView, PageSection, Panel, TextAreaField, TextField } from '@/ui/components';
+import { uiTokens } from '@/ui/tokens';
 
-import { Button } from '../../../components/ui/button';
-import { Card, CardContent, CardTitle } from '../../../components/ui/card';
 import { useLanguage } from '../../../contexts/LanguageContext';
 
 type PromptVaultPanelProps = {
@@ -215,168 +216,138 @@ export function PromptVaultPanel({ onBack }: PromptVaultPanelProps) {
   };
 
   return (
-    <div className="bg-background text-foreground w-[360px]">
-      <div className="border-border/50 flex items-center justify-between border-b px-5 py-4">
-        <div>
-          <h1 className="text-primary text-xl font-bold">{t('cgEntryPromptVault')}</h1>
-          <p className="text-muted-foreground text-xs">{t('extName')}</p>
-        </div>
-        <Button type="button" variant="outline" size="sm" onClick={onBack}>
-          {t('back')}
-        </Button>
-      </div>
+    <Panel
+      title={t('cgEntryPromptVault')}
+      subtitle={t('extName')}
+      onBack={onBack}
+      backLabel={t('back')}
+    >
+      <PageSection title={isEditing ? t('pvEditPrompt') : t('pvNewPrompt')}>
+        <TextField
+          value={draft.title}
+          onChange={(event) => setDraft((prev) => ({ ...prev, title: event.target.value }))}
+          placeholder={t('pvTitlePlaceholder')}
+        />
+        <TextAreaField
+          value={draft.content}
+          onChange={(event) => setDraft((prev) => ({ ...prev, content: event.target.value }))}
+          placeholder={t('pvContentPlaceholder')}
+          rows={5}
+        />
+        <TextField
+          value={draft.tagsText}
+          onChange={(event) => setDraft((prev) => ({ ...prev, tagsText: event.target.value }))}
+          placeholder={t('pvTagsPlaceholder')}
+        />
+        <label className={cn('flex items-center gap-2', uiTokens.typography.body)}>
+          <input
+            type="checkbox"
+            checked={draft.favorite}
+            onChange={(event) => setDraft((prev) => ({ ...prev, favorite: event.target.checked }))}
+          />
+          {t('pvFavoritePinned')}
+        </label>
+        <ActionBar
+          actions={[
+            { id: 'save', label: t('save'), tone: 'primary', onClick: () => void handleSave() },
+            ...(isEditing
+              ? [
+                  {
+                    id: 'cancel',
+                    label: t('cancel'),
+                    tone: 'secondary' as const,
+                    onClick: resetDraft,
+                  },
+                ]
+              : []),
+          ]}
+        />
+      </PageSection>
 
-      <div className="flex max-h-[560px] flex-col gap-4 overflow-y-auto p-5">
-        <Card className="p-4">
-          <CardTitle className="mb-3 text-base">
-            {isEditing ? t('pvEditPrompt') : t('pvNewPrompt')}
-          </CardTitle>
-          <CardContent className="space-y-3 p-0">
-            <input
-              value={draft.title}
-              onChange={(event) => setDraft((prev) => ({ ...prev, title: event.target.value }))}
-              placeholder={t('pvTitlePlaceholder')}
-              className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
-            />
-            <textarea
-              value={draft.content}
-              onChange={(event) => setDraft((prev) => ({ ...prev, content: event.target.value }))}
-              placeholder={t('pvContentPlaceholder')}
-              rows={5}
-              className="border-border bg-background w-full resize-y rounded-md border px-3 py-2 text-sm"
-            />
-            <input
-              value={draft.tagsText}
-              onChange={(event) => setDraft((prev) => ({ ...prev, tagsText: event.target.value }))}
-              placeholder={t('pvTagsPlaceholder')}
-              className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
-            />
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={draft.favorite}
-                onChange={(event) =>
-                  setDraft((prev) => ({ ...prev, favorite: event.target.checked }))
-                }
-              />
-              {t('pvFavoritePinned')}
-            </label>
-            <div className="flex gap-2">
-              <Button type="button" size="sm" onClick={() => void handleSave()}>
-                {t('save')}
-              </Button>
-              {isEditing && (
-                <Button type="button" variant="outline" size="sm" onClick={resetDraft}>
-                  {t('cancel')}
-                </Button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+      <PageSection>
+        <TextField
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder={t('pvSearchPlaceholder')}
+        />
+        <ActionBar
+          actions={[
+            { id: 'export', label: t('pvExportJson'), tone: 'secondary', onClick: handleExport },
+            {
+              id: 'import',
+              label: t('pvImportJson'),
+              tone: 'secondary',
+              onClick: () => fileInputRef.current?.click(),
+            },
+          ]}
+        />
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="application/json,.json"
+          className="hidden"
+          onChange={(event) => void handleImportFile(event)}
+        />
+        {message && (
+          <p className={cn(uiTokens.color.textMuted, uiTokens.typography.caption)}>{message}</p>
+        )}
+      </PageSection>
 
-        <Card className="p-4">
-          <CardContent className="space-y-3 p-0">
-            <input
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder={t('pvSearchPlaceholder')}
-              className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
-            />
-            <div className="flex gap-2">
-              <Button type="button" variant="outline" size="sm" onClick={handleExport}>
-                {t('pvExportJson')}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                {t('pvImportJson')}
-              </Button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="application/json,.json"
-                className="hidden"
-                onChange={(event) => void handleImportFile(event)}
-              />
-            </div>
-            {message && <p className="text-muted-foreground text-xs">{message}</p>}
-          </CardContent>
-        </Card>
-
-        <div className="space-y-3">
-          {filteredPrompts.length === 0 ? (
-            <p className="text-muted-foreground text-sm">{t('pvNoMatches')}</p>
-          ) : (
-            filteredPrompts.map((prompt) => (
-              <Card key={prompt.id} className="p-3">
-                <CardContent className="space-y-2 p-0">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold">
-                        {prompt.favorite ? 'â˜?' : ''}
-                        {prompt.title}
-                      </p>
-                      <p className="text-muted-foreground line-clamp-2 text-xs">{prompt.content}</p>
-                    </div>
-                  </div>
-                  {prompt.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1">
-                      {prompt.tags.map((tag) => (
-                        <span
-                          key={tag}
-                          className="bg-secondary text-secondary-foreground rounded px-1.5 py-0.5 text-[11px]"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                  <div className="flex flex-wrap gap-2">
-                    <Button type="button" size="sm" onClick={() => void handleInsert(prompt)}>
-                      {t('insert')}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setDraft(toDraft(prompt));
-                        setIsEditing(true);
-                      }}
-                    >
-                      {t('edit')}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        void saveChatGPTPrompt({
-                          ...prompt,
-                          favorite: !prompt.favorite,
-                        }).then(setPrompts)
-                      }
-                    >
-                      {prompt.favorite ? t('unfavorite') : t('favorite')}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => void handleDelete(prompt)}
-                    >
-                      {t('delete')}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))
-          )}
-        </div>
-      </div>
-    </div>
+      <ListView
+        emptyText={t('pvNoMatches')}
+        items={filteredPrompts.map((prompt) => ({
+          id: prompt.id,
+          title: `${prompt.favorite ? 'â˜… ' : ''}${prompt.title}`,
+          subtitle: <span className="line-clamp-2">{prompt.content}</span>,
+          body:
+            prompt.tags.length > 0 ? (
+              <div className="flex flex-wrap gap-1">
+                {prompt.tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className={cn(
+                      uiTokens.color.surfaceMuted,
+                      uiTokens.radius.control,
+                      'px-1.5 py-0.5 text-[11px]',
+                    )}
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            ) : null,
+          actions: [
+            {
+              id: 'insert',
+              label: t('insert'),
+              tone: 'primary',
+              onClick: () => void handleInsert(prompt),
+            },
+            {
+              id: 'edit',
+              label: t('edit'),
+              tone: 'secondary',
+              onClick: () => {
+                setDraft(toDraft(prompt));
+                setIsEditing(true);
+              },
+            },
+            {
+              id: 'favorite',
+              label: prompt.favorite ? t('unfavorite') : t('favorite'),
+              tone: 'secondary',
+              onClick: () =>
+                void saveChatGPTPrompt({ ...prompt, favorite: !prompt.favorite }).then(setPrompts),
+            },
+            {
+              id: 'delete',
+              label: t('delete'),
+              tone: 'danger',
+              onClick: () => void handleDelete(prompt),
+            },
+          ],
+        }))}
+      />
+    </Panel>
   );
 }
