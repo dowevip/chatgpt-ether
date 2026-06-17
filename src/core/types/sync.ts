@@ -12,6 +12,7 @@ export interface SyncState {
   lastUploadTimeAIStudio: number | null;
   lastSyncTimeChatGPT: number | null;
   lastUploadTimeChatGPT: number | null;
+  cloudUploadTimeChatGPT: number | null;
   isSyncing: boolean;
   error: string | null;
   isAuthenticated: boolean;
@@ -31,6 +32,7 @@ export const DEFAULT_SYNC_STATE: SyncState = {
   lastUploadTimeAIStudio: null,
   lastSyncTimeChatGPT: null,
   lastUploadTimeChatGPT: null,
+  cloudUploadTimeChatGPT: null,
   isSyncing: false,
   error: null,
   isAuthenticated: false,
@@ -48,7 +50,7 @@ export type SyncMessageType =
 export interface SyncMessage {
   type: SyncMessageType;
   payload?: {
-    mode?: SyncMode;
+    mode?: SyncMode | ChatGPTSyncImportMode;
     interactive?: boolean;
     overwrite?: boolean;
   };

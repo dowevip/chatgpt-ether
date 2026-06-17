@@ -43,9 +43,12 @@ async function handleMessage(message: RuntimeMessage): Promise<SyncResponse | { 
     case 'gv.sync.authenticate': {
       const interactive = message.payload?.interactive !== false;
       const ok = await googleDriveSyncService.authenticate(interactive);
+      const state = ok
+        ? await googleDriveSyncService.refreshChatGPTCloudState(false)
+        : await googleDriveSyncService.getState();
       return {
         ok,
-        state: await googleDriveSyncService.getState(),
+        state,
       };
     }
 
@@ -61,7 +64,7 @@ async function handleMessage(message: RuntimeMessage): Promise<SyncResponse | { 
     case 'gv.chatgpt.sync.getState': {
       return {
         ok: true,
-        state: await googleDriveSyncService.getState(),
+        state: await googleDriveSyncService.refreshChatGPTCloudState(false),
       };
     }
 
@@ -121,7 +124,8 @@ async function handleMessage(message: RuntimeMessage): Promise<SyncResponse | { 
         };
       }
 
-      const overwrite = message.payload?.overwrite === true;
+      const overwrite =
+        message.payload?.overwrite === true || message.payload?.mode === 'overwrite';
       const mode: ChatGPTSyncImportMode = overwrite ? 'overwrite' : 'merge';
       await importChatGPTSyncPayload(payload, { mode });
       return {

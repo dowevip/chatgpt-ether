@@ -25,6 +25,7 @@ export function CloudSyncSettings({ onBack }: CloudSyncSettingsProps = {}) {
   const [isUploading, setIsUploading] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [isAuthorizing, setIsAuthorizing] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [downloadMode, setDownloadMode] = useState<DownloadMode | null>(null);
 
   const isChineseLanguage = language.startsWith('zh');
@@ -42,6 +43,7 @@ export function CloudSyncSettings({ onBack }: CloudSyncSettingsProps = {}) {
   };
 
   const refreshChatGPTSyncState = useCallback(async () => {
+    setIsRefreshing(true);
     try {
       const response = (await chrome.runtime.sendMessage({
         type: 'gv.chatgpt.sync.getState',
@@ -57,6 +59,8 @@ export function CloudSyncSettings({ onBack }: CloudSyncSettingsProps = {}) {
     } catch (error) {
       const message = error instanceof Error ? error.message : t('unknownError');
       setStatusMessage({ text: t('syncRefreshFailed').replace('{error}', message), kind: 'err' });
+    } finally {
+      setIsRefreshing(false);
     }
   }, [t]);
 
@@ -187,7 +191,9 @@ export function CloudSyncSettings({ onBack }: CloudSyncSettingsProps = {}) {
 
   if (isSafari()) return null;
 
-  const busy = isAuthorizing || isUploading || isDownloading || syncState.isSyncing;
+  const isSyncingNow =
+    isAuthorizing || isUploading || isDownloading || isRefreshing || syncState.isSyncing;
+  const busy = isSyncingNow;
 
   return (
     <Panel title={t('syncTitle')} subtitle={t('syncSubtitle')} onBack={onBack} backLabel={t('back')}>
@@ -204,12 +210,14 @@ export function CloudSyncSettings({ onBack }: CloudSyncSettingsProps = {}) {
             {
               id: 'syncing',
               title: <span className={uiTokens.color.textMuted}>{t('syncCurrentlySyncing')}</span>,
-              meta: syncState.isSyncing ? t('yes') : t('no'),
+              meta: isSyncingNow ? t('yes') : t('no'),
             },
             {
               id: 'last-upload',
               title: <span className={uiTokens.color.textMuted}>{t('syncLastUploadTime')}</span>,
-              meta: formatChatGPTTime(syncState.lastUploadTimeChatGPT),
+              meta: formatChatGPTTime(
+                syncState.cloudUploadTimeChatGPT ?? syncState.lastUploadTimeChatGPT,
+              ),
             },
             {
               id: 'last-sync',

@@ -50,6 +50,12 @@ function getPayloadExportTime(payload: ChatGPTSyncPayload | null): number | null
   return Number.isFinite(time) ? time : null;
 }
 
+function getMetadataModifiedTime(metadata: AppDataFileMetadata | null): number | null {
+  if (!metadata?.modifiedTime) return null;
+  const time = Date.parse(metadata.modifiedTime);
+  return Number.isFinite(time) ? time : null;
+}
+
 export class GoogleDriveSyncService {
   private state: SyncState = { ...DEFAULT_SYNC_STATE };
   private stateChangeCallback: ((state: SyncState) => void) | null = null;
@@ -70,6 +76,39 @@ export class GoogleDriveSyncService {
     if (this.stateLoadPromise) {
       await this.stateLoadPromise;
     }
+    return { ...this.state };
+  }
+
+  async refreshChatGPTCloudState(interactive = false): Promise<SyncState> {
+    if (this.stateLoadPromise) {
+      await this.stateLoadPromise;
+    }
+
+    try {
+      this.updateState({ isSyncing: true, error: null });
+      const token = await this.getAuthToken(interactive);
+      if (!token) {
+        this.updateState({ isAuthenticated: false, isSyncing: false });
+        await this.saveState();
+        return { ...this.state };
+      }
+
+      const metadata = await this.findAppDataFileMetadata(token, CHATGPT_SYNC_FILE_NAME);
+      const cloudTime = getMetadataModifiedTime(metadata);
+      this.updateState({
+        isAuthenticated: true,
+        isSyncing: false,
+        cloudUploadTimeChatGPT: cloudTime,
+        error: null,
+      });
+      await this.saveState();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Drive 状态刷新失败';
+      console.warn('[GoogleDriveSyncService] Failed to refresh cloud state:', message);
+      this.updateState({ isSyncing: false, error: message });
+      await this.saveState();
+    }
+
     return { ...this.state };
   }
 
@@ -151,6 +190,7 @@ export class GoogleDriveSyncService {
         isSyncing: false,
         isAuthenticated: true,
         lastUploadTimeChatGPT: now,
+        cloudUploadTimeChatGPT: now,
         error: null,
       });
       await this.saveState();
@@ -182,11 +222,13 @@ export class GoogleDriveSyncService {
       }
 
       const payload = await this.downloadJsonWithRetry<ChatGPTSyncPayload>(token, metadata.id);
+      const cloudTime = getMetadataModifiedTime(metadata);
       const now = Date.now();
       this.updateState({
         isSyncing: false,
         isAuthenticated: true,
         lastSyncTimeChatGPT: now,
+        cloudUploadTimeChatGPT: cloudTime,
         error: null,
       });
       await this.saveState();
@@ -207,9 +249,9 @@ export class GoogleDriveSyncService {
     }
 
     const cloudPayload = await this.safeDownloadCloudPayload(token, metadata.id);
-    const modifiedTime = metadata.modifiedTime ? Date.parse(metadata.modifiedTime) : NaN;
+    const modifiedTime = getMetadataModifiedTime(metadata);
     const cloudTime = Math.max(
-      Number.isFinite(modifiedTime) ? modifiedTime : 0,
+      modifiedTime ?? 0,
       getPayloadExportTime(cloudPayload) ?? 0,
     );
     const normalizedCloudTime = cloudTime > 0 ? cloudTime : null;
