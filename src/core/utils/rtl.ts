@@ -44,7 +44,7 @@ export function detectRTL(extensionLanguage?: string | null): boolean {
   const pageLang = document.documentElement.lang?.split('-')[0]?.toLowerCase();
   if (pageLang && RTL_LANGUAGES.has(pageLang)) return true;
 
-  // 3. Host URL hint (e.g. Gemini `?hl=ar`)
+  // 3. Host URL language hint
   const urlLangHint = getUrlLanguageHint();
   if (urlLangHint) return isRTLLanguage(urlLangHint);
 

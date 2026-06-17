@@ -27,19 +27,13 @@ import type {
 
 export const CHATGPT_SYNC_SCHEMA_VERSION = 1;
 const CHATGPT_SYNC_SOURCE = 'chatgpt-ether';
-const CHATGPT_SYNC_LEGACY_SOURCE = 'chatgpt-voyager';
 export const CHATGPT_SYNC_BACKUP_STORAGE_KEY = 'chatgptEther.sync.localBackup';
 export const CHATGPT_SCHEMA_VERSION_STORAGE_KEY = 'chatgptEther.schemaVersion';
 export const CHATGPT_TIMELINE_VISIBLE_STORAGE_KEY = 'chatgptEther.timeline.visible';
-export const CHATGPT_TIMELINE_VISIBLE_LEGACY_STORAGE_KEY = 'chatgptVoyager.timeline.visible';
 export const CHATGPT_TIMELINE_WIDTH_STORAGE_KEY = 'chatgptEther.timeline.width';
-export const CHATGPT_TIMELINE_WIDTH_LEGACY_STORAGE_KEY = 'chatgptVoyager.timeline.width';
 export const CHATGPT_TIMELINE_HEIGHT_STORAGE_KEY = 'chatgptEther.timeline.height';
-export const CHATGPT_TIMELINE_HEIGHT_LEGACY_STORAGE_KEY = 'chatgptVoyager.timeline.height';
 export const CHATGPT_FOLDERS_PANEL_COLLAPSED_STORAGE_KEY =
   'chatgptEther.foldersPanel.collapsed';
-export const CHATGPT_FOLDERS_PANEL_COLLAPSED_LEGACY_STORAGE_KEY =
-  'chatgptVoyager.foldersPanel.collapsed';
 
 const SUSPICIOUS_TRANSCRIPT_KEYS = new Set([
   'messages',
@@ -228,29 +222,14 @@ function hasSuspiciousTranscriptField(value: unknown, path = ''): string | null 
 async function readSettings(): Promise<ChatGPTSyncSettings> {
   const result = await browser.storage.local.get([
     CHATGPT_TIMELINE_VISIBLE_STORAGE_KEY,
-    CHATGPT_TIMELINE_VISIBLE_LEGACY_STORAGE_KEY,
     CHATGPT_TIMELINE_WIDTH_STORAGE_KEY,
-    CHATGPT_TIMELINE_WIDTH_LEGACY_STORAGE_KEY,
     CHATGPT_TIMELINE_HEIGHT_STORAGE_KEY,
-    CHATGPT_TIMELINE_HEIGHT_LEGACY_STORAGE_KEY,
     CHATGPT_FOLDERS_PANEL_COLLAPSED_STORAGE_KEY,
-    CHATGPT_FOLDERS_PANEL_COLLAPSED_LEGACY_STORAGE_KEY,
   ]);
-  const timelineVisible =
-    typeof result[CHATGPT_TIMELINE_VISIBLE_STORAGE_KEY] === 'boolean'
-      ? result[CHATGPT_TIMELINE_VISIBLE_STORAGE_KEY]
-      : result[CHATGPT_TIMELINE_VISIBLE_LEGACY_STORAGE_KEY];
-  const timelineWidth =
-    typeof result[CHATGPT_TIMELINE_WIDTH_STORAGE_KEY] === 'number'
-      ? result[CHATGPT_TIMELINE_WIDTH_STORAGE_KEY]
-      : result[CHATGPT_TIMELINE_WIDTH_LEGACY_STORAGE_KEY];
-  const timelineHeight =
-    typeof result[CHATGPT_TIMELINE_HEIGHT_STORAGE_KEY] === 'number'
-      ? result[CHATGPT_TIMELINE_HEIGHT_STORAGE_KEY]
-      : result[CHATGPT_TIMELINE_HEIGHT_LEGACY_STORAGE_KEY];
-  const collapsedFolderIds = Array.isArray(result[CHATGPT_FOLDERS_PANEL_COLLAPSED_STORAGE_KEY])
-    ? result[CHATGPT_FOLDERS_PANEL_COLLAPSED_STORAGE_KEY]
-    : result[CHATGPT_FOLDERS_PANEL_COLLAPSED_LEGACY_STORAGE_KEY];
+  const timelineVisible = result[CHATGPT_TIMELINE_VISIBLE_STORAGE_KEY];
+  const timelineWidth = result[CHATGPT_TIMELINE_WIDTH_STORAGE_KEY];
+  const timelineHeight = result[CHATGPT_TIMELINE_HEIGHT_STORAGE_KEY];
+  const collapsedFolderIds = result[CHATGPT_FOLDERS_PANEL_COLLAPSED_STORAGE_KEY];
 
   return {
     timelineVisible: typeof timelineVisible === 'boolean' ? timelineVisible : undefined,
@@ -296,7 +275,7 @@ function sanitizePayload(payload: ChatGPTSyncPayload): ChatGPTSyncPayload {
 export function validateChatGPTSyncPayload(payload: unknown): payload is ChatGPTSyncPayload {
   if (!isRecord(payload)) throw new Error('同步数据格式无效。');
   if (typeof payload.schemaVersion !== 'number') throw new Error('缺少 schemaVersion。');
-  if (payload.source !== CHATGPT_SYNC_SOURCE && payload.source !== CHATGPT_SYNC_LEGACY_SOURCE) {
+  if (payload.source !== CHATGPT_SYNC_SOURCE) {
     throw new Error('同步数据来源不正确。');
   }
   if (!isRecord(payload.data)) throw new Error('同步数据 data 不是对象。');

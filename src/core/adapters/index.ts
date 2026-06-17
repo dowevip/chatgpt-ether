@@ -1,5 +1,4 @@
 export { chatgptAdapter } from './chatgptAdapter';
-export { geminiAdapter } from './geminiAdapter';
 export type {
   ConversationInfo,
   MessageNodeRef,

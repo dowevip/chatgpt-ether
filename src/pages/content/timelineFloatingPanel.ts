@@ -24,11 +24,8 @@ import {
 const ROOT_ID = 'cg-voyager-timeline-root';
 const STYLE_ID = 'cg-voyager-timeline-style';
 const STORAGE_KEY = 'chatgptEther.timeline.visible';
-const LEGACY_STORAGE_KEY = 'chatgptVoyager.timeline.visible';
 const WIDTH_STORAGE_KEY = 'chatgptEther.timeline.width';
-const LEGACY_WIDTH_STORAGE_KEY = 'chatgptVoyager.timeline.width';
 const HEIGHT_STORAGE_KEY = 'chatgptEther.timeline.height';
-const LEGACY_HEIGHT_STORAGE_KEY = 'chatgptVoyager.timeline.height';
 const DARK_MODE_STORAGE_KEY = 'darkMode';
 const PERFORMANCE_PREFIX = '[ChatGPT Ether Performance]';
 const SUMMARY_LIMIT = 60;
@@ -209,15 +206,8 @@ async function readEnabledFromStorage(): Promise<boolean> {
   try {
     const result = await chrome.storage?.local?.get({
       [STORAGE_KEY]: null,
-      [LEGACY_STORAGE_KEY]: null,
     });
-    const current = result?.[STORAGE_KEY];
-    const legacy = result?.[LEGACY_STORAGE_KEY];
-    const value = typeof current === 'boolean' ? current : legacy;
-    if (typeof current !== 'boolean' && typeof legacy === 'boolean') {
-      await chrome.storage?.local?.set({ [STORAGE_KEY]: legacy });
-      await chrome.storage?.local?.remove(LEGACY_STORAGE_KEY);
-    }
+    const value = result?.[STORAGE_KEY];
     return value !== false;
   } catch {
     return true;
@@ -234,15 +224,8 @@ async function readWidthFromStorage(): Promise<number> {
   try {
     const result = await chrome.storage?.local?.get({
       [WIDTH_STORAGE_KEY]: null,
-      [LEGACY_WIDTH_STORAGE_KEY]: null,
     });
-    const current = result?.[WIDTH_STORAGE_KEY];
-    const legacy = result?.[LEGACY_WIDTH_STORAGE_KEY];
-    const rawValue = typeof current === 'number' ? current : legacy;
-    if (typeof current !== 'number' && typeof legacy === 'number') {
-      await chrome.storage?.local?.set({ [WIDTH_STORAGE_KEY]: legacy });
-      await chrome.storage?.local?.remove(LEGACY_WIDTH_STORAGE_KEY);
-    }
+    const rawValue = result?.[WIDTH_STORAGE_KEY];
     const value = Number(rawValue);
     return Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, Number.isFinite(value) ? value : DEFAULT_WIDTH));
   } catch {
@@ -260,15 +243,8 @@ async function readHeightFromStorage(): Promise<number> {
   try {
     const result = await chrome.storage?.local?.get({
       [HEIGHT_STORAGE_KEY]: null,
-      [LEGACY_HEIGHT_STORAGE_KEY]: null,
     });
-    const current = result?.[HEIGHT_STORAGE_KEY];
-    const legacy = result?.[LEGACY_HEIGHT_STORAGE_KEY];
-    const rawValue = typeof current === 'number' ? current : legacy;
-    if (typeof current !== 'number' && typeof legacy === 'number') {
-      await chrome.storage?.local?.set({ [HEIGHT_STORAGE_KEY]: legacy });
-      await chrome.storage?.local?.remove(LEGACY_HEIGHT_STORAGE_KEY);
-    }
+    const rawValue = result?.[HEIGHT_STORAGE_KEY];
     const value = Number(rawValue);
     return clampHeight(Number.isFinite(value) ? value : panelHeight);
   } catch {

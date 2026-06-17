@@ -16,7 +16,6 @@ type CapturedNode = {
 const POST_MESSAGE_TYPE = 'cg-voyager-chatgpt-conversation-captured';
 const FETCH_REQUEST_TYPE = 'cg-voyager-chatgpt-fetch-current-conversation';
 const CHATGPT_CAPTURE_SOURCE = 'chatgpt-ether';
-const CHATGPT_CAPTURE_LEGACY_SOURCE = 'chatgpt-voyager';
 const MAX_SUMMARY_LENGTH = 60;
 const PERFORMANCE_PREFIX = '[ChatGPT Ether Performance]';
 
@@ -323,7 +322,7 @@ window.addEventListener('message', (event) => {
   const data = event.data as { type?: string; source?: string };
   if (
     data?.type === FETCH_REQUEST_TYPE &&
-    (data.source === CHATGPT_CAPTURE_SOURCE || data.source === CHATGPT_CAPTURE_LEGACY_SOURCE)
+    data.source === CHATGPT_CAPTURE_SOURCE
   ) {
     scheduleIdleTask(() => void fetchCurrentConversation(), 800);
   }
@@ -345,13 +344,13 @@ const originalOpen = OriginalXHR.prototype.open;
 const originalSend = OriginalXHR.prototype.send;
 
 OriginalXHR.prototype.open = function open(method: string, url: string | URL, ...rest: unknown[]) {
-  this.__cgVoyagerUrl = String(url);
+  this.__cgEtherUrl = String(url);
   return originalOpen.call(this, method, url, ...(rest as [boolean?, string?, string?]));
 };
 
 OriginalXHR.prototype.send = function send(...args: unknown[]) {
   this.addEventListener('load', () => {
-    const url = String(this.__cgVoyagerUrl || '');
+    const url = String(this.__cgEtherUrl || '');
     if (!shouldInspect(url)) return;
     try {
       const data = JSON.parse(this.responseText);
@@ -363,7 +362,7 @@ OriginalXHR.prototype.send = function send(...args: unknown[]) {
 
 declare global {
   interface XMLHttpRequest {
-    __cgVoyagerUrl?: string;
+    __cgEtherUrl?: string;
   }
 }
 

@@ -4,7 +4,7 @@
 
 This project contains modified work based on Gemini Voyager by Nagi-ovo.
 
-User-facing branding has changed to ChatGPT Ether / ChatGPT以太. Some internal identifiers may remain unchanged for compatibility, including names such as `cg-voyager-*`, `chatgptVoyager.*`, and related legacy storage or message identifiers.
+User-facing branding has changed to ChatGPT Ether / ChatGPT以太.
 
 These compatibility names should not be interpreted as current public branding.
 

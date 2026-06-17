@@ -12,13 +12,10 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "contentStyle.css",
         "dev-icon-128.png",
         "dev-icon-32.png",
         "icon-32.png",
         "icon-128.png",
-        "fetchInterceptor.js",
-        "prevent-auto-scroll.js",
         "assets/*.js",
         "assets/*.png"
       ],
@@ -38,8 +35,7 @@
       "matches": [
         "https://chatgpt.com/*"
       ],
-      "js": ["src/pages/content/index.tsx"],
-      "css": ["contentStyle.css"]
+      "js": ["src/pages/content/index.tsx"]
     }
   ],
   "host_permissions": [

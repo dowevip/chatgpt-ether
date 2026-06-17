@@ -25,7 +25,7 @@ export const baseManifest = {
         default_locale: 'en',
       }
     : {}),
-  ...(isDev ? { name: 'ChatGPT Voyager (Dev)' } : {}),
+  ...(isDev ? { name: 'ChatGPT Ether (Dev)' } : {}),
 } as ManifestV3Export;
 
 export const baseBuildOptions: BuildOptions = {

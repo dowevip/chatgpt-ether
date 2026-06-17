@@ -8,7 +8,6 @@ import {
 } from './ChatGPTTimelineService';
 
 const CHATGPT_SCHEMA_VERSION_STORAGE_KEY = 'chatgptEther.schemaVersion';
-const CHATGPT_SCHEMA_VERSION_LEGACY_STORAGE_KEY = 'chatgptVoyager.schemaVersion';
 
 export type ChatGPTDiagnosticsStatus = {
   isChatGPTPage: boolean;
@@ -62,17 +61,8 @@ function readExtensionVersion(): string {
 }
 
 async function readSchemaVersion(): Promise<string | null> {
-  const result = await browser.storage.local.get([
-    CHATGPT_SCHEMA_VERSION_STORAGE_KEY,
-    CHATGPT_SCHEMA_VERSION_LEGACY_STORAGE_KEY,
-  ]);
-  const current = result[CHATGPT_SCHEMA_VERSION_STORAGE_KEY];
-  const legacy = result[CHATGPT_SCHEMA_VERSION_LEGACY_STORAGE_KEY];
-  const value = typeof current === 'string' ? current : legacy;
-  if (typeof current !== 'string' && typeof legacy === 'string') {
-    await browser.storage.local.set({ [CHATGPT_SCHEMA_VERSION_STORAGE_KEY]: legacy });
-    await browser.storage.local.remove(CHATGPT_SCHEMA_VERSION_LEGACY_STORAGE_KEY);
-  }
+  const result = await browser.storage.local.get([CHATGPT_SCHEMA_VERSION_STORAGE_KEY]);
+  const value = result[CHATGPT_SCHEMA_VERSION_STORAGE_KEY];
   return typeof value === 'string' && value.trim() ? value : null;
 }
 

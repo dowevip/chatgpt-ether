@@ -1,2754 +1,563 @@
 {
-  "extName": {
-    "message": "ChatGPT Ether",
-    "description": "Extension name"
-  },
-  "extDescription": {
-    "message": "Personal ChatGPT conversation manager",
-    "description": "Extension description"
-  },
-  "scrollMode": {
-    "message": "Scroll mode",
-    "description": "Scroll mode label"
-  },
-  "flow": {
-    "message": "Flow",
-    "description": "Flow mode"
-  },
-  "jump": {
-    "message": "Jump",
-    "description": "Jump mode"
-  },
-  "hideOuterContainer": {
-    "message": "Hide outer container",
-    "description": "Hide outer container label"
-  },
-  "draggableTimeline": {
-    "message": "Draggable Timeline",
-    "description": "Draggable Timeline label"
-  },
-  "pinTimelinePreview": {
-    "message": "Pin preview panel",
-    "description": "Pin timeline preview panel toggle label"
-  },
-  "pinTimelinePreviewHint": {
-    "message": "Keep the preview panel open beside the timeline.",
-    "description": "Pin timeline preview panel feature hint"
-  },
-  "enableMarkerLevel": {
-    "message": "Enable Node Levels",
-    "description": "Enable timeline node level feature"
-  },
-  "enableMarkerLevelHint": {
-    "message": "Right-click timeline nodes to set their level and collapse children",
-    "description": "Node level feature hint"
-  },
-  "experimentalLabel": {
-    "message": "Experimental",
-    "description": "Experimental feature label"
-  },
-  "resetPosition": {
-    "message": "Reset Position",
-    "description": "Reset Position button"
-  },
-  "resetTimelinePosition": {
-    "message": "Reset Timeline Position",
-    "description": "Reset timeline position button in timeline options"
-  },
-  "language": {
-    "message": "Language",
-    "description": "Language label"
-  },
-  "pm_title": {
-    "message": "ChatGPT Ether",
-    "description": "Prompt Manager title"
-  },
-  "pm_add": {
-    "message": "Add",
-    "description": "Add prompt button"
-  },
-  "pm_search_placeholder": {
-    "message": "Search prompts or tags",
-    "description": "Search placeholder"
-  },
-  "pm_import": {
-    "message": "Import",
-    "description": "Import button"
-  },
-  "pm_export": {
-    "message": "Export",
-    "description": "Export button"
-  },
-  "pm_prompt_placeholder": {
-    "message": "Prompt text",
-    "description": "Prompt textarea placeholder"
-  },
-  "pm_tags_placeholder": {
-    "message": "Tags (comma separated)",
-    "description": "Tags input placeholder"
-  },
-  "pm_save": {
-    "message": "Save",
-    "description": "Save prompt"
-  },
-  "pm_cancel": {
-    "message": "Cancel",
-    "description": "Cancel"
-  },
-  "pm_all_tags": {
-    "message": "All",
-    "description": "All tags chip"
-  },
-  "pm_empty": {
-    "message": "No prompts yet",
-    "description": "Empty state"
-  },
-  "pm_copy": {
-    "message": "Copy",
-    "description": "Copy prompt"
-  },
-  "pm_copied": {
-    "message": "Copied",
-    "description": "Copied notice"
-  },
-  "pm_inserted": {
-    "message": "Inserted",
-    "description": "Prompt inserted into the chat input"
-  },
-  "pm_delete": {
-    "message": "Delete",
-    "description": "Delete prompt"
-  },
-  "pm_delete_confirm": {
-    "message": "Delete this prompt?",
-    "description": "Delete confirm"
-  },
-  "pm_lock": {
-    "message": "Lock position",
-    "description": "Lock panel position"
-  },
-  "pm_unlock": {
-    "message": "Unlock position",
-    "description": "Unlock panel position"
-  },
-  "pm_import_invalid": {
-    "message": "Invalid file format",
-    "description": "Import invalid"
-  },
-  "pm_import_empty": {
-    "message": "Import file contains no prompts",
-    "description": "Import file is valid but empty"
-  },
-  "pm_import_success": {
-    "message": "Imported {count} prompts",
-    "description": "Import success"
-  },
-  "pm_duplicate": {
-    "message": "Duplicate prompt",
-    "description": "Duplicate on add"
-  },
-  "pm_deleted": {
-    "message": "Deleted",
-    "description": "Deleted notice"
-  },
-  "pm_edit": {
-    "message": "Edit",
-    "description": "Edit prompt"
-  },
-  "pm_expand": {
-    "message": "Expand",
-    "description": "Expand prompt text"
-  },
-  "pm_collapse": {
-    "message": "Collapse",
-    "description": "Collapse prompt text"
-  },
-  "pm_saved": {
-    "message": "Saved",
-    "description": "Saved notice"
-  },
-  "pm_settings": {
-    "message": "Settings",
-    "description": "Settings button"
-  },
-  "pm_settings_tooltip": {
-    "message": "Open extension settings",
-    "description": "Settings button tooltip"
-  },
-  "pm_settings_fallback": {
-    "message": "Please click the extension icon in the browser toolbar to open settings",
-    "description": "Settings open failed message"
-  },
-  "pm_backup": {
-    "message": "Local Backup",
-    "description": "Local backup button"
-  },
-  "pm_backup_tooltip": {
-    "message": "Backup prompts and folders to a timestamped folder",
-    "description": "Backup button tooltip"
-  },
-  "pm_backup_cancelled": {
-    "message": "Backup cancelled",
-    "description": "Backup cancelled hint"
-  },
-  "pm_backup_error": {
-    "message": "✗ Backup failed",
-    "description": "Backup failed hint"
-  },
-  "pm_backup_hint_options": {
-    "message": "The feature is integrated into the Prompt Manager on the Gemini page.",
-    "description": "Backup hint in options page"
-  },
-  "pm_backup_step1": {
-    "message": "Open the Gemini page (gemini.google.com)",
-    "description": "Backup step 1"
-  },
-  "pm_backup_step2": {
-    "message": "Click the extension icon in the bottom-right to open Prompt Manager",
-    "description": "Backup step 2"
-  },
-  "pm_backup_step3": {
-    "message": "Click the \"💾 Local Backup\" button and select a backup folder",
-    "description": "Backup step 3"
-  },
-  "pm_backup_note": {
-    "message": "Backups include all prompts and folders, saved in a timestamped folder (format: backup-YYYYMMDD-HHMMSS)",
-    "description": "Backup feature note"
-  },
-  "pm_theme_light": {
-    "message": "Switch to light mode",
-    "description": "Theme toggle tooltip - switch to light"
-  },
-  "pm_view_compact": {
-    "message": "Switch to compact list",
-    "description": "View-mode toggle tooltip - switch from comfortable cards to compact single-line rows"
-  },
-  "pm_view_comfortable": {
-    "message": "Switch to comfortable view",
-    "description": "View-mode toggle tooltip - switch from compact rows to comfortable cards with markdown preview"
-  },
-  "pm_name_placeholder": {
-    "message": "Name (optional)",
-    "description": "Placeholder for the optional prompt name/label input used as the compact-mode headline"
-  },
-  "pm_theme_dark": {
-    "message": "Switch to dark mode",
-    "description": "Theme toggle tooltip - switch to dark"
-  },
-  "extensionVersion": {
-    "message": "Version",
-    "description": "Extension version label"
-  },
-  "newVersionAvailable": {
-    "message": "New version available",
-    "description": "Update reminder title"
-  },
-  "currentVersionLabel": {
-    "message": "Current",
-    "description": "Label for current version number"
-  },
-  "latestVersionLabel": {
-    "message": "Latest",
-    "description": "Label for latest version number"
-  },
-  "updateNow": {
-    "message": "Update",
-    "description": "CTA to update to latest version"
-  },
-  "safariUpdateNotSynced": {
-    "message": "Update source not synced yet, please try again in a few hours",
-    "description": "Shown on Safari when the DMG file is not yet available on GitHub releases"
-  },
-  "starProject": {
-    "message": "Support me ⭐",
-    "description": "Github callout"
-  },
-  "officialDocs": {
-    "message": "Official Docs",
-    "description": "Official docs link"
-  },
-  "exportChatJson": {
-    "message": "Export conversation history",
-    "description": "Tooltip for export button"
-  },
-  "folder_title": {
-    "message": "Folders",
-    "description": "Folder section title"
-  },
-  "folder_create": {
-    "message": "Create folder",
-    "description": "Create folder button tooltip"
-  },
-  "folder_name_prompt": {
-    "message": "Enter folder name:",
-    "description": "Create folder name prompt"
-  },
-  "folder_rename_prompt": {
-    "message": "Enter new name:",
-    "description": "Rename folder prompt"
-  },
-  "folder_delete_confirm": {
-    "message": "Delete this folder and all its contents?",
-    "description": "Delete folder confirmation"
-  },
-  "folder_create_subfolder": {
-    "message": "Create subfolder",
-    "description": "Create subfolder menu item"
-  },
-  "folder_rename": {
-    "message": "Rename",
-    "description": "Rename folder menu item"
-  },
-  "folder_change_color": {
-    "message": "Change Color",
-    "description": "Change folder color menu item"
-  },
-  "folder_delete": {
-    "message": "Delete",
-    "description": "Delete folder menu item"
-  },
-  "folder_color_default": {
-    "message": "Default",
-    "description": "Default folder color name"
-  },
-  "folder_color_red": {
-    "message": "Red",
-    "description": "Red folder color name"
-  },
-  "folder_color_orange": {
-    "message": "Orange",
-    "description": "Orange folder color name"
-  },
-  "folder_color_yellow": {
-    "message": "Yellow",
-    "description": "Yellow folder color name"
-  },
-  "folder_color_green": {
-    "message": "Green",
-    "description": "Green folder color name"
-  },
-  "folder_color_blue": {
-    "message": "Blue",
-    "description": "Blue folder color name"
-  },
-  "folder_color_purple": {
-    "message": "Purple",
-    "description": "Purple folder color name"
-  },
-  "folder_color_pink": {
-    "message": "Pink",
-    "description": "Pink folder color name"
-  },
-  "folder_color_custom": {
-    "message": "Custom",
-    "description": "Custom folder color name"
-  },
-  "folder_empty": {
-    "message": "No folders yet",
-    "description": "Empty state placeholder when no folders exist"
-  },
-  "folder_pin": {
-    "message": "Pin folder",
-    "description": "Pin folder menu item"
-  },
-  "folder_unpin": {
-    "message": "Unpin folder",
-    "description": "Unpin folder menu item"
-  },
-  "folder_remove_conversation": {
-    "message": "Remove from folder",
-    "description": "Remove conversation button tooltip"
-  },
-  "folder_remove_conversation_confirm": {
-    "message": "Remove \"{title}\" from this folder?",
-    "description": "Remove conversation confirmation"
-  },
-  "conversation_more": {
-    "message": "More options",
-    "description": "Conversation more options button tooltip"
-  },
-  "conversation_move_to_folder": {
-    "message": "Move to folder",
-    "description": "Move conversation to folder menu item"
-  },
-  "conversation_move_to_folder_title": {
-    "message": "Move to folder",
-    "description": "Move conversation to folder dialog title"
-  },
-  "chatWidth": {
-    "message": "Chat width",
-    "description": "Chat width adjustment label"
-  },
-  "chatWidthNarrow": {
-    "message": "Narrow",
-    "description": "Narrow chat width label"
-  },
-  "chatWidthWide": {
-    "message": "Wide",
-    "description": "Wide chat width label"
-  },
-  "chatFontSize": {
-    "message": "Chat font size",
-    "description": "Chat message font size adjustment label"
-  },
-  "chatFontSizeSmall": {
-    "message": "Small",
-    "description": "Small font size label"
-  },
-  "chatFontSizeLarge": {
-    "message": "Large",
-    "description": "Large font size label"
-  },
-  "chatLineHeight": {
-    "message": "Chat line spacing",
-    "description": "Chat message line spacing adjustment label"
-  },
-  "chatLineHeightTight": {
-    "message": "Tight",
-    "description": "Tight chat line spacing label"
-  },
-  "chatLineHeightLoose": {
-    "message": "Loose",
-    "description": "Loose chat line spacing label"
-  },
-  "sidebarWidth": {
-    "message": "Sidebar width",
-    "description": "Sidebar width adjustment label"
-  },
-  "sidebarWidthNarrow": {
-    "message": "Narrow",
-    "description": "Narrow sidebar width label"
-  },
-  "sidebarWidthWide": {
-    "message": "Wide",
-    "description": "Wide sidebar width label"
-  },
-  "formula_copied": {
-    "message": "✓ Formula copied",
-    "description": "Formula copied success message"
-  },
-  "formula_copy_failed": {
-    "message": "✗ Failed to copy",
-    "description": "Formula copy failed message"
-  },
-  "formulaCopyFormat": {
-    "message": "Formula copy format",
-    "description": "Formula copy format setting label"
-  },
-  "formulaCopyFormatLatex": {
-    "message": "LaTeX",
-    "description": "LaTeX format option"
-  },
-  "formulaCopyFormatUnicodeMath": {
-    "message": "MathML (Word)",
-    "description": "Label for MathML formula copy format option (formerly UnicodeMath)"
-  },
-  "formulaCopyFormatHint": {
-    "message": "Choose the format when copying formulas by clicking",
-    "description": "Formula copy format hint"
-  },
-  "formulaCopyFormatNoDollar": {
-    "message": "LaTeX (No Dollar Sign)",
-    "description": "LaTeX format option without dollar signs"
-  },
-  "formulaCopyFormatNotion": {
-    "message": "Notion ($$ format)",
-    "description": "Notion-compatible format with $$ delimiters"
-  },
-  "folder_filter_current_user": {
-    "message": "Account Isolation",
-    "description": "Show only conversations from the current Google account"
-  },
-  "folder_export": {
-    "message": "Export folders",
-    "description": "Export folders button tooltip"
-  },
-  "folder_import_export": {
-    "message": "Import/Export folders",
-    "description": "Combined import/export button tooltip"
-  },
-  "folder_cloud_upload": {
-    "message": "Upload to Cloud",
-    "description": "Cloud upload button tooltip"
-  },
-  "folder_cloud_sync": {
-    "message": "Sync from Cloud",
-    "description": "Cloud sync button tooltip"
-  },
-  "folder_cloud": {
-    "message": "Cloud sync",
-    "description": "Tooltip for the merged cloud button that opens an upload/sync popover"
-  },
-  "folder_settings": {
-    "message": "Folder settings",
-    "description": "Tooltip for the gear icon that opens folder-scoped settings"
-  },
-  "folder_anchor_move_above_notebooks": {
-    "message": "Move folders above Notebooks",
-    "description": "Tooltip on the folder header swap button shown when folders are currently above Recents — clicking moves them above Notebooks instead."
-  },
-  "folder_anchor_move_above_recents": {
-    "message": "Move folders above Recents",
-    "description": "Tooltip on the folder header swap button shown when folders are currently above Notebooks — clicking moves them above Recents instead."
-  },
-  "folder_item_font_size": {
-    "message": "Text size",
-    "description": "Label for the folder/conversation text size stepper inside folder settings"
-  },
-  "folder_item_font_size_decrease": {
-    "message": "Smaller",
-    "description": "Tooltip for the minus button on the folder text size stepper"
-  },
-  "folder_item_font_size_increase": {
-    "message": "Larger",
-    "description": "Tooltip for the plus button on the folder text size stepper"
-  },
-  "folder_manage_in_library": {
-    "message": "Manage in Library",
-    "description": "Shortcut button shown in AI Studio sidebar to jump to /library for drag-and-drop conversation management"
-  },
-  "aistudio_hide_archived_nudge_title": {
-    "message": "Tidy up your AI Studio Library",
-    "description": "Onboarding nudge title inviting the user to hide archived conversations from the AI Studio library table"
-  },
-  "aistudio_hide_archived_nudge_body": {
-    "message": "Voyager can hide conversations already filed into folders from the Library table, leaving only uncategorized chats behind.",
-    "description": "Onboarding nudge body explaining the hide-archived feature in AI Studio"
-  },
-  "aistudio_hide_archived_nudge_enable": {
-    "message": "Enable",
-    "description": "Primary button on the AI Studio hide-archived nudge"
-  },
-  "aistudio_hide_archived_nudge_dismiss": {
-    "message": "Not now",
-    "description": "Dismiss button on the AI Studio hide-archived nudge"
-  },
-  "aistudio_hide_archived_nudge_footnote": {
-    "message": "Applies to AI Studio only — your Gemini preference is kept separately.",
-    "description": "Footnote on the AI Studio hide-archived nudge noting the setting is scoped per platform"
-  },
-  "folder_import": {
-    "message": "Import folders",
-    "description": "Import folders button tooltip"
-  },
-  "folder_import_title": {
-    "message": "Import Folder Configuration",
-    "description": "Import dialog title"
-  },
-  "folder_import_strategy": {
-    "message": "Import strategy:",
-    "description": "Import strategy label"
-  },
-  "folder_import_merge": {
-    "message": "Merge with existing folders",
-    "description": "Merge import strategy"
-  },
-  "folder_import_overwrite": {
-    "message": "Overwrite existing folders",
-    "description": "Overwrite import strategy"
-  },
-  "folder_import_select_file": {
-    "message": "Select a JSON file to import",
-    "description": "Import file selection prompt"
-  },
-  "folder_import_success": {
-    "message": "✓ Imported {folders} folders, {conversations} conversations",
-    "description": "Import success message"
-  },
-  "folder_import_success_skipped": {
-    "message": "✓ Imported {folders} folders, {conversations} conversations ({skipped} duplicates skipped)",
-    "description": "Import success with skipped message"
-  },
-  "folder_import_error": {
-    "message": "✗ Import failed: {error}",
-    "description": "Import error message"
-  },
-  "folder_export_success": {
-    "message": "✓ Folders exported successfully",
-    "description": "Export success message"
-  },
-  "folder_import_invalid_format": {
-    "message": "Invalid file format. Please select a valid folder configuration file.",
-    "description": "Invalid format error"
-  },
-  "folder_import_confirm_overwrite": {
-    "message": "This will replace all existing folders. A backup will be created. Continue?",
-    "description": "Overwrite confirmation"
-  },
-  "folder_import_paste_json": {
-    "message": "Or paste JSON directly",
-    "description": "Toggle button to show paste textarea in import dialog"
-  },
-  "folder_import_paste_placeholder": {
-    "message": "Paste your JSON here...",
-    "description": "Placeholder text for the paste textarea"
-  },
-  "export_dialog_title": {
-    "message": "Export Conversation",
-    "description": "Export dialog title"
-  },
-  "export_dialog_select": {
-    "message": "Choose export format:",
-    "description": "Export format selection label"
-  },
-  "export_dialog_warning": {
-    "message": "⚠️ After clicking export, the system will auto-jump to the beginning to load all content. Please do not operate; export will continue automatically after the jump.",
-    "description": "Warning about auto-jump and loading completeness"
-  },
-  "export_dialog_safari_cmdp_hint": {
-    "message": "Safari tip: Click 'Export' below, wait a moment, then press ⌘P and choose 'Save to PDF'.",
-    "description": "Safari-specific hint for PDF export"
-  },
-  "export_toast_safari_pdf_ready": {
-    "message": "You can now press Command + P to export PDF.",
-    "description": "Safari-specific toast shown after PDF export is prepared"
-  },
-  "export_dialog_safari_markdown_hint": {
-    "message": "Note: Due to Safari limitations, images in chat history cannot be extracted. For complete export, use PDF export.",
-    "description": "Warning about image references in Safari markdown export"
-  },
-  "export_format_json_description": {
-    "message": "Machine-readable format for developers",
-    "description": "Description for JSON export format"
-  },
-  "export_format_markdown_description": {
-    "message": "Clean, portable text format (recommended)",
-    "description": "Description for Markdown export format"
-  },
-  "export_format_pdf_description": {
-    "message": "Print-friendly format via Save as PDF",
-    "description": "Description for PDF export format"
-  },
-  "editInputWidth": {
-    "message": "Edit input width",
-    "description": "Edit input width adjustment label"
-  },
-  "editInputWidthNarrow": {
-    "message": "Narrow",
-    "description": "Narrow edit input width label"
-  },
-  "editInputWidthWide": {
-    "message": "Wide",
-    "description": "Wide edit input width label"
-  },
-  "timelineOptions": {
-    "message": "Timeline Options",
-    "description": "Timeline options section label"
-  },
-  "folderOptions": {
-    "message": "Folder Options",
-    "description": "Folder options section label"
-  },
-  "enableFolderFeature": {
-    "message": "Enable folder feature",
-    "description": "Enable or disable the folder feature"
-  },
-  "enableFolderFloatingMode": {
-    "message": "Use floating folder panel",
-    "description": "Popup toggle that renders the folder feature as a floating window instead of injecting into Gemini's sidebar"
-  },
-  "enableFolderFloatingModeHint": {
-    "message": "Show folders in a draggable floating window instead of the sidebar.",
-    "description": "Helper text under the floating folder mode toggle"
-  },
-  "hideArchivedConversations": {
-    "message": "Hide archived conversations",
-    "description": "Hide conversations that are in folders from the main list"
-  },
-  "hideArchivedNudgeTitle": {
-    "message": "Tidy up your sidebar",
-    "description": "Title of the first-archive onboarding nudge"
-  },
-  "hideArchivedNudgeBody": {
-    "message": "Voyager can hide conversations that are filed into folders from the main list, so you see only active chats. Nothing is deleted — filed conversations stay accessible inside their folders.",
-    "description": "Body text of the first-archive onboarding nudge"
-  },
-  "hideArchivedNudgeEnable": {
-    "message": "Enable",
-    "description": "Primary button that turns on hide-archived"
-  },
-  "hideArchivedNudgeDismiss": {
-    "message": "Not now",
-    "description": "Secondary button that dismisses the nudge"
-  },
-  "hideArchivedNudgeFootnote": {
-    "message": "You can change this anytime in the extension popup → Folder options.",
-    "description": "Footnote explaining where to toggle the setting later"
-  },
-  "floatingModeNudgeTitle": {
-    "message": "Sidebar unavailable — open folders in a floating window?",
-    "description": "Title of the floating-mode fallback nudge"
-  },
-  "floatingModeNudgeBody": {
-    "message": "Voyager couldn't find the Gemini sidebar, likely because the page layout changed. You can still browse your folders in a floating window.",
-    "description": "Body copy of the floating-mode fallback nudge"
-  },
-  "floatingModeNudgeEnable": {
-    "message": "Open floating window",
-    "description": "Primary button that opens the floating folder panel"
-  },
-  "floatingModeNudgeDismiss": {
-    "message": "Not now",
-    "description": "Secondary button that dismisses the floating-mode nudge"
-  },
-  "floatingPanelTitle": {
-    "message": "Folders",
-    "description": "Title shown in the floating folder panel header"
-  },
-  "floatingPanelClose": {
-    "message": "Close",
-    "description": "Aria label for the floating panel close button"
-  },
-  "floatingPanelEmpty": {
-    "message": "No folders yet.",
-    "description": "Empty state shown when the user has no folders"
-  },
-  "floatingPanelUntitled": {
-    "message": "Untitled",
-    "description": "Fallback label for conversations with no title"
-  },
-  "floatingFabLabel": {
-    "message": "Open floating folders",
-    "description": "Aria label and tooltip for the persistent floating-mode FAB"
-  },
-  "conversation_star": {
-    "message": "Star conversation",
-    "description": "Star conversation button tooltip"
-  },
-  "conversation_unstar": {
-    "message": "Unstar conversation",
-    "description": "Unstar conversation button tooltip"
-  },
-  "conversation_untitled": {
-    "message": "Untitled",
-    "description": "Fallback title for conversations without a name"
-  },
-  "geminiOnlyNotice": {
-    "message": "Runs on Gemini (including Enterprise) & AI Studio by default. Add other sites below to enable the Prompt Manager there.",
-    "description": "Notice that defaults are limited to Gemini/AI Studio"
-  },
-  "folderManager_dataLossWarning": {
-    "message": "⚠️ Warning: Failed to load folder data. Your folders may have been corrupted. Please check the browser console for details and try restoring from backup if available.",
-    "description": "Warning shown when folder data fails to load"
-  },
-  "backupOptions": {
-    "message": "Auto Backup",
-    "description": "Backup options section label"
-  },
-  "backupEnabled": {
-    "message": "Enable auto backup",
-    "description": "Enable auto backup toggle"
-  },
-  "backupNow": {
-    "message": "Backup Now",
-    "description": "Backup now button"
-  },
-  "backupSelectFolder": {
-    "message": "Select Backup Folder",
-    "description": "Select backup folder button"
-  },
-  "backupFolderSelected": {
-    "message": "Backup folder: {folder}",
-    "description": "Shows selected backup folder"
-  },
-  "backupIncludePrompts": {
-    "message": "Include prompts",
-    "description": "Include prompts in backup toggle"
-  },
-  "backupIncludeFolders": {
-    "message": "Include folders",
-    "description": "Include folders in backup toggle"
-  },
-  "backupIntervalLabel": {
-    "message": "Backup interval",
-    "description": "Backup interval label"
-  },
-  "backupIntervalManual": {
-    "message": "Manual only",
-    "description": "Manual backup mode"
-  },
-  "backupIntervalDaily": {
-    "message": "Daily",
-    "description": "Daily backup interval"
-  },
-  "backupIntervalWeekly": {
-    "message": "Weekly (7 days)",
-    "description": "Weekly backup interval"
-  },
-  "backupLastBackup": {
-    "message": "Last backup: {time}",
-    "description": "Last backup timestamp"
-  },
-  "backupNever": {
-    "message": "Never",
-    "description": "Never backed up"
-  },
-  "backupSuccess": {
-    "message": "✓ Backup created: {prompts} prompts, {folders} folders, {conversations} conversations",
-    "description": "Backup success message"
-  },
-  "backupError": {
-    "message": "✗ Backup failed: {error}",
-    "description": "Backup error message"
-  },
-  "backupNotSupported": {
-    "message": "⚠️ Auto backup requires a modern browser with File System Access API support",
-    "description": "Browser not supported message"
-  },
-  "backupSelectFolderFirst": {
-    "message": "Please select a backup folder first",
-    "description": "No folder selected warning"
-  },
-  "backupUserCancelled": {
-    "message": "Backup cancelled",
-    "description": "User cancelled folder selection"
-  },
-  "backupConfigSaved": {
-    "message": "✓ Backup settings saved",
-    "description": "Config saved message"
-  },
-  "backupPermissionDenied": {
-    "message": "⚠️ Cannot access this directory. Please choose a different location (e.g., Documents, Downloads, or a folder in Desktop)",
-    "description": "Permission denied for restricted directory"
-  },
-  "backupConfigureInOptions": {
-    "message": "Backup configuration requires the Options page. Click the button below to open it (click the three dots next to the extension icon → Options).",
-    "description": "Backup configure in options page explanation"
-  },
-  "openOptionsPage": {
-    "message": "Open Options Page",
-    "description": "Open options page button"
-  },
-  "optionsPageSubtitle": {
-    "message": "Extension Options",
-    "description": "Options page subtitle"
-  },
-  "optionsComingSoon": {
-    "message": "More options coming soon...",
-    "description": "Options page placeholder text"
-  },
-  "backupDataAccessNotice": {
-    "message": "Data Access Limitation",
-    "description": "Backup data access limitation title"
-  },
-  "backupDataAccessHint": {
-    "message": "Due to browser security restrictions, this Options page cannot directly access prompts and folder data from Gemini pages. Please use the Prompt Manager and Folder Export features on the Gemini page for manual backups.",
-    "description": "Backup data access limitation explanation"
-  },
-  "promptManagerOptions": {
-    "message": "Prompt Manager",
-    "description": "Prompt Manager options section label"
-  },
-  "hidePromptManager": {
-    "message": "Hide Prompt Manager",
-    "description": "Hide the prompt manager floating ball"
-  },
-  "hidePromptManagerHint": {
-    "message": "Hide the Prompt Manager floating ball on the page",
-    "description": "Hint for hiding prompt manager feature"
-  },
-  "promptInsertOnClick": {
-    "message": "Insert prompt on click",
-    "description": "Enable direct prompt insertion instead of copying"
-  },
-  "promptInsertOnClickHint": {
-    "message": "When enabled, clicking a prompt inserts it into Gemini's input. Off keeps the default copy behavior.",
-    "description": "Hint for prompt click insertion behavior"
-  },
-  "customWebsites": {
-    "message": "Custom websites",
-    "description": "Custom websites for prompt manager"
-  },
-  "customWebsitesPlaceholder": {
-    "message": "Enter website URL (e.g., chatgpt.com)",
-    "description": "Custom websites input placeholder"
-  },
-  "customWebsitesHint": {
-    "message": "Add websites where you want to use the Prompt Manager. Only the Prompt Manager will be activated on these sites.",
-    "description": "Custom websites hint"
-  },
-  "addWebsite": {
-    "message": "Add website",
-    "description": "Add website button"
-  },
-  "removeWebsite": {
-    "message": "Remove",
-    "description": "Remove website button"
-  },
-  "invalidUrl": {
-    "message": "Invalid URL format",
-    "description": "Invalid URL error message"
-  },
-  "websiteAdded": {
-    "message": "Website added",
-    "description": "Website added success message"
-  },
-  "websiteRemoved": {
-    "message": "Website removed",
-    "description": "Website removed success message"
-  },
-  "permissionDenied": {
-    "message": "Permission denied. Please allow access to this website.",
-    "description": "Permission denied error message"
-  },
-  "permissionRequestFailed": {
-    "message": "Permission request failed. Please try again or grant access in the extension settings.",
-    "description": "Permission request failure message"
-  },
-  "customWebsitesNote": {
-    "message": "Tip: You'll be asked to allow access when adding a site. After granting permission, reload that site so the Prompt Manager can start.",
-    "description": "Custom websites reload/permission note"
-  },
-  "starredHistory": {
-    "message": "Starred History",
-    "description": "Starred history title"
-  },
-  "viewStarredHistory": {
-    "message": "View Starred History",
-    "description": "View starred history button"
-  },
-  "noStarredMessages": {
-    "message": "No starred messages yet",
-    "description": "No starred messages placeholder"
-  },
-  "removeFromStarred": {
-    "message": "Remove from starred",
-    "description": "Remove from starred tooltip"
-  },
-  "justNow": {
-    "message": "Just now",
-    "description": "Just now time label"
-  },
-  "hoursAgo": {
-    "message": "hours ago",
-    "description": "Hours ago label"
-  },
-  "yesterday": {
-    "message": "Yesterday",
-    "description": "Yesterday date label"
-  },
-  "daysAgo": {
-    "message": "days ago",
-    "description": "Days ago label"
-  },
-  "loading": {
-    "message": "Loading...",
-    "description": "Loading message"
-  },
-  "keyboardShortcuts": {
-    "message": "Keyboard Shortcuts",
-    "description": "Keyboard shortcuts section title"
-  },
-  "enableShortcuts": {
-    "message": "Enable keyboard shortcuts",
-    "description": "Enable shortcuts toggle label"
-  },
-  "previousNode": {
-    "message": "Previous node",
-    "description": "Previous timeline node shortcut label"
-  },
-  "nextNode": {
-    "message": "Next node",
-    "description": "Next timeline node shortcut label"
-  },
-  "firstNode": {
-    "message": "First turn",
-    "description": "First timeline node shortcut label"
-  },
-  "lastNode": {
-    "message": "Last turn",
-    "description": "Last timeline node shortcut label"
-  },
-  "shortcutKey": {
-    "message": "Key",
-    "description": "Shortcut key label"
-  },
-  "shortcutModifiers": {
-    "message": "Modifiers",
-    "description": "Shortcut modifiers label"
-  },
-  "resetShortcuts": {
-    "message": "Reset to defaults",
-    "description": "Reset shortcuts button"
-  },
-  "shortcutsResetSuccess": {
-    "message": "Shortcuts reset to defaults",
-    "description": "Shortcuts reset success message"
-  },
-  "shortcutsDescription": {
-    "message": "Navigate timeline nodes using keyboard shortcuts",
-    "description": "Shortcuts description"
-  },
-  "modifierNone": {
-    "message": "None",
-    "description": "No modifier key"
-  },
-  "modifierAlt": {
-    "message": "Alt",
-    "description": "Alt modifier key"
-  },
-  "modifierCtrl": {
-    "message": "Ctrl",
-    "description": "Ctrl modifier key"
-  },
-  "modifierShift": {
-    "message": "Shift",
-    "description": "Shift modifier key"
-  },
-  "modifierMeta": {
-    "message": "Cmd/Win",
-    "description": "Meta/Command/Windows modifier key"
-  },
-  "cloudSync": {
-    "message": "Cloud Sync",
-    "description": "Cloud sync section title"
-  },
-  "cloudSyncDescription": {
-    "message": "Sync folders and prompts to Google Drive",
-    "description": "Cloud sync description"
-  },
-  "preventAutoScroll": {
-    "message": "Prevent auto-scroll to bottom",
-    "description": "Feature to prevent auto scrolling to bottom when generating answers"
-  },
-  "preventAutoScrollHint": {
-    "message": "Prevents Gemini from jumping to the bottom when you hit enter while reading previous responses.",
-    "description": "Hint for prevent auto scroll feature"
-  },
-  "syncModeDisabled": {
-    "message": "Disabled",
-    "description": "Sync mode disabled option"
-  },
-  "syncModeManual": {
-    "message": "Manual",
-    "description": "Sync mode manual option"
-  },
-  "syncServerPort": {
-    "message": "Server Port",
-    "description": "Port number for the sync server"
-  },
-  "syncNow": {
-    "message": "Sync Now",
-    "description": "Sync now button"
-  },
-  "lastSynced": {
-    "message": "Last synced: {time}",
-    "description": "Last sync timestamp"
-  },
-  "neverSynced": {
-    "message": "Never synced",
-    "description": "Never synced message"
-  },
-  "lastUploaded": {
-    "message": "Uploaded: {time}",
-    "description": "Last upload timestamp"
-  },
-  "neverUploaded": {
-    "message": "Never uploaded",
-    "description": "Never uploaded message"
-  },
-  "syncSuccess": {
-    "message": "✓ Synced successfully",
-    "description": "Sync success message"
-  },
-  "syncError": {
-    "message": "✗ Sync failed: {error}",
-    "description": "Sync error message"
-  },
-  "syncInProgress": {
-    "message": "Syncing...",
-    "description": "Sync in progress message"
-  },
-  "uploadInProgress": {
-    "message": "Uploading...",
-    "description": "Upload in progress message"
-  },
-  "uploadSuccess": {
-    "message": "✓ Uploaded successfully",
-    "description": "Upload success message"
-  },
-  "downloadInProgress": {
-    "message": "Downloading...",
-    "description": "Download in progress message"
-  },
-  "downloadMergeSuccess": {
-    "message": "✓ Downloaded and merged",
-    "description": "Download and merge success message"
-  },
-  "syncUpload": {
-    "message": "Upload",
-    "description": "Upload button label"
-  },
-  "syncMerge": {
-    "message": "Download & Merge",
-    "description": "Merge button label"
-  },
-  "syncOverwrite": {
-    "message": "Overwrite",
-    "description": "Overwrite download button label"
-  },
-  "syncOverwriteConfirm": {
-    "message": "Overwrite local data with the cloud copy? Local changes that have not been uploaded will be lost.",
-    "description": "Confirmation before overwriting local sync data"
-  },
-  "syncMode": {
-    "message": "Sync Mode",
-    "description": "Sync mode label"
-  },
-  "minutesAgo": {
-    "message": "minutes ago",
-    "description": "Minutes ago label"
-  },
-  "syncNoData": {
-    "message": "No sync data found in Drive",
-    "description": "Error message when no data is found in Drive"
-  },
-  "syncOverwriteMissingFolders": {
-    "message": "Drive does not have a folders backup to overwrite from. Your local folders were left unchanged.",
-    "description": "Error message when overwrite is blocked because Drive has no folders payload"
-  },
-  "syncUploadFailed": {
-    "message": "Upload to cloud failed",
-    "description": "Popup UI: syncUploadFailed"
-  },
-  "syncDownloadFailed": {
-    "message": "Download from cloud failed",
-    "description": "Popup UI: syncDownloadFailed"
-  },
-  "syncAuthFailed": {
-    "message": "Authentication failed",
-    "description": "Error message when authentication fails"
-  },
-  "signOut": {
-    "message": "Sign out",
-    "description": "Sign out button"
-  },
-  "signInWithGoogle": {
-    "message": "Sign in with Google",
-    "description": "Sign in with Google button"
-  },
-  "nanobananaOptions": {
-    "message": "NanoBanana Options",
-    "description": "NanoBanana options section label"
-  },
-  "nanobananaDownloadLabel": {
-    "message": "Remove watermark on download",
-    "description": "Toggle: strip the Gemini watermark from images saved via the download button (lightweight, recommended)"
-  },
-  "nanobananaDownloadHint": {
-    "message": "When you click the download button, the saved file has the watermark removed.",
-    "description": "Hint for the download-time watermark removal toggle"
-  },
-  "nanobananaPreviewLabel": {
-    "message": "Remove watermark in preview",
-    "description": "Toggle: also strip the watermark from images shown in the chat (heavier, may flash while processing)"
-  },
-  "nanobananaPreviewHint": {
-    "message": "Also process images shown on screen. Slower; the image may briefly flash while processing.",
-    "description": "Hint for the preview-time watermark removal toggle"
-  },
-  "nanobananaDownloadTooltip": {
-    "message": "Download unwatermarked image (NanoBanana)",
-    "description": "Download button tooltip"
-  },
-  "deepResearchDownload": {
-    "message": "Download thinking content",
-    "description": "Deep Research download button text"
-  },
-  "deepResearchDownloadTooltip": {
-    "message": "Download thinking content as Markdown",
-    "description": "Deep Research download button tooltip"
-  },
-  "folder_uncategorized": {
-    "message": "Uncategorized",
-    "description": "Label for root-level conversations not in any folder"
-  },
-  "timelineLevelTitle": {
-    "message": "Node Level",
-    "description": "Title for timeline node level context menu"
-  },
-  "timelineLevel1": {
-    "message": "Level 1",
-    "description": "Timeline node level 1 option"
-  },
-  "timelineLevel2": {
-    "message": "Level 2",
-    "description": "Timeline node level 2 option"
-  },
-  "timelineLevel3": {
-    "message": "Level 3",
-    "description": "Timeline node level 3 option"
-  },
-  "timelineCollapse": {
-    "message": "Collapse",
-    "description": "Collapse children"
-  },
-  "timelineExpand": {
-    "message": "Expand",
-    "description": "Expand children"
-  },
-  "timelinePreviewSearch": {
-    "message": "Search...",
-    "description": "Timeline preview panel search placeholder"
-  },
-  "timelinePreviewNoResults": {
-    "message": "No results",
-    "description": "Timeline preview panel no search results"
-  },
-  "timelinePreviewNoMessages": {
-    "message": "No messages",
-    "description": "Timeline preview panel no messages"
-  },
-  "quoteReply": {
-    "message": "Quote Reply",
-    "description": "Quote reply button text"
-  },
-  "inputCollapseOptions": {
-    "message": "Input Options",
-    "description": "Input options section label"
-  },
-  "enableInputCollapse": {
-    "message": "Enable input collapse",
-    "description": "Enable input collapse toggle label"
-  },
-  "enableInputCollapseHint": {
-    "message": "Collapse the input area when empty to gain more reading space",
-    "description": "Input collapse feature hint"
-  },
-  "inputCollapseShortcutHint": {
-    "message": "{modifier}+I to expand",
-    "description": "Shortcut hint for expanding collapsed input. {modifier} is replaced with ⌘ on macOS and Ctrl on other platforms"
-  },
-  "inputCollapsePlaceholder": {
-    "message": "Message Gemini",
-    "description": "Placeholder text shown in collapsed input"
-  },
-  "allowCollapseWhenNotEmpty": {
-    "message": "Allow collapse with content",
-    "description": "Allow input to collapse even when it has text or attachments"
-  },
-  "allowCollapseWhenNotEmptyHint": {
-    "message": "Collapse input area even when it contains text or attachments",
-    "description": "Hint text explaining the collapse when not empty feature"
-  },
-  "inputVimMode": {
-    "message": "Input Vim mode",
-    "description": "Toggle label for focusing and leaving the question input with Vim-style keys"
-  },
-  "inputVimModeHint": {
-    "message": "Use i/Escape for Insert/Normal mode, v for selection, and Vim motions inside the question input",
-    "description": "Hint for input Vim mode shortcuts"
-  },
-  "ctrlEnterSend": {
-    "message": "{modifier}+Enter to send",
-    "description": "Modifier+Enter to send toggle label. {modifier} is replaced with ⌘ on macOS and Ctrl on other platforms"
-  },
-  "ctrlEnterSendHint": {
-    "message": "Press {modifier}+Enter to send messages, Enter to add a new line",
-    "description": "Modifier+Enter to send feature hint. {modifier} is replaced with ⌘ on macOS and Ctrl on other platforms"
-  },
-  "aistudioEnterSend": {
-    "message": "Enter to send on AI Studio",
-    "description": "AI Studio Enter to send toggle label. {modifier} is replaced with ⌘ on macOS and Ctrl on other platforms"
-  },
-  "aistudioEnterSendHint": {
-    "message": "Press Enter to send messages, {modifier}+Enter to add a new line",
-    "description": "AI Studio Enter to send feature hint. {modifier} is replaced with ⌘ on macOS and Ctrl on other platforms"
-  },
-  "safariEnterFix": {
-    "message": "Fix Enter key on Safari",
-    "description": "Toggle label for Safari Enter key fix feature"
-  },
-  "safariEnterFixHint": {
-    "message": "Send messages with a single Enter press (fixes Safari's double-Enter issue)",
-    "description": "Hint text for Safari Enter key fix feature"
-  },
-  "draftAutoSave": {
-    "message": "Draft auto-save",
-    "description": "Toggle label for input draft auto-save feature"
-  },
-  "draftAutoSaveHint": {
-    "message": "Automatically save and restore unsent input when you refresh or reopen a conversation",
-    "description": "Hint for draft auto-save feature"
-  },
-  "batch_delete_confirm": {
-    "message": "Are you sure you want to delete {count} conversation(s)? This action cannot be undone.",
-    "description": "Batch delete confirmation message"
-  },
-  "batch_delete_in_progress": {
-    "message": "Deleting... ({current}/{total})",
-    "description": "Batch delete progress message"
-  },
-  "batch_delete_success": {
-    "message": "✓ Deleted {count} conversation(s)",
-    "description": "Batch delete success message"
-  },
-  "batch_delete_partial": {
-    "message": "Deletion complete: {success} succeeded, {failed} failed",
-    "description": "Batch delete partial success message"
-  },
-  "batch_delete_limit_reached": {
-    "message": "Maximum {max} conversations can be selected at once",
-    "description": "Batch delete limit warning"
-  },
-  "batch_delete_button": {
-    "message": "Delete selected",
-    "description": "Batch delete button tooltip in multi-select mode"
-  },
-  "batch_delete_match_patterns": {
-    "message": "delete,confirm,yes,ok,remove，删除，确认，确定，是",
-    "description": "Comma-separated list of keywords to match native delete/confirm buttons (case-insensitive)"
-  },
-  "generalOptions": {
-    "message": "General Options",
-    "description": "General options section label"
-  },
-  "enableTabTitleUpdate": {
-    "message": "Sync tab title with conversation",
-    "description": "Enable tab title sync toggle label"
-  },
-  "enableTabTitleUpdateHint": {
-    "message": "Automatically update the browser tab title to match the current conversation title",
-    "description": "Tab title sync feature hint"
-  },
-  "persistentExportToolbar": {
-    "message": "Show floating export button",
-    "description": "Toggle label for the fallback top-right export toolbar"
-  },
-  "persistentExportToolbarHint": {
-    "message": "Adds a top-right export button when Gemini's header no longer hosts one. Turn off to hide it.",
-    "description": "Hint for the persistent export toolbar toggle"
-  },
-  "enableMermaidRendering": {
-    "message": "Enable Mermaid diagram rendering",
-    "description": "Enable Mermaid diagram rendering toggle label"
-  },
-  "enableMermaidRenderingHint": {
-    "message": "Automatically render Mermaid diagrams in code blocks",
-    "description": "Mermaid rendering feature hint"
-  },
-  "enableQuoteReply": {
-    "message": "Enable quote reply",
-    "description": "Enable quote reply toggle label"
-  },
-  "enableQuoteReplyHint": {
-    "message": "Show a floating button to quote selected text when text is selected in conversations",
-    "description": "Quote reply feature hint"
-  },
-  "hideInputHalo": {
-    "message": "Hide input box halo",
-    "description": "Input halo hider toggle label"
-  },
-  "hideInputHaloHint": {
-    "message": "Hide the blue radial-gradient halo behind Gemini's chat input area",
-    "description": "Input halo hider feature hint"
-  },
-  "contextSync": {
-    "message": "Context Sync",
-    "description": "Context Sync title"
-  },
-  "contextSyncDescription": {
-    "message": "Sync chat context to your local IDE",
-    "description": "Context Sync description"
-  },
-  "syncToIDE": {
-    "message": "Sync to IDE",
-    "description": "Sync to IDE button"
-  },
-  "ideOnline": {
-    "message": "IDE Online",
-    "description": "IDE Online status"
-  },
-  "ideOffline": {
-    "message": "IDE Offline",
-    "description": "IDE Offline status"
-  },
-  "syncing": {
-    "message": "Syncing...",
-    "description": "Syncing status"
-  },
-  "checkServer": {
-    "message": "Please start AI Sync server in VS Code",
-    "description": "Check server hint"
-  },
-  "capturing": {
-    "message": "Capturing dialogue...",
-    "description": "Capturing status"
-  },
-  "syncedSuccess": {
-    "message": "Synced successfully!",
-    "description": "Synced success message"
-  },
-  "downloadingOriginal": {
-    "message": "Downloading original image",
-    "description": "Status when downloading original image"
-  },
-  "downloadingOriginalLarge": {
-    "message": "Downloading original image (large file)",
-    "description": "Status when downloading large original image"
-  },
-  "downloadLargeWarning": {
-    "message": "Large file warning",
-    "description": "Warning shown for large downloads"
-  },
-  "downloadProcessing": {
-    "message": "Processing watermark",
-    "description": "Status when processing watermark removal"
-  },
-  "downloadSuccess": {
-    "message": "Downloading...",
-    "description": "Status when download starts"
-  },
-  "downloadError": {
-    "message": "Failed",
-    "description": "Status prefix when download fails"
-  },
-  "gemsHide": {
-    "message": "Hide Gems",
-    "description": "Tooltip for hiding Gems list section"
-  },
-  "gemsShow": {
-    "message": "Show Gems",
-    "description": "Tooltip for showing Gems list section"
-  },
-  "notebooksHide": {
-    "message": "Hide Notebooks",
-    "description": "Tooltip for hiding Notebooks list section"
-  },
-  "notebooksShow": {
-    "message": "Show Notebooks",
-    "description": "Tooltip for showing Notebooks list section"
-  },
-  "foldersHide": {
-    "message": "Hide Folders",
-    "description": "Tooltip for hiding Folders section"
-  },
-  "foldersShow": {
-    "message": "Show Folders",
-    "description": "Tooltip for showing Folders section"
-  },
-  "sidebarCollapseNudgeTitle": {
-    "message": "Collapsed sections are still here",
-    "description": "Title of the one-time nudge shown after collapsing a sidebar section"
-  },
-  "sidebarCollapseNudgeBody": {
-    "message": "A slim bar stays in the sidebar. Click it anytime to expand this section again.",
-    "description": "Body text of the one-time nudge shown after collapsing a sidebar section"
-  },
-  "sidebarCollapseNudgeDismiss": {
-    "message": "Got it",
-    "description": "Dismiss button for the one-time sidebar collapse nudge"
-  },
-  "setAsDefaultModel": {
-    "message": "Set as default model",
-    "description": "Tooltip for setting default model"
-  },
-  "cancelDefaultModel": {
-    "message": "Cancel default model",
-    "description": "Tooltip for cancelling default model"
-  },
-  "defaultModelSet": {
-    "message": "Default model set: $1",
-    "description": "Toast message when default model is set"
-  },
-  "defaultModelCleared": {
-    "message": "Default model cleared",
-    "description": "Toast message when default model is cleared"
-  },
-  "enableDefaultModelAutoApply": {
-    "message": "Auto-apply default model on new chats",
-    "description": "Toggle label for the default-model auto-apply kill switch in the popup"
-  },
-  "enableDefaultModelAutoApplyHint": {
-    "message": "Automatically switch to your starred default model and thinking level when you start a new conversation. Turn off if a Gemini redesign causes the auto-selection to misfire.",
-    "description": "Hint text under the default-model auto-apply toggle"
-  },
-  "defaultModelAutoApplyFailed": {
-    "message": "Default model couldn't auto-apply after 3 tries. Gemini may have changed its menu — you can pause this feature for now.",
-    "description": "Toast body when the model locker hits its consecutive-failure threshold"
-  },
-  "defaultModelAutoApplyFailedAction": {
-    "message": "Pause in settings",
-    "description": "Action button label on the auto-apply failure toast"
-  },
-  "defaultModelAutoApplyFailedFallback": {
-    "message": "Click the Voyager icon in your toolbar to open the popup, then pause this feature.",
-    "description": "Fallback message shown when programmatic popup open fails (e.g. Firefox)"
-  },
-  "setAsDefaultThinkingLevel": {
-    "message": "Set as default thinking level",
-    "description": "Tooltip for setting default thinking level"
-  },
-  "cancelDefaultThinkingLevel": {
-    "message": "Cancel default thinking level",
-    "description": "Tooltip for cancelling default thinking level"
-  },
-  "defaultThinkingLevelSet": {
-    "message": "Default thinking level set: $1",
-    "description": "Toast message when default thinking level is set"
-  },
-  "defaultThinkingLevelCleared": {
-    "message": "Default thinking level cleared",
-    "description": "Toast message when default thinking level is cleared"
-  },
-  "sidebarAutoHide": {
-    "message": "Auto-hide sidebar",
-    "description": "Auto-hide sidebar toggle label"
-  },
-  "sidebarAutoHideHint": {
-    "message": "Automatically collapse sidebar when mouse leaves, expand when mouse enters",
-    "description": "Auto-hide sidebar feature hint"
-  },
-  "sidebarFullHide": {
-    "message": "Fully hide sidebar",
-    "description": "Fully hide sidebar toggle label"
-  },
-  "sidebarFullHideHint": {
-    "message": "Completely hide the collapsed sidebar",
-    "description": "Fully hide sidebar feature hint"
-  },
-  "folderSpacing": {
-    "message": "Folder spacing",
-    "description": "Folder spacing adjustment label"
-  },
-  "folderSpacingCompact": {
-    "message": "Compact",
-    "description": "Compact folder spacing label"
-  },
-  "folderSpacingSpacious": {
-    "message": "Spacious",
-    "description": "Spacious folder spacing label"
-  },
-  "folderTreeIndent": {
-    "message": "Subfolder indent",
-    "description": "Subfolder tree indentation adjustment label"
-  },
-  "folderTreeIndentCompact": {
-    "message": "Narrow",
-    "description": "Narrow subfolder indentation label"
-  },
-  "folderTreeIndentSpacious": {
-    "message": "Wide",
-    "description": "Wide subfolder indentation label"
-  },
-  "gemsSidebarCount": {
-    "message": "Recent Gems in sidebar",
-    "description": "Popup slider label — how many recent gems to show in the sidebar above Notebooks. 0 hides the section entirely."
-  },
-  "gemsSidebarCountOff": {
-    "message": "Off",
-    "description": "Narrow-end label on the gems count slider (count=0, section hidden)."
-  },
-  "gemsSidebarCountMany": {
-    "message": "Many",
-    "description": "Wide-end label on the gems count slider (count up to 10)."
-  },
-  "export_select_mode_select_all": {
-    "message": "Select all",
-    "description": "Selection mode select all toggle"
-  },
-  "export_select_mode_count": {
-    "message": "Selected {count}",
-    "description": "Selection mode selected message count"
-  },
-  "export_select_mode_toggle": {
-    "message": "Select message",
-    "description": "Selection mode per-message toggle tooltip"
-  },
-  "export_select_mode_select_below": {
-    "message": "Select messages below",
-    "description": "Selection mode top-left button to select messages below current line"
-  },
-  "export_select_mode_empty": {
-    "message": "Please select at least one message to export.",
-    "description": "Selection mode validation when nothing is selected"
-  },
-  "export_format_image_description": {
-    "message": "Single PNG image, great for mobile sharing.",
-    "description": "Description for Image export format"
-  },
-  "export_image_progress": {
-    "message": "Generating image...",
-    "description": "Progress message while generating image export"
-  },
-  "deepResearchSaveReport": {
-    "message": "Save Report",
-    "description": "Deep Research save report button"
-  },
-  "deepResearchSaveReportTooltip": {
-    "message": "Export this research report",
-    "description": "Deep Research save report tooltip"
-  },
-  "export_fontsize_label": {
-    "message": "Font Size",
-    "description": "Label for font size slider in export dialog"
-  },
-  "export_fontsize_preview": {
-    "message": "The quick brown fox jumps over the lazy dog.",
-    "description": "Preview text for font size slider in export dialog"
-  },
-  "export_image_width_label": {
-    "message": "Image Width",
-    "description": "Label for image width selection in export dialog"
-  },
-  "export_image_width_narrow": {
-    "message": "Narrow",
-    "description": "Narrow width option (e.g. mobile)"
-  },
-  "export_image_width_medium": {
-    "message": "Medium",
-    "description": "Medium width option (e.g. tablet)"
-  },
-  "export_image_width_wide": {
-    "message": "Wide",
-    "description": "Wide width option (e.g. desktop)"
-  },
-  "export_error_generic": {
-    "message": "Export failed: {error}",
-    "description": "Generic export failure with detailed reason"
-  },
-  "export_error_refresh_retry": {
-    "message": "Image export failed due to network issues. Please refresh the page and try again.",
-    "description": "Guidance shown when image export fails due to transient loading issues"
-  },
-  "export_md_include_source_confirm": {
-    "message": "The exported content contains web search images. Include image source links in the Markdown?",
-    "description": "Confirm dialog when exporting markdown with web search images"
-  },
-  "deepResearch_exportedAt": {
-    "message": "Exported At",
-    "description": "Deep Research export timestamp label"
-  },
-  "deepResearch_totalPhases": {
-    "message": "Total Phases",
-    "description": "Deep Research total thinking phases label"
-  },
-  "deepResearch_thinkingPhase": {
-    "message": "Thinking Phase",
-    "description": "Deep Research thinking phase header"
-  },
-  "deepResearch_researchedWebsites": {
-    "message": "Researched Websites",
-    "description": "Deep Research researched websites section header"
-  },
-  "visualEffect": {
-    "message": "Visual effects",
-    "description": "Visual effect selector label"
-  },
-  "visualEffectHint": {
-    "message": "Add seasonal atmosphere to the page",
-    "description": "Visual effect feature hint"
-  },
-  "visualEffectOff": {
-    "message": "Off",
-    "description": "Visual effect off option"
-  },
-  "visualEffectSnow": {
-    "message": "Snow",
-    "description": "Visual effect snow option"
-  },
-  "visualEffectSakura": {
-    "message": "Sakura",
-    "description": "Visual effect sakura option"
-  },
-  "visualEffectRain": {
-    "message": "Rain",
-    "description": "Visual effect rain option"
-  },
-  "changelog_title": {
-    "message": "What's New",
-    "description": "Changelog modal title"
-  },
-  "changelog_close": {
-    "message": "Got it",
-    "description": "Changelog modal close button"
-  },
-  "changelog_docs_link": {
-    "message": "Docs",
-    "description": "Changelog modal documentation link text"
-  },
-  "changelog_recommendation": {
-    "message": "If Voyager has been helpful, share it with friends or on social media — feel free to tag the author!",
-    "description": "Changelog modal recommendation message"
-  },
-  "changelog_follow_cta": {
-    "message": "Get the latest updates — follow me on social media for new releases and quick fixes.",
-    "description": "Changelog modal follow-me CTA headline"
-  },
-  "changelog_social_xiaohongshu": {
-    "message": "Xiaohongshu",
-    "description": "Xiaohongshu platform name for social links"
-  },
-  "changelog_docs_hint": {
-    "message": "Details in docs",
-    "description": "Changelog annotation pointing to docs icon"
-  },
-  "changelog_rate_chrome": {
-    "message": "Love Voyager? A quick rating on the Chrome Web Store makes a huge difference!",
-    "description": "Chrome Web Store rating prompt in changelog modal"
-  },
-  "changelog_rate_chrome_cta": {
-    "message": "Rate Now",
-    "description": "Chrome Web Store rating CTA button text"
-  },
-  "changelog_rate_edge": {
-    "message": "Love Voyager? A quick rating on the Edge Add-ons store makes a huge difference!",
-    "description": "Edge Add-ons store rating prompt in changelog modal"
-  },
-  "changelog_rate_edge_cta": {
-    "message": "Rate Now",
-    "description": "Edge Add-ons store rating CTA button text"
-  },
-  "changelog_badge_mode": {
-    "message": "Notify via badge on the floating button instead of this popup",
-    "description": "Changelog notification mode toggle label"
-  },
-  "forkConversation": {
-    "message": "Fork",
-    "description": "Fork conversation button label"
-  },
-  "forkConfirm": {
-    "message": "Fork conversation from this point?",
-    "description": "Fork confirmation prompt"
-  },
-  "forkConfirmBtn": {
-    "message": "Fork",
-    "description": "Fork confirmation button"
-  },
-  "forkMarkdownBtn": {
-    "message": "Download MD",
-    "description": "Fork confirmation button for downloading a Markdown file"
-  },
-  "forkCancel": {
-    "message": "Cancel",
-    "description": "Fork cancel button"
-  },
-  "forkBranch": {
-    "message": "Branch",
-    "description": "Fork branch label"
-  },
-  "forkOriginal": {
-    "message": "Original",
-    "description": "Original fork branch tag"
-  },
-  "forkCurrent": {
-    "message": "Current",
-    "description": "Current fork branch tag"
-  },
-  "forkPreparing": {
-    "message": "Preparing fork...",
-    "description": "Fork preparation status"
-  },
-  "forkPasteHint": {
-    "message": "Press Enter to send and create the fork",
-    "description": "Fork paste hint text"
-  },
-  "forkManualUploadHint": {
-    "message": "Drag {filename} into Gemini and send within 2 minutes to create the fork.",
-    "description": "Fork manual Markdown upload hint text"
-  },
-  "forkManualUploadPrompt": {
-    "message": "I uploaded {filename}; it is context from the previous conversation. Please use the attachment as background and answer my new request below.\n\nNew request:\n",
-    "description": "Prefilled prompt for manual Markdown upload forks"
-  },
-  "forkDeleteData": {
-    "message": "Delete this branch",
-    "description": "Delete fork branch metadata button"
-  },
-  "forkDeleteDataConfirm": {
-    "message": "Delete this branch link? This only removes Voyager fork metadata and will not delete any conversation.",
-    "description": "Fork metadata delete confirmation prompt"
-  },
-  "enableForkFeature": {
-    "message": "Enable conversation fork",
-    "description": "Enable conversation fork feature toggle label"
-  },
-  "enableForkFeatureHint": {
-    "message": "Show Fork button and branch indicators in Gemini conversations",
-    "description": "Enable conversation fork feature toggle hint"
-  },
-  "enableAccountIsolation": {
-    "message": "Enable Hard Isolation",
-    "description": "Enable hard isolation for account-scoped folder data and cloud sync."
-  },
-  "enableAccountIsolationHint": {
-    "message": "Strictly isolate folder and cloud sync data by Google account to prevent cross-account mixing.",
-    "description": "Hint text for account isolation option."
-  },
-  "currentPlatform": {
-    "message": "Current platform",
-    "description": "Current active platform label in popup."
-  },
-  "platformGemini": {
-    "message": "Gemini",
-    "description": "Gemini platform label."
-  },
-  "platformAIStudio": {
-    "message": "AI Studio",
-    "description": "AI Studio platform label."
-  },
-  "enableOnAIStudio": {
-    "message": "Enable on AI Studio",
-    "description": "Toggle to enable/disable Voyager on AI Studio"
-  },
-  "enableOnAIStudioHint": {
-    "message": "Turn off to disable Voyager features on AI Studio (Prompt Manager stays active)",
-    "description": "Hint for AI Studio enable toggle"
-  },
-  "export_select_mode_only_user": {
-    "message": "Select User Only",
-    "description": "Export selection mode: select only user messages"
-  },
-  "export_select_mode_only_ai": {
-    "message": "Select AI Only",
-    "description": "Export selection mode: select only AI messages"
-  },
-  "aiOrgCopyButton": {
-    "message": "AI Organize",
-    "description": "Button to copy folder structure and conversations for AI-based organization"
-  },
-  "aiOrgCopied": {
-    "message": "Copied!",
-    "description": "Confirmation after copying AI organization prompt"
-  },
-  "aiOrgError": {
-    "message": "Failed — open Gemini first",
-    "description": "Error when copying AI organization prompt fails"
-  },
-  "aiOrgCopyHint": {
-    "message": "Copies all conversations & folder structure as a prompt. Paste into Gemini to get an importable folder plan.",
-    "description": "Hint text below the AI organization copy button"
-  },
-  "aiOrgCurrentFolders": {
-    "message": "Current Folder Structure",
-    "description": "Heading in the AI organization prompt"
-  },
-  "aiOrgUnfiledConversations": {
-    "message": "Unfiled Conversations",
-    "description": "Heading for conversations not in any folder"
-  },
-  "aiOrgEmpty": {
-    "message": "empty",
-    "description": "Label for empty folders in the AI organization prompt"
-  },
-  "aiOrgInstructions": {
-    "message": "Instructions",
-    "description": "Heading for AI instructions section"
-  },
-  "aiOrgInstructionsBody": {
-    "message": "Based on the conversations and folder structure above, please reorganize them into a logical folder hierarchy. Output a JSON file using the exact format below that can be directly imported into the Gemini Voyager extension (use the \"Merge\" import strategy). Keep existing well-organized folders, create new ones as needed, and move unfiled conversations into appropriate folders. Each folder needs a unique ID (use a short random string), and each conversation must keep its original conversationId and url.",
-    "description": "Instructions body for AI to generate importable folder structure"
-  },
-  "showMessageTimestamps": {
-    "message": "Show Message Timestamps",
-    "description": "Display timestamp for each message"
-  },
-  "showMessageTimestampsHint": {
-    "message": "Show when each message was sent",
-    "description": "Hint for message timestamps feature"
-  },
-  "moveSectionUp": {
-    "message": "Move up",
-    "description": "Tooltip for moving a settings section up in popup"
-  },
-  "moveSectionDown": {
-    "message": "Move down",
-    "description": "Tooltip for moving a settings section down in popup"
-  },
-  "folderAsProject_enable": {
-    "message": "Enable Folder as Project",
-    "description": "Toggle label for the Folder-as-Project feature"
-  },
-  "folderAsProject_description": {
-    "message": "Show a folder picker on new chats and auto-assign the conversation to the selected folder on first send",
-    "description": "Hint for the Folder-as-Project feature toggle"
-  },
-  "folderAsProject_selectFolder": {
-    "message": "Select folder…",
-    "description": "Placeholder text for the folder picker chip when no folder is selected"
-  },
-  "folderAsProject_noFolder": {
-    "message": "No folder",
-    "description": "Option in the folder picker dropdown to clear the selection"
-  },
-  "folderAsProject_setInstructions": {
-    "message": "Set Instructions",
-    "description": "Folder context menu item to open the instructions editor"
-  },
-  "folderAsProject_editInstructions": {
-    "message": "Edit Instructions",
-    "description": "Folder context menu item to edit existing instructions"
-  },
-  "folderAsProject_expand": {
-    "message": "Expand",
-    "description": "Aria-label for the expand button (screen readers)"
-  },
-  "folderAsProject_collapse": {
-    "message": "Collapse",
-    "description": "Aria-label for the collapse button (screen readers)"
-  },
-  "folder_new_chat_in_folder": {
-    "message": "New chat in this folder",
-    "description": "Folder context menu item to create a new chat and auto-assign it to this folder"
-  },
-  "canvasExportCopyMarkdown": {
-    "message": "Copy as Markdown",
-    "description": "Canvas share menu item: copy canvas content as Markdown to clipboard"
-  },
-  "canvasExportCopyMarkdownTooltip": {
-    "message": "Copy Canvas content as Markdown",
-    "description": "Tooltip for the Canvas copy-as-markdown menu item"
-  },
-  "canvasExportCopied": {
-    "message": "Canvas copied as Markdown",
-    "description": "Toast shown after copying canvas content as Markdown"
-  },
-  "canvasExportEmpty": {
-    "message": "Canvas content is empty",
-    "description": "Toast shown when canvas has no content to copy"
-  },
-  "canvasExportFailed": {
-    "message": "Failed to copy Canvas content",
-    "description": "Toast shown when clipboard copy of canvas markdown fails"
-  },
-  "floatingPanelCreateFolder": {
-    "message": "Create folder",
-    "description": "Floating folder panel create folder action"
-  },
-  "floatingPanelCreateSubfolder": {
-    "message": "Create subfolder",
-    "description": "Floating folder panel create subfolder action"
-  },
-  "floatingPanelFolderNamePlaceholder": {
-    "message": "Folder name",
-    "description": "Floating folder panel folder name input placeholder"
-  },
-  "floatingPanelRenameFolder": {
-    "message": "Rename",
-    "description": "Floating folder panel rename folder action"
-  },
-  "floatingPanelDeleteFolder": {
-    "message": "Delete",
-    "description": "Floating folder panel delete folder action"
-  },
-  "floatingPanelDeleteConfirm": {
-    "message": "Delete this folder and all its contents?",
-    "description": "Floating folder panel delete folder confirmation"
-  },
-  "floatingPanelCancel": {
-    "message": "Cancel",
-    "description": "Floating folder panel cancel action"
-  },
-  "floatingPanelSave": {
-    "message": "Save",
-    "description": "Floating folder panel save action"
-  },
-  "floatingPanelPinFolder": {
-    "message": "Pin",
-    "description": "Floating folder panel pin folder action"
-  },
-  "floatingPanelUnpinFolder": {
-    "message": "Unpin",
-    "description": "Floating folder panel unpin folder action"
-  },
-  "floatingPanelRemoveConversation": {
-    "message": "Remove from folder",
-    "description": "Floating folder panel remove conversation action"
-  },
-  "floatingPanelStarConversation": {
-    "message": "Star",
-    "description": "Floating folder panel star conversation action"
-  },
-  "floatingPanelUnstarConversation": {
-    "message": "Unstar",
-    "description": "Floating folder panel unstar conversation action"
-  },
-  "floatingPanelColor": {
-    "message": "Color",
-    "description": "Floating folder panel color section label"
-  },
-  "floatingPanelExpandFolder": {
-    "message": "Expand",
-    "description": "Floating folder panel expand folder aria label"
-  },
-  "floatingPanelCollapseFolder": {
-    "message": "Collapse",
-    "description": "Floating folder panel collapse folder aria label"
-  },
-  "floatingPanelCloudUpload": {
-    "message": "Upload to cloud",
-    "description": "Floating folder panel cloud upload button tooltip"
-  },
-  "floatingPanelCloudSync": {
-    "message": "Sync from cloud",
-    "description": "Floating folder panel cloud sync button tooltip"
-  },
-  "floatingPanelMoveHint": {
-    "message": "To add a conversation: open its ⋮ menu → \"Move to folder\".",
-    "description": "Floating folder panel hint explaining how to add conversations through the native conversation menu"
-  },
-  "floatingPanelGestureHint": {
-    "message": "Double-click to rename • Right-click for pin, color, delete.",
-    "description": "Floating folder panel hint explaining folder gestures and context menu actions"
-  },
-  "yes": {
-    "message": "Yes",
-    "description": "Popup UI: yes"
-  },
-  "no": {
-    "message": "No",
-    "description": "Popup UI: no"
-  },
-  "none": {
-    "message": "None",
-    "description": "Popup UI: none"
-  },
-  "never": {
-    "message": "Never",
-    "description": "Popup UI: never"
-  },
-  "notSet": {
-    "message": "Not set",
-    "description": "Popup UI: notSet"
-  },
-  "unknownError": {
-    "message": "Unknown error",
-    "description": "Popup UI: unknownError"
-  },
   "back": {
-    "message": "Back",
-    "description": "Popup UI: back"
-  },
-  "save": {
-    "message": "Save",
-    "description": "Popup UI: save"
+    "message": "Back"
   },
   "cancel": {
-    "message": "Cancel",
-    "description": "Popup UI: cancel"
-  },
-  "delete": {
-    "message": "Delete",
-    "description": "Popup UI: delete"
-  },
-  "edit": {
-    "message": "Edit",
-    "description": "Popup UI: edit"
-  },
-  "insert": {
-    "message": "Insert",
-    "description": "Popup UI: insert"
-  },
-  "favorite": {
-    "message": "Favorite",
-    "description": "Popup UI: favorite"
-  },
-  "unfavorite": {
-    "message": "Unfavorite",
-    "description": "Popup UI: unfavorite"
-  },
-  "rename": {
-    "message": "Rename",
-    "description": "Popup UI: rename"
-  },
-  "expand": {
-    "message": "Expand",
-    "description": "Popup UI: expand"
-  },
-  "collapse": {
-    "message": "Collapse",
-    "description": "Popup UI: collapse"
-  },
-  "refresh": {
-    "message": "Refresh",
-    "description": "Popup UI: refresh"
-  },
-  "copy": {
-    "message": "Copy",
-    "description": "Popup UI: copy"
-  },
-  "saved": {
-    "message": "Saved.",
-    "description": "Popup UI: saved"
-  },
-  "saveFailed": {
-    "message": "Save failed.",
-    "description": "Popup UI: saveFailed"
-  },
-  "deleted": {
-    "message": "Deleted.",
-    "description": "Popup UI: deleted"
-  },
-  "deleteFailed": {
-    "message": "Delete failed.",
-    "description": "Popup UI: deleteFailed"
-  },
-  "copyFailedRefresh": {
-    "message": "Copy failed. Refresh and try again.",
-    "description": "Popup UI: copyFailedRefresh"
-  },
-  "emptyMessage": {
-    "message": "Empty message",
-    "description": "Popup UI: emptyMessage"
-  },
-  "roleUser": {
-    "message": "User",
-    "description": "Popup UI: roleUser"
-  },
-  "roleAssistant": {
-    "message": "Assistant",
-    "description": "Popup UI: roleAssistant"
-  },
-  "cgHomeTitle": {
-    "message": "Home",
-    "description": "Popup UI: cgHomeTitle"
-  },
-  "cgCurrentPageStatus": {
-    "message": "Current page status",
-    "description": "Popup UI: cgCurrentPageStatus"
-  },
-  "cgReadingCurrentTab": {
-    "message": "Reading current tab",
-    "description": "Popup UI: cgReadingCurrentTab"
-  },
-  "cgStatusRecognized": {
-    "message": "ChatGPT page detected",
-    "description": "Popup UI: cgStatusRecognized"
-  },
-  "cgStatusNotChatGPT": {
-    "message": "Current page is not recognized as ChatGPT",
-    "description": "Popup UI: cgStatusNotChatGPT"
-  },
-  "cgRefreshCurrentConversation": {
-    "message": "Refresh conversation info",
-    "description": "Popup UI: cgRefreshCurrentConversation"
-  },
-  "cgIsChatGPTPage": {
-    "message": "Recognized as ChatGPT",
-    "description": "Popup UI: cgIsChatGPTPage"
-  },
-  "cgConversationId": {
-    "message": "Conversation ID",
-    "description": "Popup UI: cgConversationId"
-  },
-  "cgConversationTitle": {
-    "message": "Conversation title",
-    "description": "Popup UI: cgConversationTitle"
-  },
-  "cgUserMessageCount": {
-    "message": "User messages",
-    "description": "Popup UI: cgUserMessageCount"
+    "message": "Cancel"
   },
   "cgAssistantMessageCount": {
-    "message": "Assistant replies",
-    "description": "Popup UI: cgAssistantMessageCount"
+    "message": "Assistant replies"
   },
-  "cgTotalMessageCount": {
-    "message": "Total messages",
-    "description": "Popup UI: cgTotalMessageCount"
+  "cgConversationId": {
+    "message": "Conversation ID"
   },
-  "cgEntryPromptVault": {
-    "message": "Prompt Vault",
-    "description": "Popup UI: cgEntryPromptVault"
+  "cgConversationTitle": {
+    "message": "Conversation title"
   },
-  "cgEntryFolders": {
-    "message": "Conversation Manager",
-    "description": "Popup UI: cgEntryFolders"
-  },
-  "cgEntryTimeline": {
-    "message": "Timeline",
-    "description": "Popup UI: cgEntryTimeline"
-  },
-  "cgEntryStarred": {
-    "message": "Starred Messages",
-    "description": "Popup UI: cgEntryStarred"
-  },
-  "cgEntrySync": {
-    "message": "Sync",
-    "description": "Popup UI: cgEntrySync"
+  "cgCurrentPageStatus": {
+    "message": "Current page status"
   },
   "cgEntryDiagnostics": {
-    "message": "Diagnostics",
-    "description": "Popup UI: cgEntryDiagnostics"
+    "message": "Diagnostics"
+  },
+  "cgEntryFolders": {
+    "message": "Conversation Manager"
+  },
+  "cgEntryPromptVault": {
+    "message": "Prompt Vault"
+  },
+  "cgEntryStarred": {
+    "message": "Starred Messages"
+  },
+  "cgEntrySync": {
+    "message": "Sync"
+  },
+  "cgEntryTimeline": {
+    "message": "Timeline"
   },
   "cgHidePageTimeline": {
-    "message": "Hide timeline",
-    "description": "Popup UI: cgHidePageTimeline"
+    "message": "Hide timeline"
+  },
+  "cgHomeTitle": {
+    "message": "Home"
+  },
+  "cgIsChatGPTPage": {
+    "message": "Recognized as ChatGPT"
+  },
+  "cgReadingCurrentTab": {
+    "message": "Reading current tab"
+  },
+  "cgRefreshCurrentConversation": {
+    "message": "Refresh conversation info"
   },
   "cgShowPageTimeline": {
-    "message": "Show timeline",
-    "description": "Popup UI: cgShowPageTimeline"
+    "message": "Show timeline"
   },
-  "cgOpenEntry": {
-    "message": "Open {name}",
-    "description": "Popup UI: cgOpenEntry"
+  "cgStatusNotChatGPT": {
+    "message": "Current page is not recognized as ChatGPT"
   },
-  "cgPlaceholderEntry": {
-    "message": "Placeholder entry for a later phase",
-    "description": "Popup UI: cgPlaceholderEntry"
+  "cgStatusRecognized": {
+    "message": "ChatGPT page detected"
   },
   "cgTimelineToggleFailed": {
-    "message": "Timeline toggle failed.",
-    "description": "Popup UI: cgTimelineToggleFailed"
+    "message": "Timeline toggle failed."
   },
-  "pvLoadFailed": {
-    "message": "Failed to load Prompt Vault.",
-    "description": "Popup UI: pvLoadFailed"
+  "cgTotalMessageCount": {
+    "message": "Total messages"
   },
-  "pvContentRequired": {
-    "message": "Prompt content cannot be empty.",
-    "description": "Popup UI: pvContentRequired"
+  "cgUserMessageCount": {
+    "message": "User messages"
   },
-  "pvDeleteConfirm": {
-    "message": "Delete prompt \"{title}\"?",
-    "description": "Popup UI: pvDeleteConfirm"
+  "collapse": {
+    "message": "Collapse"
   },
-  "pvNoCurrentTab": {
-    "message": "No current tab found.",
-    "description": "Popup UI: pvNoCurrentTab"
+  "copy": {
+    "message": "Copy"
   },
-  "pvNotChatGPTPage": {
-    "message": "Current page is not ChatGPT, so the prompt cannot be inserted.",
-    "description": "Popup UI: pvNotChatGPTPage"
+  "copyFailedRefresh": {
+    "message": "Copy failed. Refresh and try again."
   },
-  "pvContentScriptNoResponse": {
-    "message": "Content script did not respond. Refresh the ChatGPT page and try again.",
-    "description": "Popup UI: pvContentScriptNoResponse"
+  "delete": {
+    "message": "Delete"
   },
-  "pvInvalidInsertResult": {
-    "message": "Insert failed: no valid result received.",
-    "description": "Popup UI: pvInvalidInsertResult"
+  "deleteFailed": {
+    "message": "Delete failed."
   },
-  "pvInsertSuccess": {
-    "message": "Inserted.",
-    "description": "Popup UI: pvInsertSuccess"
-  },
-  "pvInsertSuccessWithMethod": {
-    "message": "Inserted ({method}).",
-    "description": "Popup UI: pvInsertSuccessWithMethod"
-  },
-  "pvInsertFailed": {
-    "message": "Insert failed.",
-    "description": "Popup UI: pvInsertFailed"
-  },
-  "pvExported": {
-    "message": "Prompt Vault JSON exported.",
-    "description": "Popup UI: pvExported"
-  },
-  "pvImported": {
-    "message": "Import complete.",
-    "description": "Popup UI: pvImported"
-  },
-  "pvImportFailed": {
-    "message": "Import failed.",
-    "description": "Popup UI: pvImportFailed"
-  },
-  "pvEditPrompt": {
-    "message": "Edit prompt",
-    "description": "Popup UI: pvEditPrompt"
-  },
-  "pvNewPrompt": {
-    "message": "New prompt",
-    "description": "Popup UI: pvNewPrompt"
-  },
-  "pvTitlePlaceholder": {
-    "message": "Prompt title",
-    "description": "Popup UI: pvTitlePlaceholder"
-  },
-  "pvContentPlaceholder": {
-    "message": "Prompt content",
-    "description": "Popup UI: pvContentPlaceholder"
-  },
-  "pvTagsPlaceholder": {
-    "message": "Tags, separated by commas",
-    "description": "Popup UI: pvTagsPlaceholder"
-  },
-  "pvFavoritePinned": {
-    "message": "Favorite / pin",
-    "description": "Popup UI: pvFavoritePinned"
-  },
-  "pvSearchPlaceholder": {
-    "message": "Search prompt titles, content, or tags",
-    "description": "Popup UI: pvSearchPlaceholder"
-  },
-  "pvExportJson": {
-    "message": "Export JSON",
-    "description": "Popup UI: pvExportJson"
-  },
-  "pvImportJson": {
-    "message": "Import JSON",
-    "description": "Popup UI: pvImportJson"
-  },
-  "pvNoMatches": {
-    "message": "No matching prompts.",
-    "description": "Popup UI: pvNoMatches"
-  },
-  "foldersUncategorized": {
-    "message": "Uncategorized",
-    "description": "Popup UI: foldersUncategorized"
-  },
-  "foldersUnknownFolder": {
-    "message": "Unknown folder",
-    "description": "Popup UI: foldersUnknownFolder"
-  },
-  "foldersUntitledConversation": {
-    "message": "Untitled conversation",
-    "description": "Popup UI: foldersUntitledConversation"
-  },
-  "foldersLoadFailed": {
-    "message": "Failed to load folder data.",
-    "description": "Popup UI: foldersLoadFailed"
-  },
-  "foldersTitleSyncFailed": {
-    "message": "Failed to sync current conversation title.",
-    "description": "Popup UI: foldersTitleSyncFailed"
-  },
-  "foldersNameRequired": {
-    "message": "Enter a folder name.",
-    "description": "Popup UI: foldersNameRequired"
-  },
-  "foldersChildCreated": {
-    "message": "Child folder created.",
-    "description": "Popup UI: foldersChildCreated"
-  },
-  "foldersCreated": {
-    "message": "Folder created.",
-    "description": "Popup UI: foldersCreated"
-  },
-  "foldersCreateFailed": {
-    "message": "Failed to create folder.",
-    "description": "Popup UI: foldersCreateFailed"
-  },
-  "foldersCurrentNotSaveable": {
-    "message": "Current page is not a saveable ChatGPT conversation.",
-    "description": "Popup UI: foldersCurrentNotSaveable"
-  },
-  "foldersCurrentSaved": {
-    "message": "Current conversation saved.",
-    "description": "Popup UI: foldersCurrentSaved"
-  },
-  "foldersCurrentSavedBadge": {
-    "message": "Saved",
-    "description": "Popup UI: foldersCurrentSavedBadge"
-  },
-  "foldersCurrentSaveFailed": {
-    "message": "Failed to save current conversation.",
-    "description": "Popup UI: foldersCurrentSaveFailed"
-  },
-  "foldersConversationMoved": {
-    "message": "Conversation moved.",
-    "description": "Popup UI: foldersConversationMoved"
-  },
-  "foldersConversationMoveFailed": {
-    "message": "Failed to move conversation.",
-    "description": "Popup UI: foldersConversationMoveFailed"
-  },
-  "foldersConversationDeleteConfirm": {
-    "message": "Remove \"{name}\" from the extension's conversation index? This will not delete the original ChatGPT conversation.",
-    "description": "Popup UI: foldersConversationDeleteConfirm"
-  },
-  "foldersConversationDeleted": {
-    "message": "Removed from the conversation index.",
-    "description": "Popup UI: foldersConversationDeleted"
-  },
-  "foldersConversationDeleteFailed": {
-    "message": "Failed to remove the saved conversation.",
-    "description": "Popup UI: foldersConversationDeleteFailed"
-  },
-  "foldersRenamed": {
-    "message": "Folder renamed.",
-    "description": "Popup UI: foldersRenamed"
-  },
-  "foldersRenameFailed": {
-    "message": "Failed to rename folder.",
-    "description": "Popup UI: foldersRenameFailed"
-  },
-  "foldersDeleteWithChildrenConfirm": {
-    "message": "Delete folder \"{name}\" and its {count} child folders? Conversations inside will move to Uncategorized.",
-    "description": "Popup UI: foldersDeleteWithChildrenConfirm"
-  },
-  "foldersDeleteConfirm": {
-    "message": "Delete folder \"{name}\"? Conversations inside will move to Uncategorized.",
-    "description": "Popup UI: foldersDeleteConfirm"
-  },
-  "foldersDeleted": {
-    "message": "Folder deleted. Conversations moved to Uncategorized.",
-    "description": "Popup UI: foldersDeleted"
-  },
-  "foldersDeleteFailed": {
-    "message": "Failed to delete folder.",
-    "description": "Popup UI: foldersDeleteFailed"
-  },
-  "foldersNoteSaved": {
-    "message": "Note saved.",
-    "description": "Popup UI: foldersNoteSaved"
-  },
-  "foldersNoteSaveFailed": {
-    "message": "Failed to save note.",
-    "description": "Popup UI: foldersNoteSaveFailed"
-  },
-  "foldersSavedConversations": {
-    "message": "Saved conversations",
-    "description": "Popup UI: foldersSavedConversations"
-  },
-  "foldersPanelSubtitle": {
-    "message": "Manage folders, notes, and saved conversations",
-    "description": "Popup UI: foldersPanelSubtitle"
-  },
-  "foldersNewFolder": {
-    "message": "New folder",
-    "description": "Popup UI: foldersNewFolder"
-  },
-  "foldersQuickCreate": {
-    "message": "New",
-    "description": "Popup UI: foldersQuickCreate"
-  },
-  "foldersNamePlaceholder": {
-    "message": "Folder name",
-    "description": "Popup UI: foldersNamePlaceholder"
-  },
-  "foldersCreateAsRoot": {
-    "message": "Create as top-level folder",
-    "description": "Popup UI: foldersCreateAsRoot"
-  },
-  "foldersParentFolder": {
-    "message": "Parent folder: {name}",
-    "description": "Popup UI: foldersParentFolder"
-  },
-  "foldersCreateChild": {
-    "message": "Create child folder",
-    "description": "Popup UI: foldersCreateChild"
-  },
-  "foldersCreateRoot": {
-    "message": "Create top-level folder",
-    "description": "Popup UI: foldersCreateRoot"
-  },
-  "foldersCurrentConversation": {
-    "message": "Current conversation",
-    "description": "Popup UI: foldersCurrentConversation"
-  },
-  "foldersCurrentNotChatGPT": {
-    "message": "Current page is not recognized as a ChatGPT conversation",
-    "description": "Popup UI: foldersCurrentNotChatGPT"
-  },
-  "foldersSaveCurrent": {
-    "message": "Save current ChatGPT conversation",
-    "description": "Popup UI: foldersSaveCurrent"
-  },
-  "foldersFolderList": {
-    "message": "Conversation Manager",
-    "description": "Popup UI: foldersFolderList"
-  },
-  "foldersConversationCount": {
-    "message": "{count} conversations",
-    "description": "Popup UI: foldersConversationCount"
-  },
-  "foldersEmpty": {
-    "message": "No folders yet.",
-    "description": "Popup UI: foldersEmpty"
-  },
-  "foldersSearchConversationPlaceholder": {
-    "message": "Search conversation title, note, or URL",
-    "description": "Popup UI: foldersSearchConversationPlaceholder"
-  },
-  "foldersAllFolders": {
-    "message": "All folders",
-    "description": "Popup UI: foldersAllFolders"
-  },
-  "foldersNoSavedConversations": {
-    "message": "No saved conversations yet.",
-    "description": "Popup UI: foldersNoSavedConversations"
-  },
-  "foldersNoConversationsInFolder": {
-    "message": "No conversations in this folder yet.",
-    "description": "Popup UI: foldersNoConversationsInFolder"
-  },
-  "foldersSearchResults": {
-    "message": "{count} matching conversations",
-    "description": "Popup UI: foldersSearchResults"
-  },
-  "foldersDetails": {
-    "message": "Details",
-    "description": "Popup UI: foldersDetails"
-  },
-  "foldersHideDetails": {
-    "message": "Collapse",
-    "description": "Popup UI: foldersHideDetails"
-  },
-  "foldersOpenConversation": {
-    "message": "Open conversation",
-    "description": "Popup UI: foldersOpenConversation"
-  },
-  "foldersCurrentFolder": {
-    "message": "Current folder: {name}",
-    "description": "Popup UI: foldersCurrentFolder"
-  },
-  "foldersUpdatedAt": {
-    "message": "Updated: {time}",
-    "description": "Popup UI: foldersUpdatedAt"
-  },
-  "foldersNotePlaceholder": {
-    "message": "Note",
-    "description": "Popup UI: foldersNotePlaceholder"
-  },
-  "foldersSearchFolderPlaceholder": {
-    "message": "Search folders",
-    "description": "Popup UI: foldersSearchFolderPlaceholder"
-  },
-  "starredLoadFailed": {
-    "message": "Failed to load starred messages.",
-    "description": "Popup UI: starredLoadFailed"
-  },
-  "starredRemoved": {
-    "message": "Removed from starred.",
-    "description": "Popup UI: starredRemoved"
-  },
-  "starredRemoveFailed": {
-    "message": "Failed to remove starred message.",
-    "description": "Popup UI: starredRemoveFailed"
-  },
-  "starredLocateFailed": {
-    "message": "Could not locate automatically",
-    "description": "Popup UI: starredLocateFailed"
-  },
-  "starredLocating": {
-    "message": "Locating starred message...",
-    "description": "Popup UI: starredLocating"
-  },
-  "starredLocated": {
-    "message": "Located",
-    "description": "Popup UI: starredLocated"
-  },
-  "starredOpeningConversation": {
-    "message": "Opening conversation...",
-    "description": "Popup UI: starredOpeningConversation"
-  },
-  "starredOpenedButLocateFailed": {
-    "message": "Opened the conversation, but could not automatically locate the starred message. Try jumping again later.",
-    "description": "Popup UI: starredOpenedButLocateFailed"
-  },
-  "starredJumpFailed": {
-    "message": "Jump failed. Make sure the ChatGPT page has loaded.",
-    "description": "Popup UI: starredJumpFailed"
-  },
-  "starredSubtitle": {
-    "message": "Only stores user message snippets and locator metadata.",
-    "description": "Popup UI: starredSubtitle"
-  },
-  "starredEmpty": {
-    "message": "No starred messages yet. Click the star on a right-side timeline node to save one.",
-    "description": "Popup UI: starredEmpty"
-  },
-  "starredCreatedAt": {
-    "message": "Starred: {time}",
-    "description": "Popup UI: starredCreatedAt"
-  },
-  "starredOpenJump": {
-    "message": "Open / Jump",
-    "description": "Popup UI: starredOpenJump"
-  },
-  "starredRemove": {
-    "message": "Remove star",
-    "description": "Popup UI: starredRemove"
-  },
-  "diagTitle": {
-    "message": "Diagnostics",
-    "description": "Popup UI: diagTitle"
-  },
-  "diagSubtitle": {
-    "message": "Current ChatGPT Ether runtime status",
-    "description": "Popup UI: diagSubtitle"
-  },
-  "diagRuntimeStatus": {
-    "message": "Runtime status",
-    "description": "Popup UI: diagRuntimeStatus"
-  },
-  "diagRefreshing": {
-    "message": "Refreshing diagnostics",
-    "description": "Popup UI: diagRefreshing"
-  },
-  "diagNoChatBody": {
-    "message": "Does not include chat content",
-    "description": "Popup UI: diagNoChatBody"
-  },
-  "diagEmpty": {
-    "message": "No diagnostics yet.",
-    "description": "Popup UI: diagEmpty"
-  },
-  "diagLoadFailed": {
-    "message": "Failed to load diagnostics.",
-    "description": "Popup UI: diagLoadFailed"
+  "deleted": {
+    "message": "Deleted."
   },
   "diagCopied": {
-    "message": "Diagnostics copied.",
-    "description": "Popup UI: diagCopied"
-  },
-  "diagTimelineVisible": {
-    "message": "Timeline visible",
-    "description": "Popup UI: diagTimelineVisible"
-  },
-  "diagTimelineNodeCount": {
-    "message": "Timeline node count",
-    "description": "Popup UI: diagTimelineNodeCount"
-  },
-  "diagStarredMessageCount": {
-    "message": "Starred message count",
-    "description": "Popup UI: diagStarredMessageCount"
+    "message": "Diagnostics copied."
   },
   "diagCurrentConversationSaved": {
-    "message": "Current conversation saved in index",
-    "description": "Popup UI: diagCurrentConversationSaved"
+    "message": "Current conversation saved in index"
+  },
+  "diagEmpty": {
+    "message": "No diagnostics yet."
   },
   "diagExtensionVersion": {
-    "message": "Extension version",
-    "description": "Popup UI: diagExtensionVersion"
+    "message": "Extension version"
   },
-  "timelineLoadFailed": {
-    "message": "Failed to load timeline.",
-    "description": "Popup UI: timelineLoadFailed"
+  "diagLoadFailed": {
+    "message": "Failed to load diagnostics."
   },
-  "timelineMessageNotFound": {
-    "message": "Message not found.",
-    "description": "Popup UI: timelineMessageNotFound"
+  "diagNoChatBody": {
+    "message": "Does not include chat content"
   },
-  "timelineJumpFailed": {
-    "message": "Failed to jump to message.",
-    "description": "Popup UI: timelineJumpFailed"
+  "diagRefreshing": {
+    "message": "Refreshing diagnostics"
   },
-  "timelineSubtitle": {
-    "message": "Current ChatGPT conversation",
-    "description": "Popup UI: timelineSubtitle"
+  "diagRuntimeStatus": {
+    "message": "Runtime status"
   },
-  "timelineBasic": {
-    "message": "Basic timeline",
-    "description": "Popup UI: timelineBasic"
+  "diagStarredMessageCount": {
+    "message": "Starred message count"
   },
-  "timelineRefreshing": {
-    "message": "Refreshing timeline",
-    "description": "Popup UI: timelineRefreshing"
+  "diagSubtitle": {
+    "message": "Current ChatGPT Ether runtime status"
   },
-  "timelineMessageTotal": {
-    "message": "{count} messages",
-    "description": "Popup UI: timelineMessageTotal"
+  "diagTimelineNodeCount": {
+    "message": "Timeline node count"
   },
-  "timelineRefresh": {
-    "message": "Refresh timeline",
-    "description": "Popup UI: timelineRefresh"
+  "diagTimelineVisible": {
+    "message": "Timeline visible"
   },
-  "timelineNoMessages": {
-    "message": "No messages detected yet",
-    "description": "Popup UI: timelineNoMessages"
+  "diagTitle": {
+    "message": "Diagnostics"
   },
-  "syncTitle": {
-    "message": "Google Drive Sync",
-    "description": "Popup UI: syncTitle"
+  "edit": {
+    "message": "Edit"
   },
-  "syncSubtitle": {
-    "message": "ChatGPT Ether manual sync",
-    "description": "Popup UI: syncSubtitle"
+  "emptyMessage": {
+    "message": "Empty message"
   },
-  "syncStatus": {
-    "message": "Sync status",
-    "description": "Popup UI: syncStatus"
+  "expand": {
+    "message": "Expand"
   },
-  "syncGoogleDriveAuthStatus": {
-    "message": "Google Drive authorization",
-    "description": "Popup UI: syncGoogleDriveAuthStatus"
+  "extDescription": {
+    "message": "Personal ChatGPT conversation manager"
   },
-  "syncAuthorized": {
-    "message": "Authorized",
-    "description": "Popup UI: syncAuthorized"
+  "extName": {
+    "message": "ChatGPT Ether"
   },
-  "syncUnauthorized": {
-    "message": "Not authorized",
-    "description": "Popup UI: syncUnauthorized"
+  "favorite": {
+    "message": "Favorite"
   },
-  "syncCurrentlySyncing": {
-    "message": "Currently syncing",
-    "description": "Popup UI: syncCurrentlySyncing"
+  "foldersChildCreated": {
+    "message": "Child folder created."
   },
-  "syncLastUploadTime": {
-    "message": "Last upload",
-    "description": "Popup UI: syncLastUploadTime"
+  "foldersConversationCount": {
+    "message": "{count} conversations"
   },
-  "syncLastSyncTime": {
-    "message": "Last sync",
-    "description": "Popup UI: syncLastSyncTime"
+  "foldersConversationDeleteConfirm": {
+    "message": "Remove \"{name}\" from the extension's conversation index? This will not delete the original ChatGPT conversation."
   },
-  "syncRecentError": {
-    "message": "Recent error",
-    "description": "Popup UI: syncRecentError"
+  "foldersConversationDeleteFailed": {
+    "message": "Failed to remove the saved conversation."
   },
-  "syncUploading": {
-    "message": "Uploading...",
-    "description": "Popup UI: syncUploading"
+  "foldersConversationDeleted": {
+    "message": "Removed from the conversation index."
   },
-  "syncUploadToCloud": {
-    "message": "Upload to cloud",
-    "description": "Popup UI: syncUploadToCloud"
+  "foldersConversationMoveFailed": {
+    "message": "Failed to move conversation."
   },
-  "syncDownloading": {
-    "message": "Downloading...",
-    "description": "Popup UI: syncDownloading"
+  "foldersConversationMoved": {
+    "message": "Conversation moved."
   },
-  "syncDownloadMerge": {
-    "message": "Download and merge",
-    "description": "Popup UI: syncDownloadMerge"
+  "foldersCreateAsRoot": {
+    "message": "Create as top-level folder"
   },
-  "syncClearAuthReauth": {
-    "message": "Clear auth cache / reauthorize",
-    "description": "Popup UI: syncClearAuthReauth"
+  "foldersCreateFailed": {
+    "message": "Failed to create folder."
   },
-  "syncRefreshStatus": {
-    "message": "Refresh status",
-    "description": "Popup UI: syncRefreshStatus"
+  "foldersCreated": {
+    "message": "Folder created."
   },
-  "syncPrivacyNote": {
-    "message": "Only syncs prompts, folders, conversation index, notes, starred message metadata, and settings. Full chat content is not synced.",
-    "description": "Popup UI: syncPrivacyNote"
+  "foldersCurrentConversation": {
+    "message": "Current conversation"
   },
-  "syncRefreshFailed": {
-    "message": "Failed to refresh sync status: {error}",
-    "description": "Popup UI: syncRefreshFailed"
+  "foldersCurrentFolder": {
+    "message": "Current folder: {name}"
   },
-  "syncAuthCacheCleared": {
-    "message": "Authorization cache cleared. The next upload or download will reauthorize.",
-    "description": "Popup UI: syncAuthCacheCleared"
+  "foldersCurrentNotChatGPT": {
+    "message": "Current page is not recognized as a ChatGPT conversation"
   },
-  "syncClearAuthFailed": {
-    "message": "Failed to clear authorization cache: {error}",
-    "description": "Popup UI: syncClearAuthFailed"
+  "foldersCurrentNotSaveable": {
+    "message": "Current page is not a saveable ChatGPT conversation."
   },
-  "syncUploadConfirmExistingCloud": {
-    "message": "Cloud sync data already exists. This upload will update the cloud data. Continue?",
-    "description": "Popup UI: syncUploadConfirmExistingCloud"
+  "foldersCurrentSaveFailed": {
+    "message": "Failed to save current conversation."
   },
-  "syncUploadSuccess": {
-    "message": "ChatGPT Ether uploaded to cloud.",
-    "description": "Popup UI: syncUploadSuccess"
+  "foldersCurrentSaved": {
+    "message": "Current conversation saved."
   },
-  "syncOverwriteChatGPTConfirm": {
-    "message": "Overwrite local ChatGPT Ether data with cloud data?",
-    "description": "Popup UI: syncOverwriteChatGPTConfirm"
+  "foldersCurrentSavedBadge": {
+    "message": "Saved"
   },
-  "syncOverwriteSuccess": {
-    "message": "ChatGPT Ether local data overwritten from cloud.",
-    "description": "Popup UI: syncOverwriteSuccess"
+  "foldersDeleteConfirm": {
+    "message": "Delete folder \"{name}\"? Conversations inside will move to Uncategorized."
   },
-  "syncMergeSuccess": {
-    "message": "ChatGPT Ether cloud data merged into local data.",
-    "description": "Popup UI: syncMergeSuccess"
+  "foldersDeleteFailed": {
+    "message": "Failed to delete folder."
   },
-  "syncFailed": {
-    "message": "Sync failed",
-    "description": "Popup UI: syncFailed"
+  "foldersDeleteWithChildrenConfirm": {
+    "message": "Delete folder \"{name}\" and its {count} child folders? Conversations inside will move to Uncategorized."
   },
-  "syncDisabled": {
-    "message": "Disabled",
-    "description": "Popup UI: syncDisabled"
+  "foldersDeleted": {
+    "message": "Folder deleted. Conversations moved to Uncategorized."
+  },
+  "foldersDetails": {
+    "message": "Details"
+  },
+  "foldersEmpty": {
+    "message": "No folders yet."
+  },
+  "foldersFolderList": {
+    "message": "Conversation Manager"
+  },
+  "foldersHideDetails": {
+    "message": "Collapse"
+  },
+  "foldersLoadFailed": {
+    "message": "Failed to load folder data."
+  },
+  "foldersNamePlaceholder": {
+    "message": "Folder name"
+  },
+  "foldersNameRequired": {
+    "message": "Enter a folder name."
+  },
+  "foldersNoConversationsInFolder": {
+    "message": "No conversations in this folder yet."
+  },
+  "foldersNoSavedConversations": {
+    "message": "No saved conversations yet."
+  },
+  "foldersNotePlaceholder": {
+    "message": "Note"
+  },
+  "foldersNoteSaveFailed": {
+    "message": "Failed to save note."
+  },
+  "foldersNoteSaved": {
+    "message": "Note saved."
+  },
+  "foldersOpenConversation": {
+    "message": "Open conversation"
+  },
+  "foldersPanelSubtitle": {
+    "message": "Manage folders, notes, and saved conversations"
+  },
+  "foldersParentFolder": {
+    "message": "Parent folder: {name}"
+  },
+  "foldersQuickCreate": {
+    "message": "New"
+  },
+  "foldersRenameFailed": {
+    "message": "Failed to rename folder."
+  },
+  "foldersRenamed": {
+    "message": "Folder renamed."
+  },
+  "foldersSaveCurrent": {
+    "message": "Save current ChatGPT conversation"
+  },
+  "foldersSearchConversationPlaceholder": {
+    "message": "Search conversation title, note, or URL"
+  },
+  "foldersSearchFolderPlaceholder": {
+    "message": "Search folders"
+  },
+  "foldersSearchResults": {
+    "message": "{count} matching conversations"
+  },
+  "foldersTitleSyncFailed": {
+    "message": "Failed to sync current conversation title."
+  },
+  "foldersUncategorized": {
+    "message": "Uncategorized"
+  },
+  "foldersUnknownFolder": {
+    "message": "Unknown folder"
+  },
+  "foldersUntitledConversation": {
+    "message": "Untitled conversation"
+  },
+  "insert": {
+    "message": "Insert"
+  },
+  "jump": {
+    "message": "Jump"
+  },
+  "never": {
+    "message": "Never"
+  },
+  "no": {
+    "message": "No"
+  },
+  "none": {
+    "message": "None"
+  },
+  "notSet": {
+    "message": "Not set"
   },
   "notSynced": {
-    "message": "Not synced",
-    "description": "Popup UI: notSynced"
+    "message": "Not synced"
+  },
+  "optionsComingSoon": {
+    "message": "More options coming soon..."
+  },
+  "optionsPageSubtitle": {
+    "message": "Extension Options"
+  },
+  "pvContentPlaceholder": {
+    "message": "Prompt content"
+  },
+  "pvContentRequired": {
+    "message": "Prompt content cannot be empty."
+  },
+  "pvContentScriptNoResponse": {
+    "message": "Content script did not respond. Refresh the ChatGPT page and try again."
+  },
+  "pvDeleteConfirm": {
+    "message": "Delete prompt \"{title}\"?"
+  },
+  "pvEditPrompt": {
+    "message": "Edit prompt"
+  },
+  "pvExportJson": {
+    "message": "Export JSON"
+  },
+  "pvExported": {
+    "message": "Prompt Vault JSON exported."
+  },
+  "pvFavoritePinned": {
+    "message": "Favorite / pin"
+  },
+  "pvImportFailed": {
+    "message": "Import failed."
+  },
+  "pvImportJson": {
+    "message": "Import JSON"
+  },
+  "pvImported": {
+    "message": "Import complete."
+  },
+  "pvInsertFailed": {
+    "message": "Insert failed."
+  },
+  "pvInsertSuccess": {
+    "message": "Inserted."
+  },
+  "pvInsertSuccessWithMethod": {
+    "message": "Inserted ({method})."
+  },
+  "pvInvalidInsertResult": {
+    "message": "Insert failed: no valid result received."
+  },
+  "pvLoadFailed": {
+    "message": "Failed to load Prompt Vault."
+  },
+  "pvNewPrompt": {
+    "message": "New prompt"
+  },
+  "pvNoCurrentTab": {
+    "message": "No current tab found."
+  },
+  "pvNoMatches": {
+    "message": "No matching prompts."
+  },
+  "pvNotChatGPTPage": {
+    "message": "Current page is not ChatGPT, so the prompt cannot be inserted."
+  },
+  "pvSearchPlaceholder": {
+    "message": "Search prompt titles, content, or tags"
+  },
+  "pvTagsPlaceholder": {
+    "message": "Tags, separated by commas"
+  },
+  "pvTitlePlaceholder": {
+    "message": "Prompt title"
+  },
+  "refresh": {
+    "message": "Refresh"
+  },
+  "rename": {
+    "message": "Rename"
+  },
+  "roleAssistant": {
+    "message": "Assistant"
+  },
+  "roleUser": {
+    "message": "User"
+  },
+  "save": {
+    "message": "Save"
+  },
+  "saveFailed": {
+    "message": "Save failed."
+  },
+  "saved": {
+    "message": "Saved."
+  },
+  "starredCreatedAt": {
+    "message": "Starred: {time}"
+  },
+  "starredEmpty": {
+    "message": "No starred messages yet. Click the star on a right-side timeline node to save one."
+  },
+  "starredJumpFailed": {
+    "message": "Jump failed. Make sure the ChatGPT page has loaded."
+  },
+  "starredLoadFailed": {
+    "message": "Failed to load starred messages."
+  },
+  "starredLocateFailed": {
+    "message": "Could not locate automatically"
+  },
+  "starredLocated": {
+    "message": "Located"
+  },
+  "starredLocating": {
+    "message": "Locating starred message..."
+  },
+  "starredOpenJump": {
+    "message": "Open / Jump"
+  },
+  "starredOpenedButLocateFailed": {
+    "message": "Opened the conversation, but could not automatically locate the starred message. Try jumping again later."
+  },
+  "starredOpeningConversation": {
+    "message": "Opening conversation..."
+  },
+  "starredRemove": {
+    "message": "Remove star"
+  },
+  "starredRemoveFailed": {
+    "message": "Failed to remove starred message."
+  },
+  "starredRemoved": {
+    "message": "Removed from starred."
+  },
+  "starredSubtitle": {
+    "message": "Only stores user message snippets and locator metadata."
+  },
+  "syncAuthCacheCleared": {
+    "message": "Authorization cache cleared. The next upload or download will reauthorize."
+  },
+  "syncAuthorized": {
+    "message": "Authorized"
+  },
+  "syncClearAuthFailed": {
+    "message": "Failed to clear authorization cache: {error}"
+  },
+  "syncClearAuthReauth": {
+    "message": "Clear auth cache / reauthorize"
+  },
+  "syncCurrentlySyncing": {
+    "message": "Currently syncing"
+  },
+  "syncDisabled": {
+    "message": "Disabled"
+  },
+  "syncDownloadFailed": {
+    "message": "Download from cloud failed"
+  },
+  "syncDownloadMerge": {
+    "message": "Download and merge"
+  },
+  "syncDownloadMergeSuccess": {
+    "message": "Downloaded and merged from cloud."
+  },
+  "syncDownloading": {
+    "message": "Downloading..."
+  },
+  "syncError": {
+    "message": "✗ Sync failed: {error}"
+  },
+  "syncGoogleDriveAuthStatus": {
+    "message": "Google Drive authorization"
+  },
+  "syncLastSyncTime": {
+    "message": "Last sync"
+  },
+  "syncLastUploadTime": {
+    "message": "Last upload"
+  },
+  "syncOverwriteSuccess": {
+    "message": "ChatGPT Ether local data overwritten from cloud."
+  },
+  "syncPrivacyNote": {
+    "message": "Only syncs prompts, folders, conversation index, notes, starred message metadata, and settings. Full chat content is not synced."
+  },
+  "syncRecentError": {
+    "message": "Recent error"
+  },
+  "syncRefreshFailed": {
+    "message": "Failed to refresh sync status: {error}"
+  },
+  "syncRefreshStatus": {
+    "message": "Refresh status"
+  },
+  "syncStatus": {
+    "message": "Sync status"
+  },
+  "syncSubtitle": {
+    "message": "ChatGPT Ether manual sync"
+  },
+  "syncTitle": {
+    "message": "Google Drive Sync"
+  },
+  "syncUnauthorized": {
+    "message": "Not authorized"
+  },
+  "syncUploadFailed": {
+    "message": "Upload to cloud failed"
+  },
+  "syncUploadSuccess": {
+    "message": "ChatGPT Ether uploaded to cloud."
+  },
+  "syncUploadToCloud": {
+    "message": "Upload to cloud"
+  },
+  "syncUploading": {
+    "message": "Uploading..."
+  },
+  "timelineBasic": {
+    "message": "Basic timeline"
+  },
+  "timelineJumpFailed": {
+    "message": "Failed to jump to message."
+  },
+  "timelineLoadFailed": {
+    "message": "Failed to load timeline."
+  },
+  "timelineMessageNotFound": {
+    "message": "Message not found."
+  },
+  "timelineMessageTotal": {
+    "message": "{count} messages"
+  },
+  "timelineNoMessages": {
+    "message": "No messages detected yet"
+  },
+  "timelineRefresh": {
+    "message": "Refresh timeline"
+  },
+  "timelineRefreshing": {
+    "message": "Refreshing timeline"
+  },
+  "timelineSubtitle": {
+    "message": "Current ChatGPT conversation"
+  },
+  "unfavorite": {
+    "message": "Unfavorite"
+  },
+  "unknownError": {
+    "message": "Unknown error"
+  },
+  "yes": {
+    "message": "Yes"
   }
 }

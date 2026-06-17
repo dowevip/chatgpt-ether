@@ -31,7 +31,7 @@ describe('rtl utilities', () => {
     expect(isRTLLanguage('EN')).toBe(false);
   });
 
-  it('detects rtl from Gemini hl URL param', () => {
+  it('detects rtl from URL language param', () => {
     setTestUrl('/app/9416ff6384e9cf46?hl=ar');
 
     expect(detectRTL()).toBe(true);
