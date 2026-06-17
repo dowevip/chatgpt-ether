@@ -2,7 +2,8 @@ import browser from 'webextension-polyfill';
 
 import type { ChatGPTStarredMessage, ChatGPTStarredMessageInput } from '@/core/types/starred';
 
-export const CHATGPT_STARRED_MESSAGES_STORAGE_KEY = 'chatgptVoyager.starredMessages';
+export const CHATGPT_STARRED_MESSAGES_STORAGE_KEY = 'chatgptEther.starredMessages';
+export const CHATGPT_STARRED_MESSAGES_LEGACY_STORAGE_KEY = 'chatgptVoyager.starredMessages';
 
 function now(): number {
   return Date.now();
@@ -50,11 +51,16 @@ function sortStarredMessages(items: ChatGPTStarredMessage[]): ChatGPTStarredMess
 }
 
 export async function listChatGPTStarredMessages(): Promise<ChatGPTStarredMessage[]> {
-  const result = await browser.storage.local.get(CHATGPT_STARRED_MESSAGES_STORAGE_KEY);
-  const raw = result[CHATGPT_STARRED_MESSAGES_STORAGE_KEY];
+  const result = await browser.storage.local.get([
+    CHATGPT_STARRED_MESSAGES_STORAGE_KEY,
+    CHATGPT_STARRED_MESSAGES_LEGACY_STORAGE_KEY,
+  ]);
+  const currentRaw = result[CHATGPT_STARRED_MESSAGES_STORAGE_KEY];
+  const legacyRaw = result[CHATGPT_STARRED_MESSAGES_LEGACY_STORAGE_KEY];
+  const raw = Array.isArray(currentRaw) ? currentRaw : legacyRaw;
   if (!Array.isArray(raw)) return [];
 
-  return sortStarredMessages(
+  const messages = sortStarredMessages(
     raw.filter(isStarredMessage).map((item) => ({
       ...item,
       turnId: typeof item.turnId === 'string' ? item.turnId : undefined,
@@ -62,6 +68,11 @@ export async function listChatGPTStarredMessages(): Promise<ChatGPTStarredMessag
       snippet: normalizeSnippet(item.snippet),
     })),
   );
+  if (!Array.isArray(currentRaw) && Array.isArray(legacyRaw)) {
+    await browser.storage.local.set({ [CHATGPT_STARRED_MESSAGES_STORAGE_KEY]: messages });
+    await browser.storage.local.remove(CHATGPT_STARRED_MESSAGES_LEGACY_STORAGE_KEY);
+  }
+  return messages;
 }
 
 export async function toggleChatGPTStarredMessage(

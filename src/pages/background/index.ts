@@ -782,7 +782,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
               sendResponse({
                 ok: false,
                 state: await googleDriveSyncService.getState(),
-                error: '云端没有找到 ChatGPT Voyager 同步数据',
+                error: '云端没有找到 ChatGPT以太 同步数据',
               });
               return;
             }

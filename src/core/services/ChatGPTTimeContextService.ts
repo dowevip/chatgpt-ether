@@ -139,7 +139,7 @@ export function injectChatGPTTimeContextIfNeeded(
   }
 
   lastInjectedAtByConversation.set(conversationKey, now);
-  console.debug('[ChatGPT Voyager] 时间上下文已注入', {
+  console.debug('[ChatGPT Ether] 时间上下文已注入', {
     conversationId: chatgptAdapter.getConversationId(),
     elapsedHours: Math.round(elapsedMs / 3_600_000),
     nodeCount: nodes.length,

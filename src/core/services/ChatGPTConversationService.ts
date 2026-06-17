@@ -2,8 +2,10 @@ import browser from 'webextension-polyfill';
 
 import type { ChatGPTConversationIndex, ChatGPTFolder } from '@/core/types/conversation';
 
-export const CHATGPT_FOLDERS_STORAGE_KEY = 'chatgptVoyager.folders';
-export const CHATGPT_CONVERSATIONS_STORAGE_KEY = 'chatgptVoyager.conversations';
+export const CHATGPT_FOLDERS_STORAGE_KEY = 'chatgptEther.folders';
+export const CHATGPT_CONVERSATIONS_STORAGE_KEY = 'chatgptEther.conversations';
+export const CHATGPT_FOLDERS_LEGACY_STORAGE_KEY = 'chatgptVoyager.folders';
+export const CHATGPT_CONVERSATIONS_LEGACY_STORAGE_KEY = 'chatgptVoyager.conversations';
 
 export type CurrentChatGPTConversationInput = {
   conversationId: string;
@@ -39,10 +41,29 @@ function isConversation(value: unknown): value is ChatGPTConversationIndex {
   );
 }
 
-export async function listChatGPTFolders(): Promise<ChatGPTFolder[]> {
-  const result = await browser.storage.local.get(CHATGPT_FOLDERS_STORAGE_KEY);
-  const raw = result[CHATGPT_FOLDERS_STORAGE_KEY];
+async function readMigratedArray<T>(
+  storageKey: string,
+  legacyStorageKey: string,
+): Promise<unknown[]> {
+  const result = await browser.storage.local.get([storageKey, legacyStorageKey]);
+  const currentRaw = result[storageKey];
+  const legacyRaw = result[legacyStorageKey];
+  const raw = Array.isArray(currentRaw) ? currentRaw : legacyRaw;
   if (!Array.isArray(raw)) return [];
+
+  if (!Array.isArray(currentRaw) && Array.isArray(legacyRaw)) {
+    await browser.storage.local.set({ [storageKey]: legacyRaw });
+    await browser.storage.local.remove(legacyStorageKey);
+  }
+
+  return raw;
+}
+
+export async function listChatGPTFolders(): Promise<ChatGPTFolder[]> {
+  const raw = await readMigratedArray(
+    CHATGPT_FOLDERS_STORAGE_KEY,
+    CHATGPT_FOLDERS_LEGACY_STORAGE_KEY,
+  );
 
   return raw
     .filter(isFolder)
@@ -117,9 +138,10 @@ export async function deleteChatGPTFolder(folderId: string): Promise<{
 }
 
 export async function listChatGPTConversations(): Promise<ChatGPTConversationIndex[]> {
-  const result = await browser.storage.local.get(CHATGPT_CONVERSATIONS_STORAGE_KEY);
-  const raw = result[CHATGPT_CONVERSATIONS_STORAGE_KEY];
-  if (!Array.isArray(raw)) return [];
+  const raw = await readMigratedArray(
+    CHATGPT_CONVERSATIONS_STORAGE_KEY,
+    CHATGPT_CONVERSATIONS_LEGACY_STORAGE_KEY,
+  );
 
   return raw.filter(isConversation).sort((left, right) => right.lastOpenedAt - left.lastOpenedAt);
 }

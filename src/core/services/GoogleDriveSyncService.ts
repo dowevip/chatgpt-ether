@@ -38,7 +38,7 @@ const SETTINGS_FILE_NAME = 'gemini-voyager-settings.json';
 const STARRED_FILE_NAME = 'gemini-voyager-starred.json';
 const FORKS_FILE_NAME = 'gemini-voyager-forks.json';
 const TIMELINE_HIERARCHY_FILE_NAME = 'gemini-voyager-timeline-hierarchy.json';
-const CHATGPT_SYNC_FILE_NAME = 'chatgpt-voyager-sync.json';
+const CHATGPT_SYNC_FILE_NAME = 'chatgpt-ether-sync.json';
 const BACKUP_FOLDER_NAME = 'Gemini Voyager Data';
 const DRIVE_API_BASE = 'https://www.googleapis.com/drive/v3';
 const DRIVE_UPLOAD_BASE = 'https://www.googleapis.com/upload/drive/v3';
@@ -54,6 +54,10 @@ const CHROME_NATIVE_AUTH_FAILED_100_MESSAGE =
   'Chrome 原生授权失败（-100）。请刷新插件、重新打开页面后重试。';
 const CHATGPT_CLOUD_NEWER_UPLOAD_BLOCKED_MESSAGE =
   '云端数据可能比本机更新。请先从云端拉取并合并，确认无误后再上传。';
+const CHATGPT_LAST_SYNC_TIME_STORAGE_KEY = 'ceLastSyncTimeChatGPT';
+const CHATGPT_LAST_UPLOAD_TIME_STORAGE_KEY = 'ceLastUploadTimeChatGPT';
+const CHATGPT_LAST_SYNC_TIME_LEGACY_STORAGE_KEY = 'gvLastSyncTimeChatGPT';
+const CHATGPT_LAST_UPLOAD_TIME_LEGACY_STORAGE_KEY = 'gvLastUploadTimeChatGPT';
 
 type AppDataFileMetadata = {
   id: string;
@@ -1208,18 +1212,46 @@ export class GoogleDriveSyncService {
         'gvLastUploadTime',
         'gvLastSyncTimeAIStudio',
         'gvLastUploadTimeAIStudio',
-        'gvLastSyncTimeChatGPT',
-        'gvLastUploadTimeChatGPT',
+        CHATGPT_LAST_SYNC_TIME_STORAGE_KEY,
+        CHATGPT_LAST_UPLOAD_TIME_STORAGE_KEY,
+        CHATGPT_LAST_SYNC_TIME_LEGACY_STORAGE_KEY,
+        CHATGPT_LAST_UPLOAD_TIME_LEGACY_STORAGE_KEY,
         'gvSyncError',
       ]);
+      const chatGPTLastSyncTime =
+        getNumberValue(result[CHATGPT_LAST_SYNC_TIME_STORAGE_KEY]) ??
+        getNumberValue(result[CHATGPT_LAST_SYNC_TIME_LEGACY_STORAGE_KEY]);
+      const chatGPTLastUploadTime =
+        getNumberValue(result[CHATGPT_LAST_UPLOAD_TIME_STORAGE_KEY]) ??
+        getNumberValue(result[CHATGPT_LAST_UPLOAD_TIME_LEGACY_STORAGE_KEY]);
+      const migratedChatGPTSyncState: Record<string, number> = {};
+      if (
+        getNumberValue(result[CHATGPT_LAST_SYNC_TIME_STORAGE_KEY]) === null &&
+        chatGPTLastSyncTime !== null
+      ) {
+        migratedChatGPTSyncState[CHATGPT_LAST_SYNC_TIME_STORAGE_KEY] = chatGPTLastSyncTime;
+      }
+      if (
+        getNumberValue(result[CHATGPT_LAST_UPLOAD_TIME_STORAGE_KEY]) === null &&
+        chatGPTLastUploadTime !== null
+      ) {
+        migratedChatGPTSyncState[CHATGPT_LAST_UPLOAD_TIME_STORAGE_KEY] = chatGPTLastUploadTime;
+      }
+      if (Object.keys(migratedChatGPTSyncState).length > 0) {
+        await chrome.storage.local.set(migratedChatGPTSyncState);
+        await chrome.storage.local.remove([
+          CHATGPT_LAST_SYNC_TIME_LEGACY_STORAGE_KEY,
+          CHATGPT_LAST_UPLOAD_TIME_LEGACY_STORAGE_KEY,
+        ]);
+      }
       this.state = {
         mode: (result.gvSyncMode as SyncMode) || 'disabled',
         lastSyncTime: getNumberValue(result.gvLastSyncTime),
         lastUploadTime: getNumberValue(result.gvLastUploadTime),
         lastSyncTimeAIStudio: getNumberValue(result.gvLastSyncTimeAIStudio),
         lastUploadTimeAIStudio: getNumberValue(result.gvLastUploadTimeAIStudio),
-        lastSyncTimeChatGPT: getNumberValue(result.gvLastSyncTimeChatGPT),
-        lastUploadTimeChatGPT: getNumberValue(result.gvLastUploadTimeChatGPT),
+        lastSyncTimeChatGPT: chatGPTLastSyncTime,
+        lastUploadTimeChatGPT: chatGPTLastUploadTime,
         error: getStringValue(result.gvSyncError),
         isSyncing: false,
         isAuthenticated: false,
@@ -1241,8 +1273,8 @@ export class GoogleDriveSyncService {
         gvLastUploadTime: this.state.lastUploadTime,
         gvLastSyncTimeAIStudio: this.state.lastSyncTimeAIStudio,
         gvLastUploadTimeAIStudio: this.state.lastUploadTimeAIStudio,
-        gvLastSyncTimeChatGPT: this.state.lastSyncTimeChatGPT,
-        gvLastUploadTimeChatGPT: this.state.lastUploadTimeChatGPT,
+        [CHATGPT_LAST_SYNC_TIME_STORAGE_KEY]: this.state.lastSyncTimeChatGPT,
+        [CHATGPT_LAST_UPLOAD_TIME_STORAGE_KEY]: this.state.lastUploadTimeChatGPT,
         gvSyncError: this.state.error,
       });
     } catch (error) {

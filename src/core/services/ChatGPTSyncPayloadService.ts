@@ -26,12 +26,19 @@ import type {
 } from '@/core/types/sync';
 
 export const CHATGPT_SYNC_SCHEMA_VERSION = 1;
-export const CHATGPT_SYNC_BACKUP_STORAGE_KEY = 'chatgptVoyager.sync.localBackup';
-export const CHATGPT_SCHEMA_VERSION_STORAGE_KEY = 'chatgptVoyager.schemaVersion';
-export const CHATGPT_TIMELINE_VISIBLE_STORAGE_KEY = 'chatgptVoyager.timeline.visible';
-export const CHATGPT_TIMELINE_WIDTH_STORAGE_KEY = 'chatgptVoyager.timeline.width';
-export const CHATGPT_TIMELINE_HEIGHT_STORAGE_KEY = 'chatgptVoyager.timeline.height';
+const CHATGPT_SYNC_SOURCE = 'chatgpt-ether';
+const CHATGPT_SYNC_LEGACY_SOURCE = 'chatgpt-voyager';
+export const CHATGPT_SYNC_BACKUP_STORAGE_KEY = 'chatgptEther.sync.localBackup';
+export const CHATGPT_SCHEMA_VERSION_STORAGE_KEY = 'chatgptEther.schemaVersion';
+export const CHATGPT_TIMELINE_VISIBLE_STORAGE_KEY = 'chatgptEther.timeline.visible';
+export const CHATGPT_TIMELINE_VISIBLE_LEGACY_STORAGE_KEY = 'chatgptVoyager.timeline.visible';
+export const CHATGPT_TIMELINE_WIDTH_STORAGE_KEY = 'chatgptEther.timeline.width';
+export const CHATGPT_TIMELINE_WIDTH_LEGACY_STORAGE_KEY = 'chatgptVoyager.timeline.width';
+export const CHATGPT_TIMELINE_HEIGHT_STORAGE_KEY = 'chatgptEther.timeline.height';
+export const CHATGPT_TIMELINE_HEIGHT_LEGACY_STORAGE_KEY = 'chatgptVoyager.timeline.height';
 export const CHATGPT_FOLDERS_PANEL_COLLAPSED_STORAGE_KEY =
+  'chatgptEther.foldersPanel.collapsed';
+export const CHATGPT_FOLDERS_PANEL_COLLAPSED_LEGACY_STORAGE_KEY =
   'chatgptVoyager.foldersPanel.collapsed';
 
 const SUSPICIOUS_TRANSCRIPT_KEYS = new Set([
@@ -221,25 +228,35 @@ function hasSuspiciousTranscriptField(value: unknown, path = ''): string | null 
 async function readSettings(): Promise<ChatGPTSyncSettings> {
   const result = await browser.storage.local.get([
     CHATGPT_TIMELINE_VISIBLE_STORAGE_KEY,
+    CHATGPT_TIMELINE_VISIBLE_LEGACY_STORAGE_KEY,
     CHATGPT_TIMELINE_WIDTH_STORAGE_KEY,
+    CHATGPT_TIMELINE_WIDTH_LEGACY_STORAGE_KEY,
     CHATGPT_TIMELINE_HEIGHT_STORAGE_KEY,
+    CHATGPT_TIMELINE_HEIGHT_LEGACY_STORAGE_KEY,
     CHATGPT_FOLDERS_PANEL_COLLAPSED_STORAGE_KEY,
+    CHATGPT_FOLDERS_PANEL_COLLAPSED_LEGACY_STORAGE_KEY,
   ]);
+  const timelineVisible =
+    typeof result[CHATGPT_TIMELINE_VISIBLE_STORAGE_KEY] === 'boolean'
+      ? result[CHATGPT_TIMELINE_VISIBLE_STORAGE_KEY]
+      : result[CHATGPT_TIMELINE_VISIBLE_LEGACY_STORAGE_KEY];
+  const timelineWidth =
+    typeof result[CHATGPT_TIMELINE_WIDTH_STORAGE_KEY] === 'number'
+      ? result[CHATGPT_TIMELINE_WIDTH_STORAGE_KEY]
+      : result[CHATGPT_TIMELINE_WIDTH_LEGACY_STORAGE_KEY];
+  const timelineHeight =
+    typeof result[CHATGPT_TIMELINE_HEIGHT_STORAGE_KEY] === 'number'
+      ? result[CHATGPT_TIMELINE_HEIGHT_STORAGE_KEY]
+      : result[CHATGPT_TIMELINE_HEIGHT_LEGACY_STORAGE_KEY];
+  const collapsedFolderIds = Array.isArray(result[CHATGPT_FOLDERS_PANEL_COLLAPSED_STORAGE_KEY])
+    ? result[CHATGPT_FOLDERS_PANEL_COLLAPSED_STORAGE_KEY]
+    : result[CHATGPT_FOLDERS_PANEL_COLLAPSED_LEGACY_STORAGE_KEY];
 
   return {
-    timelineVisible:
-      typeof result[CHATGPT_TIMELINE_VISIBLE_STORAGE_KEY] === 'boolean'
-        ? result[CHATGPT_TIMELINE_VISIBLE_STORAGE_KEY]
-        : undefined,
-    timelineWidth:
-      typeof result[CHATGPT_TIMELINE_WIDTH_STORAGE_KEY] === 'number'
-        ? result[CHATGPT_TIMELINE_WIDTH_STORAGE_KEY]
-        : undefined,
-    timelineHeight:
-      typeof result[CHATGPT_TIMELINE_HEIGHT_STORAGE_KEY] === 'number'
-        ? result[CHATGPT_TIMELINE_HEIGHT_STORAGE_KEY]
-        : undefined,
-    collapsedFolderIds: stringArray(result[CHATGPT_FOLDERS_PANEL_COLLAPSED_STORAGE_KEY], 160),
+    timelineVisible: typeof timelineVisible === 'boolean' ? timelineVisible : undefined,
+    timelineWidth: typeof timelineWidth === 'number' ? timelineWidth : undefined,
+    timelineHeight: typeof timelineHeight === 'number' ? timelineHeight : undefined,
+    collapsedFolderIds: stringArray(collapsedFolderIds, 160),
   };
 }
 
@@ -264,7 +281,7 @@ function sanitizePayload(payload: ChatGPTSyncPayload): ChatGPTSyncPayload {
   return {
     schemaVersion: payload.schemaVersion,
     exportedAt: payload.exportedAt,
-    source: 'chatgpt-voyager',
+    source: CHATGPT_SYNC_SOURCE,
     data: {
       prompts: payload.data.prompts.map(sanitizePrompt).filter(Boolean),
       folders: payload.data.folders.map(sanitizeFolder).filter(Boolean),
@@ -279,7 +296,9 @@ function sanitizePayload(payload: ChatGPTSyncPayload): ChatGPTSyncPayload {
 export function validateChatGPTSyncPayload(payload: unknown): payload is ChatGPTSyncPayload {
   if (!isRecord(payload)) throw new Error('同步数据格式无效。');
   if (typeof payload.schemaVersion !== 'number') throw new Error('缺少 schemaVersion。');
-  if (payload.source !== 'chatgpt-voyager') throw new Error('同步数据来源不正确。');
+  if (payload.source !== CHATGPT_SYNC_SOURCE && payload.source !== CHATGPT_SYNC_LEGACY_SOURCE) {
+    throw new Error('同步数据来源不正确。');
+  }
   if (!isRecord(payload.data)) throw new Error('同步数据 data 不是对象。');
 
   const suspiciousField = hasSuspiciousTranscriptField(payload);
@@ -302,7 +321,7 @@ export async function exportChatGPTSyncPayload(): Promise<ChatGPTSyncPayload> {
   return {
     schemaVersion: CHATGPT_SYNC_SCHEMA_VERSION,
     exportedAt: new Date().toISOString(),
-    source: 'chatgpt-voyager',
+    source: CHATGPT_SYNC_SOURCE,
     data: {
       prompts,
       folders,

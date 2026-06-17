@@ -21,7 +21,9 @@ let currentConversationId: string | null = null;
 let capturedNodes: ChatGPTTimelineNode[] = [];
 let capturedUrl = '';
 let listenerStarted = false;
-const PERFORMANCE_PREFIX = '[ChatGPT Voyager Performance]';
+const PERFORMANCE_PREFIX = '[ChatGPT Ether Performance]';
+const CHATGPT_CAPTURE_SOURCE = 'chatgpt-ether';
+const CHATGPT_CAPTURE_LEGACY_SOURCE = 'chatgpt-voyager';
 
 function performanceLog(label: string, startedAt: number, extra: Record<string, unknown> = {}): void {
   console.debug(PERFORMANCE_PREFIX, {
@@ -86,7 +88,8 @@ export function startChatGPTConversationCapture(): void {
     const data = event.data as { type?: string; source?: string; payload?: CapturedPayload };
     if (
       data?.type !== 'cg-voyager-chatgpt-conversation-captured' ||
-      data.source !== 'chatgpt-voyager' ||
+      (data.source !== CHATGPT_CAPTURE_SOURCE &&
+        data.source !== CHATGPT_CAPTURE_LEGACY_SOURCE) ||
       !data.payload
     ) {
       return;
@@ -117,7 +120,7 @@ export function requestCurrentChatGPTConversationCapture(): void {
   window.postMessage(
     {
       type: 'cg-voyager-chatgpt-fetch-current-conversation',
-      source: 'chatgpt-voyager',
+      source: CHATGPT_CAPTURE_SOURCE,
     },
     window.location.origin,
   );

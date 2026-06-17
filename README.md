@@ -29,7 +29,7 @@ Requirements: Node.js-compatible tooling and network access for the build toolch
 
 ```bash
 git clone <this-repository-url>
-cd chatgpt-voyager
+cd chatgpt-ether
 npx --yes bun@latest install
 npx --yes bun@latest run build:chrome
 ```

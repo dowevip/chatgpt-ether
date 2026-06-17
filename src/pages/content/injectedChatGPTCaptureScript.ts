@@ -15,8 +15,10 @@ type CapturedNode = {
 
 const POST_MESSAGE_TYPE = 'cg-voyager-chatgpt-conversation-captured';
 const FETCH_REQUEST_TYPE = 'cg-voyager-chatgpt-fetch-current-conversation';
+const CHATGPT_CAPTURE_SOURCE = 'chatgpt-ether';
+const CHATGPT_CAPTURE_LEGACY_SOURCE = 'chatgpt-voyager';
 const MAX_SUMMARY_LENGTH = 60;
-const PERFORMANCE_PREFIX = '[ChatGPT Voyager Performance]';
+const PERFORMANCE_PREFIX = '[ChatGPT Ether Performance]';
 
 function performanceLog(label: string, startedAt: number, extra: Record<string, unknown> = {}): void {
   console.debug(PERFORMANCE_PREFIX, {
@@ -234,7 +236,7 @@ function postCaptured(nodes: CapturedNode[], url: string): void {
   if (nodes.length === 0) return;
   const user = nodes.filter((node) => node.role === 'user').length;
   const assistant = nodes.filter((node) => node.role === 'assistant').length;
-  console.debug('[ChatGPT Voyager] 捕获到对话数据', {
+  console.debug('[ChatGPT Ether] 捕获到对话数据', {
     total: nodes.length,
     user,
     assistant,
@@ -243,7 +245,7 @@ function postCaptured(nodes: CapturedNode[], url: string): void {
   window.postMessage(
     {
       type: POST_MESSAGE_TYPE,
-      source: 'chatgpt-voyager',
+      source: CHATGPT_CAPTURE_SOURCE,
       payload: {
         conversationId: currentConversationId(),
         url,
@@ -293,7 +295,7 @@ async function fetchCurrentConversation(): Promise<void> {
     scheduleInspectJson(data, url);
     performanceLog('conversation 捕获请求耗时', startedAt, { conversationId });
   } catch {
-    console.debug('[ChatGPT Voyager] 当前对话主动读取失败', {
+    console.debug('[ChatGPT Ether] 当前对话主动读取失败', {
       conversationId,
       hasConversationData: false,
     });
@@ -319,7 +321,10 @@ window.fetch = async (...args: Parameters<typeof fetch>) => {
 window.addEventListener('message', (event) => {
   if (event.source !== window || event.origin !== window.location.origin) return;
   const data = event.data as { type?: string; source?: string };
-  if (data?.type === FETCH_REQUEST_TYPE && data.source === 'chatgpt-voyager') {
+  if (
+    data?.type === FETCH_REQUEST_TYPE &&
+    (data.source === CHATGPT_CAPTURE_SOURCE || data.source === CHATGPT_CAPTURE_LEGACY_SOURCE)
+  ) {
     scheduleIdleTask(() => void fetchCurrentConversation(), 800);
   }
 });

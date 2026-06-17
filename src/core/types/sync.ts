@@ -44,9 +44,9 @@ export interface SyncState {
   lastSyncTimeAIStudio: number | null;
   /** Timestamp of last successful upload for AI Studio */
   lastUploadTimeAIStudio: number | null;
-  /** Timestamp of last successful ChatGPT Voyager cloud download */
+  /** Timestamp of last successful ChatGPT Ether cloud download */
   lastSyncTimeChatGPT: number | null;
-  /** Timestamp of last successful ChatGPT Voyager cloud upload */
+  /** Timestamp of last successful ChatGPT Ether cloud upload */
   lastUploadTimeChatGPT: number | null;
   /** Whether a sync operation is currently in progress */
   isSyncing: boolean;
@@ -233,7 +233,7 @@ export interface SyncResponse {
   data?: SyncData;
 }
 
-export type ChatGPTSyncSource = 'chatgpt-voyager';
+export type ChatGPTSyncSource = 'chatgpt-ether' | 'chatgpt-voyager';
 
 export type ChatGPTSyncSettings = {
   timelineVisible?: boolean;

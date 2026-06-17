@@ -13,13 +13,19 @@ import {
 const ROOT_ID = 'cg-voyager-quick-access-root';
 const PANEL_ID = 'cg-voyager-quick-module';
 const STYLE_ID = 'cg-voyager-quick-access-style';
-const POSITION_STORAGE_KEY = 'chatgptVoyager.quickAccess.position';
-const PANEL_POSITION_STORAGE_KEY = 'chatgptVoyager.quickAccess.panelPosition';
+const POSITION_STORAGE_KEY = 'chatgptEther.quickAccess.position';
+const LEGACY_POSITION_STORAGE_KEY = 'chatgptVoyager.quickAccess.position';
+const PANEL_POSITION_STORAGE_KEY = 'chatgptEther.quickAccess.panelPosition';
+const LEGACY_PANEL_POSITION_STORAGE_KEY = 'chatgptVoyager.quickAccess.panelPosition';
 const DARK_MODE_STORAGE_KEY = 'darkMode';
-const PROMPTS_STORAGE_KEY = 'chatgptVoyager.prompts';
-const FOLDERS_STORAGE_KEY = 'chatgptVoyager.folders';
-const CONVERSATIONS_STORAGE_KEY = 'chatgptVoyager.conversations';
-const STARRED_STORAGE_KEY = 'chatgptVoyager.starredMessages';
+const PROMPTS_STORAGE_KEY = 'chatgptEther.prompts';
+const LEGACY_PROMPTS_STORAGE_KEY = 'chatgptVoyager.prompts';
+const FOLDERS_STORAGE_KEY = 'chatgptEther.folders';
+const LEGACY_FOLDERS_STORAGE_KEY = 'chatgptVoyager.folders';
+const CONVERSATIONS_STORAGE_KEY = 'chatgptEther.conversations';
+const LEGACY_CONVERSATIONS_STORAGE_KEY = 'chatgptVoyager.conversations';
+const STARRED_STORAGE_KEY = 'chatgptEther.starredMessages';
+const LEGACY_STARRED_STORAGE_KEY = 'chatgptVoyager.starredMessages';
 const DRAG_THRESHOLD = 4;
 const PANEL_WIDTH = 520;
 const PANEL_HEIGHT = 600;
@@ -138,10 +144,20 @@ function applyPanelPosition(): void {
 
 async function readPosition(): Promise<FloatingPosition> {
   try {
-    const result = await chrome.storage?.local?.get({ [POSITION_STORAGE_KEY]: null });
-    const saved = result?.[POSITION_STORAGE_KEY] as Partial<FloatingPosition> | null;
+    const result = await chrome.storage?.local?.get({
+      [POSITION_STORAGE_KEY]: null,
+      [LEGACY_POSITION_STORAGE_KEY]: null,
+    });
+    const current = result?.[POSITION_STORAGE_KEY] as Partial<FloatingPosition> | null;
+    const legacy = result?.[LEGACY_POSITION_STORAGE_KEY] as Partial<FloatingPosition> | null;
+    const saved = current || legacy;
     if (typeof saved?.left === 'number' && typeof saved?.top === 'number') {
-      return clampPosition(saved as FloatingPosition);
+      const next = clampPosition(saved as FloatingPosition);
+      if (!current && legacy) {
+        await chrome.storage?.local?.set({ [POSITION_STORAGE_KEY]: next });
+        await chrome.storage?.local?.remove(LEGACY_POSITION_STORAGE_KEY);
+      }
+      return next;
     }
   } catch {}
   return getDefaultPosition();
@@ -149,10 +165,20 @@ async function readPosition(): Promise<FloatingPosition> {
 
 async function readPanelPosition(): Promise<FloatingPosition> {
   try {
-    const result = await chrome.storage?.local?.get({ [PANEL_POSITION_STORAGE_KEY]: null });
-    const saved = result?.[PANEL_POSITION_STORAGE_KEY] as Partial<FloatingPosition> | null;
+    const result = await chrome.storage?.local?.get({
+      [PANEL_POSITION_STORAGE_KEY]: null,
+      [LEGACY_PANEL_POSITION_STORAGE_KEY]: null,
+    });
+    const current = result?.[PANEL_POSITION_STORAGE_KEY] as Partial<FloatingPosition> | null;
+    const legacy = result?.[LEGACY_PANEL_POSITION_STORAGE_KEY] as Partial<FloatingPosition> | null;
+    const saved = current || legacy;
     if (typeof saved?.left === 'number' && typeof saved?.top === 'number') {
-      return clampPanelPosition(saved as FloatingPosition);
+      const next = clampPanelPosition(saved as FloatingPosition);
+      if (!current && legacy) {
+        await chrome.storage?.local?.set({ [PANEL_POSITION_STORAGE_KEY]: next });
+        await chrome.storage?.local?.remove(LEGACY_PANEL_POSITION_STORAGE_KEY);
+      }
+      return next;
     }
   } catch {}
   return getDefaultPanelPosition();
@@ -914,6 +940,62 @@ async function readStorageArray<T>(key: string): Promise<T[]> {
   }
 }
 
+async function readPromptItems(): Promise<PromptItem[]> {
+  try {
+    const result = await chrome.storage?.local?.get({
+      [PROMPTS_STORAGE_KEY]: null,
+      [LEGACY_PROMPTS_STORAGE_KEY]: null,
+    });
+    const current = result?.[PROMPTS_STORAGE_KEY];
+    const legacy = result?.[LEGACY_PROMPTS_STORAGE_KEY];
+    const prompts = Array.isArray(current)
+      ? (current as PromptItem[])
+      : Array.isArray(legacy)
+        ? (legacy as PromptItem[])
+        : [];
+
+    if (!Array.isArray(current) && Array.isArray(legacy)) {
+      await chrome.storage?.local?.set({ [PROMPTS_STORAGE_KEY]: prompts });
+      await chrome.storage?.local?.remove(LEGACY_PROMPTS_STORAGE_KEY);
+    }
+
+    return prompts;
+  } catch {
+    return [];
+  }
+}
+
+async function readMigratedStorageArray<T>(key: string, legacyKey: string): Promise<T[]> {
+  try {
+    const result = await chrome.storage?.local?.get({
+      [key]: null,
+      [legacyKey]: null,
+    });
+    const current = result?.[key];
+    const legacy = result?.[legacyKey];
+    const items = Array.isArray(current)
+      ? (current as T[])
+      : Array.isArray(legacy)
+        ? (legacy as T[])
+        : [];
+
+    if (!Array.isArray(current) && Array.isArray(legacy)) {
+      await chrome.storage?.local?.set({ [key]: items });
+      if (
+        legacyKey === LEGACY_FOLDERS_STORAGE_KEY ||
+        legacyKey === LEGACY_CONVERSATIONS_STORAGE_KEY ||
+        legacyKey === LEGACY_STARRED_STORAGE_KEY
+      ) {
+        await chrome.storage?.local?.remove(legacyKey);
+      }
+    }
+
+    return items;
+  } catch {
+    return [];
+  }
+}
+
 function createSearchInput(
   placeholder: string,
   onInput: (query: string) => void,
@@ -967,7 +1049,7 @@ async function renderPromptVaultPanel(query = ''): Promise<void> {
   searchInput.value = query;
   toolbar.append(searchInput, createTimelineButton());
 
-  const prompts = await readStorageArray<PromptItem>(PROMPTS_STORAGE_KEY);
+  const prompts = await readPromptItems();
   const editingPrompt = prompts.find((prompt) => prompt.id === editingPromptId) || null;
 
   if (editingPrompt) {
@@ -1106,8 +1188,11 @@ async function renderFoldersPanel(): Promise<void> {
   if (!panelBodyEl) return;
 
   const [folders, conversations] = await Promise.all([
-    readStorageArray<FolderItem>(FOLDERS_STORAGE_KEY),
-    readStorageArray<ConversationItem>(CONVERSATIONS_STORAGE_KEY),
+    readMigratedStorageArray<FolderItem>(FOLDERS_STORAGE_KEY, LEGACY_FOLDERS_STORAGE_KEY),
+    readMigratedStorageArray<ConversationItem>(
+      CONVERSATIONS_STORAGE_KEY,
+      LEGACY_CONVERSATIONS_STORAGE_KEY,
+    ),
   ]);
   const folderNameById = new Map(folders.map((folder) => [folder.id, folder.name]));
   const section = createEl('div', 'cg-voyager-quick-module-section');
@@ -1207,7 +1292,10 @@ async function renderStarredPanel(): Promise<void> {
   resetPanelContent();
   if (!panelBodyEl) return;
 
-  const messages = await readStorageArray<StarredItem>(STARRED_STORAGE_KEY);
+  const messages = await readMigratedStorageArray<StarredItem>(
+    STARRED_STORAGE_KEY,
+    LEGACY_STARRED_STORAGE_KEY,
+  );
   const section = createEl('div', 'cg-voyager-quick-module-section');
   panelBodyEl.append(section);
 

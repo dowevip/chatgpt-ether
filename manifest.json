@@ -14,7 +14,7 @@
   },
   "browser_specific_settings": {
     "gecko": {
-      "id": "chatgpt-voyager@local",
+      "id": "chatgpt-ether@local",
       "strict_min_version": "109.0"
     }
   },

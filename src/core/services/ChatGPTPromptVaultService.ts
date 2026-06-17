@@ -2,7 +2,8 @@ import browser from 'webextension-polyfill';
 
 import type { ChatGPTPromptVaultExport, ChatGPTPromptVaultItem } from '@/core/types/prompt';
 
-export const CHATGPT_PROMPT_VAULT_STORAGE_KEY = 'chatgptVoyager.prompts';
+export const CHATGPT_PROMPT_VAULT_STORAGE_KEY = 'chatgptEther.prompts';
+export const CHATGPT_PROMPT_VAULT_LEGACY_STORAGE_KEY = 'chatgptVoyager.prompts';
 
 type PromptInput = {
   id?: string;
@@ -74,11 +75,21 @@ function sortPrompts(prompts: ChatGPTPromptVaultItem[]): ChatGPTPromptVaultItem[
 }
 
 export async function listChatGPTPrompts(): Promise<ChatGPTPromptVaultItem[]> {
-  const result = await browser.storage.local.get(CHATGPT_PROMPT_VAULT_STORAGE_KEY);
-  const raw = result[CHATGPT_PROMPT_VAULT_STORAGE_KEY];
+  const result = await browser.storage.local.get([
+    CHATGPT_PROMPT_VAULT_STORAGE_KEY,
+    CHATGPT_PROMPT_VAULT_LEGACY_STORAGE_KEY,
+  ]);
+  const currentRaw = result[CHATGPT_PROMPT_VAULT_STORAGE_KEY];
+  const legacyRaw = result[CHATGPT_PROMPT_VAULT_LEGACY_STORAGE_KEY];
+  const raw = Array.isArray(currentRaw) ? currentRaw : legacyRaw;
   if (!Array.isArray(raw)) return [];
 
-  return sortPrompts(raw.filter(isPromptLike).map((item) => sanitizePrompt(item)));
+  const prompts = sortPrompts(raw.filter(isPromptLike).map((item) => sanitizePrompt(item)));
+  if (!Array.isArray(currentRaw) && Array.isArray(legacyRaw)) {
+    await browser.storage.local.set({ [CHATGPT_PROMPT_VAULT_STORAGE_KEY]: prompts });
+    await browser.storage.local.remove(CHATGPT_PROMPT_VAULT_LEGACY_STORAGE_KEY);
+  }
+  return prompts;
 }
 
 export async function saveChatGPTPrompt(input: PromptInput): Promise<ChatGPTPromptVaultItem[]> {
@@ -113,7 +124,7 @@ export function buildChatGPTPromptExport(
   prompts: ChatGPTPromptVaultItem[],
 ): ChatGPTPromptVaultExport {
   return {
-    format: 'chatgpt-voyager.prompt-vault.v1',
+    format: 'chatgpt-ether.prompt-vault.v1',
     exportedAt: new Date().toISOString(),
     prompts: sortPrompts(prompts),
   };

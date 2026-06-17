@@ -1,12 +1,12 @@
 {
-  "name": "chatgpt-voyager",
+  "name": "chatgpt-ether",
   "version": "0.1.0",
   "description": "Personal ChatGPT conversation manager",
   "license": "GPL-3.0",
   "author": "Jesse Zhang",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Nagi-ovo/gemini-voyager.git"
+    "url": "https://github.com/dowevip/chatgpt-ether.git"
   },
   "scripts": {
     "bump": "bun scripts/bump-version.js",

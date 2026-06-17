@@ -9,7 +9,7 @@ export type ChatGPTPromptVaultItem = {
 };
 
 export type ChatGPTPromptVaultExport = {
-  format: 'chatgpt-voyager.prompt-vault.v1';
+  format: 'chatgpt-ether.prompt-vault.v1' | 'chatgpt-voyager.prompt-vault.v1';
   exportedAt: string;
   prompts: ChatGPTPromptVaultItem[];
 };

@@ -33,7 +33,8 @@ type FoldersPanelProps = {
   onBack: () => void;
 };
 
-const COLLAPSED_FOLDERS_STORAGE_KEY = 'chatgptVoyager.foldersPanel.collapsed';
+const COLLAPSED_FOLDERS_STORAGE_KEY = 'chatgptEther.foldersPanel.collapsed';
+const LEGACY_COLLAPSED_FOLDERS_STORAGE_KEY = 'chatgptVoyager.foldersPanel.collapsed';
 
 function folderName(
   folderId: string | null,
@@ -91,7 +92,13 @@ export function FoldersPanel({ currentStatus, onBack }: FoldersPanelProps) {
   );
   const [collapsedFolderIds, setCollapsedFolderIds] = useState<Record<string, boolean>>(() => {
     try {
-      const raw = localStorage.getItem(COLLAPSED_FOLDERS_STORAGE_KEY);
+      const raw =
+        localStorage.getItem(COLLAPSED_FOLDERS_STORAGE_KEY) ||
+        localStorage.getItem(LEGACY_COLLAPSED_FOLDERS_STORAGE_KEY);
+      if (!localStorage.getItem(COLLAPSED_FOLDERS_STORAGE_KEY) && raw) {
+        localStorage.setItem(COLLAPSED_FOLDERS_STORAGE_KEY, raw);
+        localStorage.removeItem(LEGACY_COLLAPSED_FOLDERS_STORAGE_KEY);
+      }
       return raw ? JSON.parse(raw) : {};
     } catch {
       return {};
