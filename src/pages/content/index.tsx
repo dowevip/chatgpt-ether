@@ -1,106 +1,28 @@
 import { chatgptAdapter, insertPromptIntoChatGPTInput } from '@/core/adapters/chatgptAdapter';
 import { startChatGPTTimeContextInjection } from '@/core/services/ChatGPTTimeContextService';
-import { StorageKeys } from '@/core/types/common';
-import { isSafari } from '@/core/utils/browser';
 import {
   hasValidExtensionContext,
   isExtensionContextInvalidatedError,
 } from '@/core/utils/extensionContext';
-import { isGeminiEnterpriseEnvironment } from '@/core/utils/gemini';
-import { startFormulaCopy } from '@/features/formulaCopy';
-import { initI18n } from '@/utils/i18n';
 
-import { startCanvasExport } from './canvasExport/index';
-import { startChangelog } from './changelog/index';
-import { startChatFontSizeAdjuster } from './chatFontSize/index';
-import { startInputVimMode } from './chatInput/vimMode';
-import { startChatLineHeightAdjuster } from './chatLineHeight/index';
-import { startChatWidthAdjuster } from './chatWidth/index';
 import {
   getCapturedChatGPTTimelineNodes,
   hasCapturedChatGPTConversationData,
   requestCurrentChatGPTConversationCapture,
   startChatGPTConversationCapture,
 } from './chatgptConversationCapture';
-import { startContextSync } from './contextSync';
-import { startDeepResearchExport } from './deepResearch/index';
-import DefaultModelManager from './defaultModel/modelLocker';
-import { startDraftSave } from './draftSave/index';
-import { startEdgeFinalVersionNotice } from './edgeFinalVersionNotice';
-import { startEditInputWidthAdjuster } from './editInputWidth/index';
-import { startExportButton } from './export/index';
 import { startChatGPTFloatingQuickAccess } from './floatingQuickAccess';
-import { startAIStudioFolderManager } from './folder/aistudio';
-import { startFolderManager } from './folder/index';
-import { startFolderItemFontSizeAdjuster } from './folderItemFontSize/index';
-import { startFolderProject } from './folderProject/index';
-import { startFolderSpacingAdjuster } from './folderSpacing/index';
-import { isForkFeatureEnabledValue } from './fork/featureFlag';
-import { startFork } from './fork/index';
-import { startGemsHider } from './gemsHider/index';
-import { startGemsSidebar } from './gemsSidebar/index';
-import { startInputCollapse } from './inputCollapse/index';
-import { startInputHaloHider } from './inputHaloHider/index';
-import { initKaTeXConfig } from './katexConfig';
-import { startMarkdownPatcher } from './markdownPatcher/index';
-import { startMermaid } from './mermaid/index';
-import { startPreventAutoScroll } from './preventAutoScroll/index';
-import { startPromptManager } from './prompt/index';
-import { startQuoteReply } from './quoteReply/index';
-import { startSendBehavior } from './sendBehavior/index';
-import { startSidebarAutoHide } from './sidebarAutoHide';
-import { startSidebarWidthAdjuster } from './sidebarWidth';
-import { startTimeline } from './timeline/index';
 import {
   isChatGPTTimelineFloatingPanelVisible,
   scrollChatGPTTimelineToMessage,
   setChatGPTTimelineFloatingPanelVisible,
   startChatGPTTimelineFloatingPanel,
 } from './timelineFloatingPanel';
-import { startTitleUpdater } from './titleUpdater';
-import { startUserLatex } from './userLatex/index';
-import { startRainEffect, startSakuraEffect, startSnowEffect } from './visualEffects';
-import { startWatermarkRemover } from './watermarkRemover/index';
 
-// Suppress Vite's CSS preload errors in the Chrome extension content script context.
-// Dynamic imports (e.g., mermaid) trigger Vite's __vitePreload helper which tries to
-// create <link> elements with paths like "/assets/foo.css". In a content script, these
-// resolve to the web page origin (e.g., https://gemini.google.com/assets/foo.css)
-// instead of the extension, causing false "Unable to preload CSS" errors.
-// The CSS is already injected via contentStyle.css, so these preloads are unnecessary.
 window.addEventListener('vite:preloadError', (event) => {
   event.preventDefault();
 });
 
-/**
- * Staggered initialization to prevent "thundering herd" problem when multiple tabs
- * are restored simultaneously (e.g., after browser restart).
- *
- * Background tabs get a random delay (3-8s) to distribute initialization load.
- * Foreground tabs initialize immediately for good UX.
- *
- * This prevents triggering Google's rate limiting when restoring sessions with
- * many Gemini tabs containing long conversations.
- */
-
-// Initialization delay constants (in milliseconds)
-const HEAVY_FEATURE_INIT_DELAY = 100; // For resource-intensive features (Timeline, Folder)
-const LIGHT_FEATURE_INIT_DELAY = 50; // For lightweight features
-const BACKGROUND_TAB_MIN_DELAY = 3000; // Minimum delay for background tabs
-const BACKGROUND_TAB_MAX_DELAY = 8000; // Maximum delay for background tabs (3000 + 5000)
-
-let initialized = false;
-let initializationTimer: number | null = null;
-let folderManagerInstance: Awaited<ReturnType<typeof startFolderManager>> | null = null;
-
-let promptManagerInstance: Awaited<ReturnType<typeof startPromptManager>> | null = null;
-let quoteReplyCleanup: (() => void) | null = null;
-let inputVimModeCleanup: (() => void) | null = null;
-let sendBehaviorCleanup: (() => void) | null = null;
-let draftSaveCleanup: (() => void) | null = null;
-let forkCleanup: (() => void) | null = null;
-let gemsSidebarCleanup: (() => void) | null = null;
-let edgeFinalVersionNoticeCleanup: (() => void) | null = null;
 let chatgptTimeContextCleanup: (() => void) | null = null;
 let chatgptStatusListenerRegistered = false;
 
@@ -294,7 +216,7 @@ function registerChatGPTStatusListener(): void {
   });
 }
 
-function initializeChatGPTStatusOnly(): void {
+function initializeChatGPT(): void {
   registerChatGPTStatusListener();
   startChatGPTConversationCapture();
   startChatGPTTimelineFloatingPanel();
@@ -307,325 +229,6 @@ function initializeChatGPTStatusOnly(): void {
   console.log('[ChatGPT Ether] ChatGPT page status detected:', getChatGPTPageStatus());
 }
 
-function isChatGPTVoyagerRuntime(): boolean {
-  return true;
-}
-
-async function isForkFeatureEnabled(): Promise<boolean> {
-  try {
-    const result = await chrome.storage?.sync?.get({ [StorageKeys.FORK_ENABLED]: false });
-    return isForkFeatureEnabledValue(result?.[StorageKeys.FORK_ENABLED]);
-  } catch {
-    return false;
-  }
-}
-
-/**
- * Check if current hostname matches any custom websites
- */
-async function isCustomWebsite(): Promise<boolean> {
-  try {
-    const result = await chrome.storage?.sync?.get({ gvPromptCustomWebsites: [] });
-    const customWebsites = Array.isArray(result?.gvPromptCustomWebsites)
-      ? result.gvPromptCustomWebsites
-      : [];
-
-    // Normalize current hostname
-    const currentHost = location.hostname.toLowerCase().replace(/^www\./, '');
-
-    console.log('[ChatGPT Ether] Checking custom websites:', {
-      currentHost,
-      customWebsites,
-      hostname: location.hostname,
-    });
-
-    const isCustom = customWebsites.some((website: string) => {
-      const normalizedWebsite = website.toLowerCase().replace(/^www\./, '');
-      const matches =
-        currentHost === normalizedWebsite || currentHost.endsWith('.' + normalizedWebsite);
-      console.log('[ChatGPT Ether] Comparing:', { currentHost, normalizedWebsite, matches });
-      return matches;
-    });
-
-    console.log('[ChatGPT Ether] Is custom website:', isCustom);
-    return isCustom;
-  } catch (e) {
-    if (isExtensionContextInvalidatedError(e)) {
-      return false;
-    }
-    console.error('[ChatGPT Ether] Error checking custom websites:', e);
-    return false;
-  }
-}
-
-/**
- * Initialize all features sequentially to reduce simultaneous load
- */
-async function initializeFeatures(): Promise<void> {
-  if (initialized) return;
-  initialized = true;
-
-  try {
-    if (!hasValidExtensionContext()) {
-      return;
-    }
-    // Sequential initialization with small delays between features
-    // to further reduce simultaneous resource usage
-    const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
-    // Check if this is a custom website (only prompt manager should be enabled)
-    const isCustomSite = await isCustomWebsite();
-
-    if (isCustomSite) {
-      // Only start prompt manager for custom websites
-      console.log('[ChatGPT Ether] Custom website detected, starting Prompt Manager only');
-
-      promptManagerInstance = await startPromptManager();
-      return;
-    }
-
-    console.log('[ChatGPT Ether] Not a custom website, checking for Gemini/AI Studio');
-
-    edgeFinalVersionNoticeCleanup = startEdgeFinalVersionNotice();
-
-    const isEnterprise = isGeminiEnterpriseEnvironment(
-      {
-        hostname: location.hostname,
-        pathname: location.pathname,
-        search: location.search,
-        hash: location.hash,
-      },
-      document,
-    );
-
-    if (isEnterprise) {
-      console.log('[ChatGPT Ether] Gemini Enterprise detected, starting Prompt Manager only');
-      promptManagerInstance = await startPromptManager();
-      return;
-    }
-
-    if (location.hostname === 'gemini.google.com') {
-      // Timeline is most resource-intensive, start it first
-      startTimeline();
-      await delay(HEAVY_FEATURE_INIT_DELAY);
-
-      folderManagerInstance = await startFolderManager();
-      if (folderManagerInstance) startFolderProject(folderManagerInstance);
-      await delay(HEAVY_FEATURE_INIT_DELAY);
-
-      startFolderSpacingAdjuster('gemini');
-      await delay(LIGHT_FEATURE_INIT_DELAY);
-
-      startFolderItemFontSizeAdjuster();
-      await delay(LIGHT_FEATURE_INIT_DELAY);
-
-      startChatWidthAdjuster();
-      await delay(LIGHT_FEATURE_INIT_DELAY);
-
-      startChatFontSizeAdjuster();
-      await delay(LIGHT_FEATURE_INIT_DELAY);
-
-      startChatLineHeightAdjuster();
-      await delay(LIGHT_FEATURE_INIT_DELAY);
-
-      startEditInputWidthAdjuster();
-      await delay(LIGHT_FEATURE_INIT_DELAY);
-
-      startSidebarWidthAdjuster();
-      await delay(LIGHT_FEATURE_INIT_DELAY);
-
-      startSidebarAutoHide();
-      await delay(LIGHT_FEATURE_INIT_DELAY);
-
-      startSnowEffect();
-      startSakuraEffect();
-      startRainEffect();
-      await delay(LIGHT_FEATURE_INIT_DELAY);
-
-      startInputCollapse();
-      await delay(LIGHT_FEATURE_INIT_DELAY);
-
-      startInputHaloHider();
-      await delay(LIGHT_FEATURE_INIT_DELAY);
-
-      inputVimModeCleanup = await startInputVimMode();
-      await delay(LIGHT_FEATURE_INIT_DELAY);
-
-      startPreventAutoScroll();
-      await delay(LIGHT_FEATURE_INIT_DELAY);
-
-      startFormulaCopy();
-
-      await delay(LIGHT_FEATURE_INIT_DELAY);
-
-      // Quote Reply - conditionally start based on storage setting
-      const quoteReplyResult = await new Promise<{ gvQuoteReplyEnabled?: boolean }>((resolve) => {
-        try {
-          chrome.storage?.sync?.get({ gvQuoteReplyEnabled: true }, resolve);
-        } catch {
-          resolve({ gvQuoteReplyEnabled: true });
-        }
-      });
-      if (quoteReplyResult.gvQuoteReplyEnabled !== false) {
-        quoteReplyCleanup = startQuoteReply();
-      }
-      await delay(LIGHT_FEATURE_INIT_DELAY);
-
-      // Watermark remover - based on gemini-watermark-remover by journey-ad
-      // https://github.com/journey-ad/gemini-watermark-remover
-      // Skip on Safari due to fetch interceptor limitations in extension sandbox
-      if (!isSafari()) {
-        startWatermarkRemover();
-      }
-      await delay(LIGHT_FEATURE_INIT_DELAY);
-
-      startTitleUpdater();
-      await delay(LIGHT_FEATURE_INIT_DELAY);
-
-      startDeepResearchExport();
-      await delay(LIGHT_FEATURE_INIT_DELAY);
-
-      startContextSync();
-      await delay(LIGHT_FEATURE_INIT_DELAY);
-
-      // Send behavior (Ctrl+Enter to send)
-      sendBehaviorCleanup = await startSendBehavior('gemini');
-      await delay(LIGHT_FEATURE_INIT_DELAY);
-
-      // Draft auto-save
-      draftSaveCleanup = await startDraftSave();
-      await delay(LIGHT_FEATURE_INIT_DELAY);
-
-      // Gems hider - hide/show toggle for Gems list section
-      startGemsHider();
-      await delay(LIGHT_FEATURE_INIT_DELAY);
-
-      // Gems sidebar — recent gems list injected above Notebooks, populated
-      // from a local cache that's refreshed whenever the user visits the
-      // /gems/view management page. Count is controlled from the popup.
-      gemsSidebarCleanup = await startGemsSidebar();
-      await delay(LIGHT_FEATURE_INIT_DELAY);
-
-      // Markdown Patcher - fixes broken bold tags due to HTML injection
-      startMarkdownPatcher();
-      await delay(LIGHT_FEATURE_INIT_DELAY);
-
-      // Default Model Manager
-      DefaultModelManager.getInstance().init();
-      await delay(LIGHT_FEATURE_INIT_DELAY);
-
-      startExportButton();
-      await delay(LIGHT_FEATURE_INIT_DELAY);
-
-      void startCanvasExport();
-      await delay(LIGHT_FEATURE_INIT_DELAY);
-
-      if (await isForkFeatureEnabled()) {
-        forkCleanup = startFork();
-        await delay(LIGHT_FEATURE_INIT_DELAY);
-      }
-
-      startChangelog();
-      await delay(LIGHT_FEATURE_INIT_DELAY);
-    }
-
-    if (
-      location.hostname === 'gemini.google.com' ||
-      location.hostname === 'aistudio.google.com' ||
-      location.hostname === 'aistudio.google.cn'
-    ) {
-      promptManagerInstance = await startPromptManager();
-      await delay(HEAVY_FEATURE_INIT_DELAY);
-    }
-
-    if (location.hostname === 'gemini.google.com') {
-      // Initialize Mermaid rendering (lightweight)
-      startMermaid();
-      await delay(LIGHT_FEATURE_INIT_DELAY);
-
-      // Initialize user message LaTeX rendering
-      startUserLatex();
-      await delay(LIGHT_FEATURE_INIT_DELAY);
-    }
-
-    if (location.hostname === 'aistudio.google.com' || location.hostname === 'aistudio.google.cn') {
-      // Check if user has disabled Voyager on AI Studio
-      const aiStudioEnabled = await new Promise<boolean>((resolve) => {
-        try {
-          chrome.storage?.sync?.get({ [StorageKeys.GV_AISTUDIO_ENABLED]: true }, (res) =>
-            resolve(res?.[StorageKeys.GV_AISTUDIO_ENABLED] !== false),
-          );
-        } catch {
-          resolve(true);
-        }
-      });
-
-      if (!aiStudioEnabled) {
-        console.log('[ChatGPT Ether] AI Studio features disabled by user');
-        return;
-      }
-
-      startAIStudioFolderManager();
-      await delay(HEAVY_FEATURE_INIT_DELAY);
-
-      startFolderSpacingAdjuster('aistudio');
-      await delay(LIGHT_FEATURE_INIT_DELAY);
-
-      // Formula copy support for AI Studio
-      startFormulaCopy();
-      await delay(LIGHT_FEATURE_INIT_DELAY);
-
-      // Send behavior (Enter to send)
-      sendBehaviorCleanup = await startSendBehavior('aistudio');
-      await delay(LIGHT_FEATURE_INIT_DELAY);
-    }
-  } catch (e) {
-    if (isExtensionContextInvalidatedError(e)) {
-      return;
-    }
-    console.error('[ChatGPT Ether] Initialization error:', e);
-  }
-}
-
-/**
- * Determine initialization delay based on tab visibility
- */
-function getInitializationDelay(): number {
-  // Check if tab is currently visible
-  const isVisible = document.visibilityState === 'visible';
-
-  if (isVisible) {
-    // Foreground tab: initialize immediately for good UX
-    console.log('[ChatGPT Ether] Foreground tab detected, initializing immediately');
-    return 0;
-  } else {
-    // Background tab: add random delay to distribute load across multiple tabs
-    const randomRange = BACKGROUND_TAB_MAX_DELAY - BACKGROUND_TAB_MIN_DELAY;
-    const randomDelay = BACKGROUND_TAB_MIN_DELAY + Math.random() * randomRange;
-    console.log(
-      `[ChatGPT Ether] Background tab detected, delaying initialization by ${Math.round(randomDelay)}ms`,
-    );
-    return randomDelay;
-  }
-}
-
-/**
- * Handle tab visibility changes
- */
-function handleVisibilityChange(): void {
-  if (document.visibilityState === 'visible' && !initialized) {
-    // Tab became visible before initialization completed
-    // Cancel any pending delayed initialization and start immediately
-    if (initializationTimer !== null) {
-      clearTimeout(initializationTimer);
-      initializationTimer = null;
-      console.log('[ChatGPT Ether] Tab became visible, initializing immediately');
-    }
-    initializeFeatures();
-  }
-}
-
-// Main initialization logic
 (function () {
   try {
     if (!hasValidExtensionContext()) return;
@@ -642,142 +245,19 @@ function handleVisibilityChange(): void {
     };
     window.addEventListener('unhandledrejection', onUnhandledRejection);
     window.addEventListener('error', onWindowError);
-    const onStorageChanged = (
-      changes: Record<string, chrome.storage.StorageChange>,
-      areaName: string,
-    ) => {
-      if (
-        (areaName !== 'sync' && areaName !== 'local') ||
-        location.hostname !== 'gemini.google.com'
-      ) {
-        return;
-      }
 
-      const forkSetting = changes[StorageKeys.FORK_ENABLED];
-      if (!forkSetting) return;
-
-      const enabled = isForkFeatureEnabledValue(forkSetting.newValue);
-      if (enabled) {
-        if (!forkCleanup) {
-          forkCleanup = startFork();
-        }
-      } else if (forkCleanup) {
-        forkCleanup();
-        forkCleanup = null;
-      }
-    };
-
-    // Quick check: only run on supported websites
-    const hostname = location.hostname.toLowerCase();
-    if (isChatGPTVoyagerRuntime()) {
-      if (hostname === 'chatgpt.com') {
-        initializeChatGPTStatusOnly();
-      }
-      return;
+    if (location.hostname.toLowerCase() === 'chatgpt.com') {
+      initializeChatGPT();
     }
 
-    const isSupportedSite =
-      hostname.includes('gemini.google.com') ||
-      hostname.includes('business.gemini.google') ||
-      hostname.includes('aistudio.google.com') ||
-      hostname.includes('aistudio.google.cn');
-
-    // Initialize KaTeX configuration early to suppress Unicode warnings
-    // This must run before any formulas are rendered on the page
-    if (isSupportedSite) {
-      initKaTeXConfig();
-      // Initialize i18n early to ensure translations are available
-      initI18n().catch((e) => console.error('[ChatGPT Ether] i18n init error:', e));
-    }
-
-    // If not a known site, check if it's a custom website (async)
-    if (!isSupportedSite) {
-      // For unknown sites, check storage asynchronously
-      chrome.storage?.sync?.get({ gvPromptCustomWebsites: [] }, (result) => {
-        const customWebsites = Array.isArray(result?.gvPromptCustomWebsites)
-          ? result.gvPromptCustomWebsites
-          : [];
-        const currentHost = hostname.replace(/^www\./, '');
-
-        const isCustomSite = customWebsites.some((website: string) => {
-          const normalizedWebsite = website.toLowerCase().replace(/^www\./, '');
-          return currentHost === normalizedWebsite || currentHost.endsWith('.' + normalizedWebsite);
-        });
-
-        if (isCustomSite) {
-          console.log('[ChatGPT Ether] Custom website detected:', hostname);
-          initializeFeatures();
-        } else {
-          // Not a supported site, exit early
-          console.log('[ChatGPT Ether] Not a supported website, skipping initialization');
-        }
-      });
-      return;
-    }
-    chrome.storage?.onChanged?.addListener(onStorageChanged);
-
-    const delay = getInitializationDelay();
-
-    if (delay === 0) {
-      // Immediate initialization for foreground tabs
-      initializeFeatures();
-    } else {
-      // Delayed initialization for background tabs
-      initializationTimer = window.setTimeout(() => {
-        initializationTimer = null;
-        initializeFeatures();
-      }, delay);
-    }
-
-    // Listen for visibility changes to handle tab switching
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    // Setup cleanup on page unload to prevent memory leaks
     window.addEventListener('beforeunload', () => {
       try {
         window.removeEventListener('unhandledrejection', onUnhandledRejection);
         window.removeEventListener('error', onWindowError);
-        if (folderManagerInstance) {
-          folderManagerInstance.destroy();
-          folderManagerInstance = null;
-        }
-        if (promptManagerInstance) {
-          promptManagerInstance.destroy();
-          promptManagerInstance = null;
-        }
-        if (quoteReplyCleanup) {
-          quoteReplyCleanup();
-          quoteReplyCleanup = null;
-        }
-        if (inputVimModeCleanup) {
-          inputVimModeCleanup();
-          inputVimModeCleanup = null;
-        }
-        if (sendBehaviorCleanup) {
-          sendBehaviorCleanup();
-          sendBehaviorCleanup = null;
-        }
-        if (draftSaveCleanup) {
-          draftSaveCleanup();
-          draftSaveCleanup = null;
-        }
-        if (forkCleanup) {
-          forkCleanup();
-          forkCleanup = null;
-        }
-        if (gemsSidebarCleanup) {
-          gemsSidebarCleanup();
-          gemsSidebarCleanup = null;
-        }
-        if (edgeFinalVersionNoticeCleanup) {
-          edgeFinalVersionNoticeCleanup();
-          edgeFinalVersionNoticeCleanup = null;
-        }
         if (chatgptTimeContextCleanup) {
           chatgptTimeContextCleanup();
           chatgptTimeContextCleanup = null;
         }
-        chrome.storage?.onChanged?.removeListener(onStorageChanged);
       } catch (e) {
         if (isExtensionContextInvalidatedError(e)) {
           return;
