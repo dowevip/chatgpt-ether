@@ -105,8 +105,8 @@ function getDefaultPanelPosition(): FloatingPosition {
 
 function clampPosition(next: FloatingPosition): FloatingPosition {
   const rootRect = rootEl?.getBoundingClientRect();
-  const width = rootRect?.width || 44;
-  const height = rootRect?.height || 44;
+  const width = rootRect?.width || 48;
+  const height = rootRect?.height || 48;
   return {
     left: Math.min(Math.max(8, next.left), Math.max(8, window.innerWidth - width - 8)),
     top: Math.min(Math.max(72, next.top), Math.max(72, window.innerHeight - height - 96)),
@@ -201,38 +201,78 @@ function injectStyles(): void {
       --cg-accent-hover: #6E61E8;
       position: fixed;
       z-index: 2147483000;
-      width: 44px;
-      height: 44px;
+      width: 48px;
+      height: 48px;
       font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       color: var(--cg-text);
     }
     .cg-voyager-quick-access-button {
-      width: 44px;
-      height: 44px;
-      border: 1px solid var(--cg-border);
+      width: 48px;
+      height: 48px;
+      border: 0;
       border-radius: 999px;
-      background: rgba(255, 255, 255, 0.94);
-      color: #3D365C;
-      box-shadow: 0 8px 22px rgba(32, 35, 50, 0.12);
+      background: transparent;
+      color: #fff;
+      box-shadow: none;
       cursor: grab;
       display: grid;
       place-items: center;
-      font-size: 18px;
-      font-weight: 800;
+      padding: 0;
       user-select: none;
-      backdrop-filter: blur(12px);
       transition:
         transform 140ms ease,
-        box-shadow 140ms ease,
-        background 140ms ease;
+        filter 140ms ease;
+    }
+    .cg-voyager-quick-access-button:focus-visible {
+      outline: none;
+      filter: drop-shadow(0 0 0 3px rgba(124, 111, 246, 0.2));
+    }
+    .cg-voyager-quick-access-button-icon {
+      width: 48px;
+      height: 48px;
+      display: block;
+      filter: drop-shadow(0 10px 28px rgba(32, 35, 50, 0.28));
+      transition:
+        transform 140ms ease,
+        filter 140ms ease;
+    }
+    .cg-voyager-quick-access-button-icon-bg {
+      fill: #6E61E8;
+      transition: fill 140ms ease;
+    }
+    .cg-voyager-quick-access-button-icon-ring {
+      stroke: rgba(255, 255, 255, 0.32);
+      transition: stroke 140ms ease;
+    }
+    .cg-voyager-quick-access-button-icon-stroke {
+      stroke: #fff;
+    }
+    .cg-voyager-quick-access-button-icon-accent {
+      fill: #DCD7FF;
+      stroke: #DCD7FF;
+      transition:
+        fill 140ms ease,
+        stroke 140ms ease;
     }
     .cg-voyager-quick-access-button:hover {
       transform: translateY(-1px);
-      box-shadow: 0 10px 24px rgba(32, 35, 50, 0.16);
+    }
+    .cg-voyager-quick-access-button:hover .cg-voyager-quick-access-button-icon {
+      filter: drop-shadow(0 14px 34px rgba(32, 35, 50, 0.34));
+    }
+    .cg-voyager-quick-access-button:hover .cg-voyager-quick-access-button-icon-bg {
+      fill: #7C6FF6;
     }
     .cg-voyager-quick-access-button:active {
       cursor: grabbing;
+      transform: translateY(0);
+    }
+    .cg-voyager-quick-access-button:active .cg-voyager-quick-access-button-icon {
       transform: scale(0.98);
+      filter: drop-shadow(0 8px 18px rgba(32, 35, 50, 0.22));
+    }
+    .cg-voyager-quick-access-button:active .cg-voyager-quick-access-button-icon-bg {
+      fill: #202332;
     }
     .cg-voyager-quick-module {
       --cg-surface: #ffffff;
@@ -629,10 +669,22 @@ function injectStyles(): void {
       --cg-accent-hover: #B8ADFF;
     }
     .cg-voyager-quick-access-dark .cg-voyager-quick-access-button {
-      border-color: rgba(220, 220, 230, 0.12);
-      background: rgba(23, 24, 33, 0.96);
-      color: #A99BFF;
-      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.28);
+      color: #F4F4F5;
+    }
+    .cg-voyager-quick-access-dark .cg-voyager-quick-access-button-icon {
+      filter: drop-shadow(0 12px 30px rgba(0, 0, 0, 0.45));
+    }
+    .cg-voyager-quick-access-dark .cg-voyager-quick-access-button-icon-bg {
+      fill: #171927;
+    }
+    .cg-voyager-quick-access-dark .cg-voyager-quick-access-button-icon-ring {
+      stroke: #3B3F56;
+    }
+    .cg-voyager-quick-access-dark .cg-voyager-quick-access-button:hover .cg-voyager-quick-access-button-icon-bg {
+      fill: #202332;
+    }
+    .cg-voyager-quick-access-dark .cg-voyager-quick-access-button:active .cg-voyager-quick-access-button-icon-bg {
+      fill: #101014;
     }
     .cg-voyager-quick-module-dark {
       border-color: rgba(220, 220, 230, 0.12);
@@ -1269,7 +1321,39 @@ function createRoot(): void {
   buttonEl.type = 'button';
   buttonEl.className = 'cg-voyager-quick-access-button';
   buttonEl.title = 'ChatGPT以太';
-  buttonEl.textContent = 'E';
+  buttonEl.setAttribute('aria-label', '打开 ChatGPT以太');
+  buttonEl.innerHTML = `
+    <svg class="cg-voyager-quick-access-button-icon" viewBox="0 0 64 64" aria-hidden="true">
+      <circle class="cg-voyager-quick-access-button-icon-bg" cx="32" cy="32" r="27" />
+      <circle class="cg-voyager-quick-access-button-icon-ring" cx="32" cy="32" r="26" stroke-width="2" fill="none" />
+      <path
+        class="cg-voyager-quick-access-button-icon-stroke"
+        d="M21.5 41L18.5 48L27 43.5H38C43.5 43.5 48 39 48 33.5C48 28 43.5 23.5 38 23.5H27C21.5 23.5 17 28 17 33.5C17 37 18.8 39.8 21.5 41Z"
+        stroke-width="3.7"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        fill="none"
+      />
+      <path
+        class="cg-voyager-quick-access-button-icon-accent"
+        d="M27 31H38"
+        stroke-width="2.6"
+        stroke-linecap="round"
+        fill="none"
+      />
+      <path
+        class="cg-voyager-quick-access-button-icon-accent"
+        d="M27 36H40"
+        stroke-width="2.6"
+        stroke-linecap="round"
+        fill="none"
+      />
+      <path
+        class="cg-voyager-quick-access-button-icon-accent"
+        d="M45 14L47.5 20.5L54 23L47.5 25.5L45 32L42.5 25.5L36 23L42.5 20.5L45 14Z"
+      />
+    </svg>
+  `;
 
   toastEl = document.createElement('div');
   toastEl.className = 'cg-voyager-quick-access-toast';
