@@ -1,148 +1,224 @@
-\# ChatGPT Ether / ChatGPT以太
+# ChatGPT以太
 
+语言：[English](./README.md) | **中文**
 
+ChatGPT以太是一款面向个人使用的 Chrome 扩展，用来增强 ChatGPT 网页端的对话管理能力。
 
-ChatGPT以太是一款个人自用 / 开发中的 Chrome 扩展，用于管理 ChatGPT 对话。它围绕 ChatGPT 网页增加了一组本地化管理能力，包括右侧时间轴、当前对话搜索、消息收藏、对话文件夹、提示词库、诊断信息、Google Drive 手动同步，以及对话时间上下文注入。
+它不是聊天机器人，也不替代 ChatGPT。本扩展的目标是给 ChatGPT 增加一层轻量的个人工作台：管理提示词、整理对话、收藏关键消息、查看当前对话时间轴，并在需要时把这些元数据同步到你自己的 Google Drive。
 
+> 当前版本仍处于早期阶段，建议作为自用版或小范围测试版使用。
 
+## 主要功能
 
-本项目基于早期开源项目改造而来。它不是 OpenAI 官方产品，与 OpenAI 无隶属关系，也与 Google 无隶属关系。
+### 提示词库
 
+- 保存常用提示词
+- 搜索提示词
+- 标签与收藏
+- 一键插入到当前 ChatGPT 输入框
+- JSON 导入 / 导出
 
+### 对话管理
 
-\## 当前状态
+- 保存当前 ChatGPT 对话到本地索引
+- 使用文件夹整理对话
+- 搜索已保存对话
+- 给对话添加备注
+- 从插件中快速打开已保存对话
 
+### 时间轴与当前对话搜索
 
+- 在 ChatGPT 页面右侧显示当前对话时间轴
+- 支持用户消息与助手回复的定位
+- 支持当前对话内搜索
+- 使用 ChatGPT 页面原生消息标识进行定位，尽量减少误跳转
 
-ChatGPT以太目前是个人自用 / 开发版本，适合从本地源码构建并加载使用。使用前建议自行审查代码。本仓库不声称已经发布 Chrome Web Store 公开版本。
+### 收藏消息
 
+- 收藏当前对话中的重要消息
+- 在插件中查看收藏消息
+- 点击后打开对应对话并定位到消息附近
 
+### 页面浮动工作台
 
-\## 功能
+- ChatGPT 页面内提供一个可拖拽的浮动入口
+- 可快速打开提示词库、对话管理、收藏消息
+- 可显示或隐藏页面时间轴
 
+### Google Drive 手动同步
 
+- 使用 Google Drive `appDataFolder`
+- 支持手动上传到云端
+- 支持从云端拉取并合并
+- 用于同步提示词、文件夹、对话索引、收藏消息等扩展数据
 
-\* 提示词库：保存和复用常用提示词。
+### 诊断信息
 
-\* 对话文件夹与对话索引。
+- 查看当前页面识别状态
+- 查看当前 conversationId、标题、消息数量
+- 查看时间轴、收藏、同步等基础状态
+- 一键复制诊断信息，方便排查问题
 
-\* ChatGPT 对话页面右侧时间轴。
+## 不做什么
 
-\* 基于右侧时间轴的当前对话搜索。
+ChatGPT以太刻意保持边界清晰：
 
-\* 收藏重要对话消息。
+- 不调用 ChatGPT 私有 API
+- 不读取 cookies
+- 不读取浏览历史
+- 不申请 `all_urls`
+- 不上传完整聊天正文
+- 不同步完整聊天正文
+- 不自动扫描所有历史对话
+- 不删除或隐藏 ChatGPT 原生对话
+- 不伪装成 OpenAI 官方产品
 
-\* 诊断信息面板，用于查看扩展运行状态。
+## 安装方式
 
-\* Google Drive 手动同步扩展数据。
+当前版本建议从源码构建并以“未打包扩展”的方式加载。
 
-\* 对话时间上下文注入。
-
-\* Popup 支持中文和英文切换。
-
-\* Popup 夜间模式与页面右侧时间轴同步。
-
-
-
-\## 从本地源码安装
-
-
-
-要求：具备 Node.js 兼容工具链，并能访问构建所需网络资源。
-
-
+### 1. 克隆仓库
 
 ```bash
-
-git clone <this-repository-url>
-
+git clone https://github.com/dowevip/chatgpt-ether.git
 cd chatgpt-ether
-
-npx --yes bun@latest install
-
-npx --yes bun@latest run build:chrome
-
 ```
 
+### 2. 安装依赖
 
+如果你已经安装 Bun：
 
-然后加载构建后的扩展：
+```bash
+bun install
+```
 
+如果没有全局安装 Bun，也可以使用：
 
+```bash
+npx --yes bun@latest install
+```
 
-1\. 打开 `chrome://extensions`。
+### 3. 构建 Chrome 扩展
 
-2\. 开启“开发者模式”。
+```bash
+bun run build:chrome
+```
 
-3\. 点击“加载已解压的扩展程序”。
+或：
 
-4\. 选择生成的 `dist\_chrome` 目录。
+```bash
+npm run build:chrome
+```
 
+构建成功后会生成：
 
+```text
+dist_chrome
+```
 
-\## 隐私摘要
+### 4. 加载到 Chrome
 
+1. 打开 `chrome://extensions/`
+2. 开启右上角“开发者模式”
+3. 点击“加载已解压的扩展程序”
+4. 选择项目中的 `dist_chrome` 目录
 
+## 更新方式
 
-ChatGPT以太会在本地读取当前 ChatGPT 页面内容，用于生成时间轴、搜索当前对话、管理收藏消息，以及展示诊断信息。部分扩展数据会存储在浏览器扩展本地存储中。
+如果你已经克隆过仓库：
 
+```bash
+git pull origin main
+npm run build:chrome
+```
 
+然后回到 `chrome://extensions/`，点击 ChatGPT以太卡片上的“重新加载”。
 
-本扩展不出售用户数据，不广泛读取浏览历史，不读取 cookies，不上传截图、图片、附件或 Canvas 内容。本扩展不会上传完整的 ChatGPT 聊天记录。
+## Google Drive 同步说明
 
+Google Drive 同步目前是手动功能。
 
+同步数据包括：
 
-如果你对隐私有顾虑，建议在安装或使用前自行审查源码。
+- 提示词库
+- 文件夹结构
+- 对话索引
+- 对话备注
+- 收藏消息元数据
+- 插件设置
+- 必要的时间元数据
 
+不会同步：
 
+- 完整聊天正文
+- 助手完整回复
+- 附件
+- 图片
+- Canvas 内容
+- 截图
+- 大型原始 conversation JSON
 
-详细说明见 \[PRIVACY.md](./PRIVACY.md)。
+同步文件存放在你自己的 Google Drive `appDataFolder` 中，不会出现在普通 Drive 文件列表里。
 
+## 隐私说明
 
+ChatGPT以太会在当前打开的 ChatGPT 页面中读取必要的页面结构，用于生成时间轴、当前对话搜索、消息定位和诊断信息。
 
-\## Google Drive 同步
+扩展数据默认保存在浏览器本地存储中。只有当你主动使用 Google Drive 同步时，允许同步的数据才会上传到你自己的 Google Drive。
 
+本扩展不会出售用户数据，不会把完整聊天正文上传到第三方服务，也不会读取 cookies 或浏览历史。
 
+详细隐私说明见 [PRIVACY.zh-CN.md](./PRIVACY.zh-CN.md)。
 
-Google Drive 同步为手动同步功能，OAuth 仅用于该同步功能。同步数据存储在用户自己的 Google Drive `appDataFolder` 中。
+## 当前状态
 
+当前版本是 `0.1.0`，适合个人使用和小范围测试。
 
+已完成的核心能力包括：
 
-启用 Google Drive 同步后，扩展可能会同步提示词、文件夹、对话索引元数据、收藏消息元数据、设置和时间元数据等扩展数据。本扩展不会上传完整的 ChatGPT 对话正文。
+- Prompt Vault
+- Conversation Manager
+- Timeline
+- Current Conversation Search
+- Starred Messages
+- Google Drive Manual Sync
+- Diagnostics
+- Floating Workspace
+- zh / en 语言切换
 
+仍建议在正式公开推广前继续观察：
 
+- 长对话性能
+- ChatGPT 页面结构变化后的兼容性
+- Google OAuth 授权体验
+- Google Drive 多设备同步边界
 
-同步流程设计为手动上传和手动下载 / 合并，不用于静默覆盖本地数据。
+## 开发命令
 
+```bash
+npm run build:chrome
+npm run dev:chrome
+npm run typecheck
+npm run test
+```
 
+常用构建输出：
 
-\## 开发说明
+```text
+dist_chrome
+```
 
+## 许可证
 
+本项目基于 GPL-3.0 许可证发布。详见 [LICENSE](./LICENSE)。
 
-\* Chrome 构建命令：`npx --yes bun@latest run build:chrome`。
+## 致谢
 
-\* 构建输出目录：`dist\_chrome`。
+ChatGPT以太基于 [Nagi-ovo/gemini-voyager](https://github.com/Nagi-ovo/gemini-voyager) 改造而来，并保留相应开源署名。
 
-\* 为兼容既有存储键、CSS 类名、消息名和同步数据，部分内部标识仍保留历史命名。
+时间轴定位思路也受到 [Reborn14/chatgpt-conversation-timeline](https://github.com/Reborn14/chatgpt-conversation-timeline) 启发。
 
-\* 文档清理不代表内部标识、仓库名或存储键已经完成重命名。
+更多说明见：
 
-
-
-\## 许可证与致谢
-
-
-
-本项目保留现有 GPL-3.0 许可证。详见 \[LICENSE](./LICENSE)。
-
-
-
-ChatGPT以太基于 / 改造自 \[Nagi-ovo/gemini-voyager](https://github.com/Nagi-ovo/gemini-voyager)。时间轴导航思路也受到 \[Reborn14/chatgpt-conversation-timeline](https://github.com/Reborn14/chatgpt-conversation-timeline) 启发。
-
-
-
-归属说明和兼容性说明见 \[CREDITS.md](./CREDITS.md) 与 \[NOTICE.md](./NOTICE.md)。
-
-
-
+- [CREDITS.zh-CN.md](./CREDITS.zh-CN.md)
+- [NOTICE.zh-CN.md](./NOTICE.zh-CN.md)

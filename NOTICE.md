@@ -1,11 +1,26 @@
 # Notice
 
-[中文版](./NOTICE.zh-CN.md)
+Language: **English** | [中文](./NOTICE.zh-CN.md)
 
 This project contains modified work based on Gemini Voyager by Nagi-ovo.
 
-User-facing branding has changed to ChatGPT Ether / ChatGPT以太.
+ChatGPT Ether is an independent adaptation for the ChatGPT web app. The current user-facing brand names are:
 
-These compatibility names should not be interpreted as current public branding.
+- Chinese: ChatGPT以太
+- English: ChatGPT Ether
 
-This notice is provided for attribution and compatibility clarity. It does not replace the project license. See [LICENSE](./LICENSE) for license terms.
+This project is not an official OpenAI product and is not an official Google product.
+
+## Upstream Attribution
+
+The original Gemini Voyager project is available at:
+
+[https://github.com/Nagi-ovo/gemini-voyager](https://github.com/Nagi-ovo/gemini-voyager)
+
+This project preserves attribution to the upstream project and does not claim upstream work as original.
+
+## License
+
+This notice explains project origin, branding, and attribution. It does not replace the project license.
+
+See [LICENSE](./LICENSE) for license terms.
