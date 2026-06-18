@@ -8,7 +8,14 @@ ChatGPT Ether is a Chrome extension for personal ChatGPT conversation management
 
 It is not a chatbot and does not replace ChatGPT. The goal is to add a lightweight personal workspace on top of the ChatGPT web app: manage prompts, organize conversations, star important messages, view the current conversation timeline, and optionally sync safe metadata to your own Google Drive.
 
-> This project is still in an early stage. It is recommended for personal use or small-scale testing.
+> Current version: `v1.0 beta`. This is a public beta release intended for personal workflow testing.
+
+## Quick Links
+
+- Website: <https://chatgpt-ether.shuspace.cn>
+- Privacy Policy: <https://chatgpt-ether.shuspace.cn/privacy.html>
+- Latest Download: <https://github.com/dowevip/chatgpt-ether/releases>
+- Source Repository: <https://github.com/dowevip/chatgpt-ether>
 
 ## Features
 
@@ -75,9 +82,21 @@ ChatGPT Ether intentionally keeps a narrow boundary:
 - Does not delete or hide ChatGPT native conversations
 - Does not pretend to be an official OpenAI product
 
-## Installation
+## Installation: Download the Release Package
 
-The current version is intended to be built from source and loaded as an unpacked extension.
+ChatGPT Ether is not currently published on the Chrome Web Store. The recommended installation method is to download the Chrome extension package from GitHub Releases and load it as an unpacked extension.
+
+1. Open the [Releases page](https://github.com/dowevip/chatgpt-ether/releases)
+2. Download the latest Chrome extension zip package
+3. Unzip the package
+4. Open `chrome://extensions/`
+5. Enable Developer mode
+6. Click "Load unpacked"
+7. Select the extracted extension folder
+
+## Build from Source
+
+If you prefer to build the extension yourself, use the steps below.
 
 ### 1. Clone the Repository
 
@@ -127,7 +146,9 @@ dist_chrome
 
 ## Update
 
-If you have already cloned the repository:
+If you installed from a Release package, download the newer package, unzip it, and reload the new folder in `chrome://extensions/`.
+
+If you built from source:
 
 ```bash
 git pull origin main
@@ -170,7 +191,10 @@ Extension data is stored locally by default. Only when you explicitly use Google
 
 The extension does not sell user data, does not upload full chat transcripts to third-party services, and does not read cookies or browsing history.
 
-See [PRIVACY.md](./PRIVACY.md) for details.
+See:
+
+- Online privacy policy: <https://chatgpt-ether.shuspace.cn/privacy.html>
+- Repository copy: [PRIVACY.md](./PRIVACY.md)
 
 ## Current Status
 
