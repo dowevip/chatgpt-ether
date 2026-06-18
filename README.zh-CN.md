@@ -2,6 +2,8 @@
 
 语言：[English](./README.md) | **中文**
 
+![ChatGPT以太：你的 ChatGPT 增强工作台](./docs/assets/readme-hero-zh.png)
+
 ChatGPT以太是一款面向个人使用的 Chrome 扩展，用来增强 ChatGPT 网页端的对话管理能力。
 
 它不是聊天机器人，也不替代 ChatGPT。本扩展的目标是给 ChatGPT 增加一层轻量的个人工作台：管理提示词、整理对话、收藏关键消息、查看当前对话时间轴，并在需要时把这些元数据同步到你自己的 Google Drive。

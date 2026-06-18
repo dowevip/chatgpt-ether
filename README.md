@@ -2,6 +2,8 @@
 
 Language: **English** | [中文](./README.zh-CN.md)
 
+![ChatGPT Ether: your ChatGPT workspace](./docs/assets/readme-hero-en.png)
+
 ChatGPT Ether is a Chrome extension for personal ChatGPT conversation management.
 
 It is not a chatbot and does not replace ChatGPT. The goal is to add a lightweight personal workspace on top of the ChatGPT web app: manage prompts, organize conversations, star important messages, view the current conversation timeline, and optionally sync safe metadata to your own Google Drive.

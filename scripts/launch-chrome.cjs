@@ -6,14 +6,14 @@ const os = require('os');
 const path = require('path');
 const { spawn } = require('child_process');
 
-const TARGET_URL = process.env.CHROME_OPEN_URL || 'https://gemini.google.com/';
+const TARGET_URL = process.env.CHROME_OPEN_URL || 'https://chatgpt.com/';
 const BUILD_TIMEOUT_MS = Number(process.env.CHROME_OPEN_BUILD_TIMEOUT_MS) || 120000; // ms
 const BUILD_POLL_INTERVAL_MS = Number(process.env.CHROME_OPEN_POLL_INTERVAL_MS) || 500; // ms
 
 const repoRoot = path.resolve(__dirname, '..');
 const distDir = path.join(repoRoot, 'dist_chrome');
 const manifestPath = path.join(distDir, 'manifest.json');
-const profileDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gemini-voyager-chrome-'));
+const profileDir = fs.mkdtempSync(path.join(os.tmpdir(), 'chatgpt-ether-chrome-'));
 
 let devProcess,
   chromeRunner,

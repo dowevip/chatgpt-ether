@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useState } from 'react';
 
 import type { SyncState } from '@/core/types/sync';
 import { DEFAULT_SYNC_STATE } from '@/core/types/sync';
-import { isSafari } from '@/core/utils/browser';
 import { ActionBar, ListView, PageSection, Panel } from '@/ui/components';
 import { uiTokens } from '@/ui/tokens';
 import { cn } from '@/lib/utils';
@@ -188,8 +187,6 @@ export function CloudSyncSettings({ onBack }: CloudSyncSettingsProps = {}) {
     },
     [syncState.isAuthenticated, t],
   );
-
-  if (isSafari()) return null;
 
   const isSyncingNow =
     isAuthorizing || isUploading || isDownloading || isRefreshing || syncState.isSyncing;
