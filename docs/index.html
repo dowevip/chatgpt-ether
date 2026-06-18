@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ChatGPT Ether / ChatGPT以太</title>
+  <meta name="description" content="ChatGPT Ether is a personal Chrome extension for ChatGPT conversation management." />
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #fbfaff;
+      --surface: #ffffff;
+      --surface-soft: #f7f6fc;
+      --text: #202332;
+      --muted: #667085;
+      --border: #e7e4f8;
+      --accent: #7c6ff6;
+      --accent-hover: #6e61e8;
+      --accent-soft: #f4f2ff;
+      --shadow: 0 20px 60px rgba(61, 54, 92, 0.12);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 80% 0%, rgba(124, 111, 246, 0.18), transparent 34%),
+        linear-gradient(180deg, #ffffff 0%, var(--bg) 58%, #ffffff 100%);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { color: var(--accent-hover); }
+
+    .wrap { width: min(1120px, calc(100% - 40px)); margin: 0 auto; }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 24px 0;
+    }
+
+    .brand { display: flex; gap: 12px; align-items: center; font-weight: 700; }
+    .logo {
+      width: 34px;
+      height: 34px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #a99bff, #5d4bea);
+      box-shadow: 0 12px 24px rgba(124, 111, 246, 0.25);
+    }
+
+    nav { display: flex; gap: 18px; align-items: center; color: var(--muted); font-size: 14px; }
+
+    .hero { padding: 42px 0 26px; }
+    .hero-card {
+      background: rgba(255, 255, 255, 0.78);
+      border: 1px solid var(--border);
+      border-radius: 28px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .hero-image { width: 100%; display: block; }
+
+    .hero-copy { padding: 34px; display: grid; gap: 20px; }
+    h1 { margin: 0; font-size: clamp(34px, 5vw, 64px); line-height: 1.05; letter-spacing: 0; color: #202332; }
+    .subtitle { margin: 0; max-width: 780px; color: var(--muted); font-size: 18px; }
+    .actions { display: flex; flex-wrap: wrap; gap: 12px; }
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 40px;
+      padding: 0 16px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      font-weight: 650;
+    }
+    .button.primary { background: var(--accent); color: white; border-color: var(--accent); }
+    .button:hover { background: var(--accent-soft); color: var(--text); }
+    .button.primary:hover { background: var(--accent-hover); color: white; }
+
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; padding: 28px 0; }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 20px;
+      box-shadow: 0 10px 30px rgba(61, 54, 92, 0.06);
+    }
+    .card h3 { margin: 0 0 8px; font-size: 17px; }
+    .card p { margin: 0; color: var(--muted); font-size: 14px; }
+
+    section { padding: 20px 0 34px; }
+    h2 { margin: 0 0 14px; font-size: 26px; }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+    ul { margin: 0; padding-left: 20px; color: var(--muted); }
+    li + li { margin-top: 6px; }
+
+    .notice {
+      border: 1px solid var(--border);
+      background: var(--accent-soft);
+      border-radius: 18px;
+      padding: 18px 20px;
+      color: #3d365c;
+    }
+
+    footer { padding: 34px 0 46px; color: var(--muted); font-size: 13px; }
+
+    @media (max-width: 860px) {
+      header { align-items: flex-start; gap: 16px; flex-direction: column; }
+      nav { flex-wrap: wrap; }
+      .grid, .two-col { grid-template-columns: 1fr; }
+      .hero-copy { padding: 24px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand"><span class="logo" aria-hidden="true"></span><span>ChatGPT Ether / ChatGPT以太</span></div>
+      <nav aria-label="Primary navigation">
+        <a href="#features">Features</a>
+        <a href="#privacy">Privacy</a>
+        <a href="./privacy.html">Privacy Policy</a>
+        <a href="https://github.com/dowevip/chatgpt-ether">GitHub</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="hero-card">
+          <img class="hero-image" src="./assets/readme-hero-en.png" alt="ChatGPT Ether, your ChatGPT workspace" />
+          <div class="hero-copy">
+            <h1>Your ChatGPT workspace.</h1>
+            <p class="subtitle">ChatGPT Ether is a personal Chrome extension for managing prompts, conversations, timelines, starred messages, and safe metadata sync around the ChatGPT web app.</p>
+            <div class="actions">
+              <a class="button primary" href="https://github.com/dowevip/chatgpt-ether">View on GitHub</a>
+              <a class="button" href="./privacy.html">Read Privacy Policy</a>
+              <a class="button" href="#zh">中文说明</a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="features">
+        <h2>Core Features</h2>
+        <div class="grid">
+          <article class="card"><h3>Prompt Vault</h3><p>Save, organize, search, tag, and insert reusable prompts.</p></article>
+          <article class="card"><h3>Conversation Manager</h3><p>Save ChatGPT conversations, organize them with folders, and add notes.</p></article>
+          <article class="card"><h3>Timeline & Search</h3><p>Browse the current conversation timeline and search within the open conversation.</p></article>
+          <article class="card"><h3>Starred Messages</h3><p>Mark important messages and jump back to their conversation context.</p></article>
+          <article class="card"><h3>Google Drive Sync</h3><p>Manually sync safe extension metadata to your own Google Drive appDataFolder.</p></article>
+          <article class="card"><h3>Diagnostics</h3><p>Inspect extension status without collecting or uploading diagnostics logs.</p></article>
+        </div>
+      </section>
+
+      <section id="privacy">
+        <h2>Privacy Boundaries</h2>
+        <div class="two-col">
+          <div class="card">
+            <h3>The extension does not</h3>
+            <ul>
+              <li>Read cookies or browsing history</li>
+              <li>Request all_urls permission</li>
+              <li>Call ChatGPT private APIs</li>
+              <li>Upload or sync full chat transcripts</li>
+              <li>Sell user data</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>Optional Google Drive sync</h3>
+            <ul>
+              <li>Uses Google Drive appDataFolder</li>
+              <li>Syncs prompts, folders, notes, settings, and starred-message metadata</li>
+              <li>Does not sync full ChatGPT conversation bodies</li>
+              <li>Runs only after user authorization and manual sync actions</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section id="zh">
+        <div class="notice">
+          <strong>中文说明：</strong>ChatGPT以太是一个面向个人使用的 ChatGPT 网页增强插件，用于管理提示词、对话、时间轴、收藏消息和安全的 Google Drive 手动同步。它不会读取 cookies、不会读取浏览历史、不会上传完整聊天正文。详细说明请查看 <a href="./privacy.html">隐私政策</a>。
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      ChatGPT Ether is not an official OpenAI product and is not affiliated with OpenAI or Google. The name "ChatGPT" is used only to describe the supported website and use case.
+    </footer>
+  </div>
+</body>
+</html>

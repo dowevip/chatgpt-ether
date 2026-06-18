@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Privacy Policy - ChatGPT Ether</title>
+  <meta name="description" content="Privacy policy for ChatGPT Ether." />
+  <style>
+    :root { --bg:#fbfaff; --surface:#fff; --text:#202332; --muted:#667085; --border:#e7e4f8; --accent:#7c6ff6; --accent-soft:#f4f2ff; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background:var(--bg); color:var(--text); line-height:1.65; }
+    a { color:var(--accent); text-decoration:none; }
+    .wrap { width:min(900px, calc(100% - 40px)); margin:0 auto; padding:32px 0 56px; }
+    header { display:flex; justify-content:space-between; gap:16px; align-items:center; padding:0 0 24px; }
+    .brand { font-weight:750; }
+    nav { display:flex; gap:16px; flex-wrap:wrap; color:var(--muted); font-size:14px; }
+    main { background:var(--surface); border:1px solid var(--border); border-radius:24px; padding:34px; box-shadow:0 20px 60px rgba(61,54,92,.1); }
+    h1 { margin:0 0 8px; font-size:38px; line-height:1.1; }
+    h2 { margin:30px 0 10px; font-size:22px; }
+    p, li { color:var(--muted); }
+    ul { padding-left:22px; }
+    .summary { background:var(--accent-soft); border:1px solid var(--border); border-radius:16px; padding:16px 18px; color:#3d365c; }
+    .lang { color:var(--muted); margin:0 0 22px; }
+    footer { color:var(--muted); font-size:13px; padding:22px 0 0; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand">ChatGPT Ether / ChatGPT以太</div>
+      <nav><a href="./">Home</a><a href="https://github.com/dowevip/chatgpt-ether">GitHub</a></nav>
+    </header>
+
+    <main>
+      <h1>Privacy Policy</h1>
+      <p class="lang">Language: <strong>English</strong> | <a href="#zh">中文</a></p>
+      <p class="summary">ChatGPT Ether is designed to handle only the minimum data required for its features. It does not read cookies, does not read browsing history, does not request all_urls, and does not upload or sync full ChatGPT conversation transcripts.</p>
+
+      <h2>What the extension reads</h2>
+      <p>When you open a <code>https://chatgpt.com/*</code> page, the extension reads page structure and message nodes related to its features. This is used to build the current conversation timeline, search within the current conversation, locate messages, star important messages, save conversation metadata, insert prompts, and show diagnostics.</p>
+
+      <h2>Locally stored data</h2>
+      <ul>
+        <li>Prompt Vault data</li>
+        <li>Folder structure</li>
+        <li>Saved conversation index and notes</li>
+        <li>Starred-message metadata and short snippets</li>
+        <li>Extension settings</li>
+        <li>Timeline and floating panel state</li>
+        <li>Google Drive sync state</li>
+      </ul>
+
+      <h2>Data not stored or uploaded</h2>
+      <ul>
+        <li>Full ChatGPT chat transcripts</li>
+        <li>Full assistant replies</li>
+        <li>Attachments, images, screenshots, or Canvas content</li>
+        <li>Large raw conversation JSON</li>
+        <li>Browsing history or cookies</li>
+      </ul>
+
+      <h2>Google Drive sync</h2>
+      <p>Google Drive sync is optional and manual. The extension uses the Google Drive API only after you explicitly authorize it and click a sync action. Sync data is stored in your own Google Drive <code>appDataFolder</code>.</p>
+      <p>Allowed sync data includes prompts, folder structure, conversation index, notes, starred-message metadata, settings, and necessary time metadata. Full chat transcripts and full assistant replies are not synced.</p>
+
+      <h2>Third-party services</h2>
+      <p>ChatGPT Ether does not send your data to third-party search APIs, analytics services, or advertising services. If you use Google Drive sync, the allowed sync data is sent to Google Drive after your explicit authorization.</p>
+
+      <h2>Diagnostics</h2>
+      <p>The diagnostics panel displays extension runtime state such as page recognition, conversation ID, message counts, timeline state, starred-message count, sync status, and extension version. Diagnostics are not uploaded automatically.</p>
+
+      <h2 id="zh">中文隐私说明</h2>
+      <p class="summary">ChatGPT以太的设计原则是尽量只处理功能所需的最少数据。它不会读取 cookies，不会读取浏览历史，不申请 all_urls，不上传或同步完整 ChatGPT 聊天正文。</p>
+      <p>当你打开 <code>https://chatgpt.com/*</code> 页面时，扩展会读取当前页面中与功能相关的页面结构和消息节点，用于生成时间轴、当前对话搜索、消息定位、收藏消息、保存对话索引、插入提示词和显示诊断信息。</p>
+      <p>扩展会在浏览器本地保存提示词库、文件夹结构、对话索引、对话备注、收藏消息元数据、插件设置、时间轴状态、浮动面板位置和 Google Drive 同步状态。收藏消息只保存必要元数据和短摘要，不保存完整消息正文。</p>
+      <p>Google Drive 同步是可选的手动功能。只有当你主动授权并点击同步按钮时，扩展才会使用 Google Drive API。同步数据存储在你自己的 Google Drive <code>appDataFolder</code> 中，不同步完整聊天正文、助手完整回复、图片、附件、截图或 Canvas 内容。</p>
+    </main>
+
+    <footer>Last updated: 2026-06-18. ChatGPT Ether is not an official OpenAI product and is not affiliated with OpenAI or Google.</footer>
+  </div>
+</body>
+</html>
