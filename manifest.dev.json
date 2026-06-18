@@ -57,5 +57,6 @@
     "service_worker": "src/pages/background/index.ts",
     "type": "module"
   },
-  "version": "0.1.0"
+  "version": "1.0.0",
+  "version_name": "v1.0 beta"
 }

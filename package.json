@@ -1,9 +1,9 @@
 {
   "name": "chatgpt-ether",
-  "version": "0.1.0",
+  "version": "1.0.0-beta",
   "description": "Personal ChatGPT conversation manager",
   "license": "GPL-3.0",
-  "author": "Jesse Zhang",
+  "author": "Dowe Hsiao",
   "repository": {
     "type": "git",
     "url": "https://github.com/dowevip/chatgpt-ether.git"

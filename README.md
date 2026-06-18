@@ -174,7 +174,7 @@ See [PRIVACY.md](./PRIVACY.md) for details.
 
 ## Current Status
 
-The current version is `0.1.0`, suitable for personal use and small-scale testing.
+The current version is `v1.0 beta`, suitable for personal use and small-scale testing.
 
 Core capabilities currently include:
 
