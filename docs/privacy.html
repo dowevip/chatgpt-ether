@@ -21,6 +21,7 @@
     ul { padding-left:22px; }
     .summary { background:var(--accent-soft); border:1px solid var(--border); border-radius:16px; padding:16px 18px; color:#3d365c; }
     .lang { color:var(--muted); margin:0 0 22px; }
+    .zh-note { border-top:1px solid var(--border); margin-top:34px; padding-top:4px; }
     footer { color:var(--muted); font-size:13px; padding:22px 0 0; }
   </style>
 </head>
@@ -69,11 +70,42 @@
       <h2>Diagnostics</h2>
       <p>The diagnostics panel displays extension runtime state such as page recognition, conversation ID, message counts, timeline state, starred-message count, sync status, and extension version. Diagnostics are not uploaded automatically.</p>
 
-      <h2 id="zh">中文隐私说明</h2>
-      <p class="summary">ChatGPT以太的设计原则是尽量只处理功能所需的最少数据。它不会读取 cookies，不会读取浏览历史，不申请 all_urls，不上传或同步完整 ChatGPT 聊天正文。</p>
-      <p>当你打开 <code>https://chatgpt.com/*</code> 页面时，扩展会读取当前页面中与功能相关的页面结构和消息节点，用于生成时间轴、当前对话搜索、消息定位、收藏消息、保存对话索引、插入提示词和显示诊断信息。</p>
-      <p>扩展会在浏览器本地保存提示词库、文件夹结构、对话索引、对话备注、收藏消息元数据、插件设置、时间轴状态、浮动面板位置和 Google Drive 同步状态。收藏消息只保存必要元数据和短摘要，不保存完整消息正文。</p>
-      <p>Google Drive 同步是可选的手动功能。只有当你主动授权并点击同步按钮时，扩展才会使用 Google Drive API。同步数据存储在你自己的 Google Drive <code>appDataFolder</code> 中，不同步完整聊天正文、助手完整回复、图片、附件、截图或 Canvas 内容。</p>
+      <div class="zh-note" id="zh">
+        <h2>中文隐私说明</h2>
+        <p class="summary">ChatGPT以太的核心原则是：只处理功能必需的数据，并尽量把数据留在你的浏览器和你自己的 Google Drive 里。扩展不会读取 cookies，不会读取浏览历史，不申请 all_urls，也不会上传或同步完整 ChatGPT 聊天正文。</p>
+
+        <h2>扩展会读取什么</h2>
+        <p>当你打开 <code>https://chatgpt.com/*</code> 页面时，扩展会读取当前页面中与功能相关的页面结构和消息节点。这些信息只用于生成当前对话时间轴、当前对话搜索、消息定位、收藏消息、保存对话索引、插入提示词和显示诊断信息。</p>
+
+        <h2>本地会保存什么</h2>
+        <ul>
+          <li>提示词库、标签和收藏状态</li>
+          <li>文件夹结构、已保存的对话索引和你的对话备注</li>
+          <li>收藏消息的元数据和短摘要</li>
+          <li>插件设置、时间轴显示状态、浮动面板位置</li>
+          <li>Google Drive 手动同步状态</li>
+        </ul>
+        <p>收藏消息只保存必要定位信息和短摘要，不保存完整消息正文。</p>
+
+        <h2>不会保存或上传什么</h2>
+        <ul>
+          <li>完整 ChatGPT 聊天正文</li>
+          <li>完整助手回复</li>
+          <li>附件、图片、截图或 Canvas 内容</li>
+          <li>大型原始 conversation JSON</li>
+          <li>cookies 或浏览历史</li>
+        </ul>
+
+        <h2>Google Drive 同步</h2>
+        <p>Google Drive 同步是可选的手动功能。只有当你主动授权并点击同步按钮时，扩展才会使用 Google Drive API。同步数据存储在你自己的 Google Drive <code>appDataFolder</code> 中。</p>
+        <p>允许同步的数据包括提示词、文件夹结构、对话索引、备注、收藏消息元数据、插件设置和必要的时间元数据。完整聊天正文、完整助手回复、图片、附件、截图和 Canvas 内容不会被同步。</p>
+
+        <h2>第三方服务</h2>
+        <p>ChatGPT以太不会把你的数据发送给第三方搜索 API、统计分析服务或广告服务。如果你使用 Google Drive 同步，允许同步的数据会在你明确授权并手动操作后发送到 Google Drive。</p>
+
+        <h2>诊断信息</h2>
+        <p>诊断面板只显示扩展运行状态，例如页面识别、conversationId、消息数量、时间轴状态、收藏数量、同步状态和版本号。诊断信息不会自动上传。</p>
+      </div>
     </main>
 
     <footer>Last updated: 2026-06-18. ChatGPT Ether is not an official OpenAI product and is not affiliated with OpenAI or Google.</footer>
