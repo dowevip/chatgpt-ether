@@ -17,6 +17,14 @@ It is not a chatbot and does not replace ChatGPT. The goal is to add a lightweig
 - Latest Download: <https://github.com/dowevip/chatgpt-ether/releases>
 - Source Repository: <https://github.com/dowevip/chatgpt-ether>
 
+## Use Cases
+
+- You use ChatGPT often and want a local Prompt Vault or prompt manager
+- You want to organize important ChatGPT conversations beyond the native history list
+- You need timeline navigation, current-conversation search, and reliable message locating in long chats
+- You want to star important user messages or assistant replies and return to their context later
+- You want to sync prompts, conversation indexes, and starred-message metadata to your own Google Drive without syncing full chat transcripts
+
 ## Features
 
 ### Prompt Vault

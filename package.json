@@ -2,6 +2,19 @@
   "name": "chatgpt-ether",
   "version": "1.0.0-beta",
   "description": "Personal ChatGPT conversation manager",
+  "homepage": "https://chatgpt-ether.shuspace.cn",
+  "keywords": [
+    "chatgpt",
+    "chatgpt-extension",
+    "chrome-extension",
+    "prompt-manager",
+    "prompt-vault",
+    "conversation-manager",
+    "timeline",
+    "chatgpt-timeline",
+    "google-drive-sync",
+    "productivity"
+  ],
   "license": "GPL-3.0",
   "author": "Dowe Hsiao",
   "repository": {

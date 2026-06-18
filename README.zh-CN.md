@@ -17,6 +17,14 @@ ChatGPT以太是一款面向个人使用的 Chrome 扩展，用来增强 ChatGPT
 - 最新下载：<https://github.com/dowevip/chatgpt-ether/releases>
 - 源码仓库：<https://github.com/dowevip/chatgpt-ether>
 
+## 适合这些场景
+
+- 你经常使用 ChatGPT，需要一个本地提示词库或 Prompt Vault
+- 你想整理重要 ChatGPT 对话，而不是只依赖 ChatGPT 原生历史列表
+- 你希望在长对话里快速浏览时间轴、搜索当前对话并定位消息
+- 你想收藏关键回答或用户消息，之后快速回到对应上下文
+- 你希望把提示词、对话索引和收藏元数据同步到自己的 Google Drive，但不想同步完整聊天正文
+
 ## 主要功能
 
 ### 提示词库
