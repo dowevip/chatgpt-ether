@@ -16,7 +16,7 @@ const localize = true;
 
 export const baseManifest = {
   ...manifest,
-  version: pkg.version,
+  version: pkg.version.replace(/-.*$/, ''),
   ...(isDev ? devManifest : ({} as ManifestV3Export)),
   ...(localize
     ? {
