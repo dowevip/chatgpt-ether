@@ -141,10 +141,10 @@ export class GoogleDriveSyncService {
   }
 
   async signOut(): Promise<void> {
+    const token = this.accessToken;
     try {
-      if (this.accessToken) {
-        await this.removeCachedAuthToken(this.accessToken);
-        await fetch(`https://accounts.google.com/o/oauth2/revoke?token=${this.accessToken}`);
+      if (token) {
+        await fetch(`https://accounts.google.com/o/oauth2/revoke?token=${token}`);
       }
     } catch (error) {
       console.warn('[GoogleDriveSyncService] Sign out warning:', error);

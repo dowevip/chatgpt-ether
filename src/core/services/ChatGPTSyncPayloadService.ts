@@ -183,6 +183,10 @@ function sanitizeSettings(value: unknown): ChatGPTSyncSettings {
   };
 }
 
+function isPresent<T>(value: T | null | undefined): value is T {
+  return value != null;
+}
+
 function mergeById<T>(
   localItems: T[],
   incomingItems: T[],
@@ -262,10 +266,10 @@ function sanitizePayload(payload: ChatGPTSyncPayload): ChatGPTSyncPayload {
     exportedAt: payload.exportedAt,
     source: CHATGPT_SYNC_SOURCE,
     data: {
-      prompts: payload.data.prompts.map(sanitizePrompt).filter(Boolean),
-      folders: payload.data.folders.map(sanitizeFolder).filter(Boolean),
-      conversations: payload.data.conversations.map(sanitizeConversation).filter(Boolean),
-      starredMessages: payload.data.starredMessages.map(sanitizeStarredMessage).filter(Boolean),
+      prompts: payload.data.prompts.map(sanitizePrompt).filter(isPresent),
+      folders: payload.data.folders.map(sanitizeFolder).filter(isPresent),
+      conversations: payload.data.conversations.map(sanitizeConversation).filter(isPresent),
+      starredMessages: payload.data.starredMessages.map(sanitizeStarredMessage).filter(isPresent),
       settings: sanitizeSettings(payload.data.settings),
       timeMetadata: {},
     },
@@ -327,7 +331,7 @@ export async function importChatGPTSyncPayload(
   options: ChatGPTSyncImportOptions,
 ): Promise<ChatGPTSyncImportResult> {
   validateChatGPTSyncPayload(payload);
-  const sanitized = sanitizePayload(payload);
+  const sanitized = sanitizePayload(payload as ChatGPTSyncPayload);
   const mode = options.mode;
   const backupKey = mode === 'overwrite' ? await createLocalBackup() : undefined;
 

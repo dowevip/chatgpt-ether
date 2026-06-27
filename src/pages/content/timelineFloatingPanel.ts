@@ -1428,13 +1428,10 @@ async function handleNodeClick(node: ChatGPTTimelineNode): Promise<void> {
 export async function scrollChatGPTTimelineToMessage(
   request: string | ChatGPTTimelineLocateRequest,
 ): Promise<boolean> {
-  const target =
+  const target: ChatGPTTimelineLocateRequest =
     typeof request === 'string'
       ? { messageAnchor: request }
-      : {
-          ...request,
-          summary: request.snippet,
-        };
+      : request;
 
   if (!chatgptAdapter.isSupportedPage() || (!target.turnId && !target.messageAnchor)) return false;
   if (target.conversationId && target.conversationId !== chatgptAdapter.getConversationId()) {

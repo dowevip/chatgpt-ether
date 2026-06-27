@@ -32,8 +32,6 @@ function createChromeMock(): MockedChrome {
     removeCachedAuthToken: vi.fn((_details: { token: string }, callback?: () => void) => {
       callback?.();
     }),
-    launchWebAuthFlow: vi.fn(),
-    getRedirectURL: vi.fn(() => 'https://test-extension.chromiumapp.org/'),
   };
 
   return {
@@ -73,7 +71,7 @@ describe('GoogleDriveSyncService authentication', () => {
     vi.unstubAllGlobals();
   });
 
-  it('uses identity.getAuthToken non-interactive first, then interactive fallback', async () => {
+  it('uses chrome.identity.getAuthToken with the requested interactivity', async () => {
     const chromeMock = createChromeMock();
     (globalThis as { chrome: MockedChrome }).chrome = chromeMock;
 
@@ -94,29 +92,23 @@ describe('GoogleDriveSyncService authentication', () => {
     const ok = await service.authenticate(true);
 
     expect(ok).toBe(true);
-    expect(getAuthTokenMock).toHaveBeenCalledTimes(2);
-    expect(getAuthTokenMock).toHaveBeenNthCalledWith(
-      1,
-      { interactive: false },
-      expect.any(Function),
-    );
-    expect(getAuthTokenMock).toHaveBeenNthCalledWith(
-      2,
-      { interactive: true },
-      expect.any(Function),
-    );
+    expect(getAuthTokenMock).toHaveBeenCalledOnce();
+    expect(getAuthTokenMock).toHaveBeenCalledWith({ interactive: true }, expect.any(Function));
 
     const state = await service.getState();
     expect(state.isAuthenticated).toBe(true);
   });
 
-  it('persists identity tokens to local storage for worker restarts', async () => {
+  it('loads saved sync state and attempts silent native authentication on startup', async () => {
     const chromeMock = createChromeMock();
     (globalThis as { chrome: MockedChrome }).chrome = chromeMock;
 
-    // loadState() only calls getAuthToken when sync mode is not 'disabled'
     const localGetMock = chromeMock.storage.local.get as unknown as ReturnType<typeof vi.fn>;
-    localGetMock.mockResolvedValue({ gvSyncMode: 'auto' });
+    localGetMock.mockResolvedValue({
+      gvSyncMode: 'auto',
+      ceLastSyncTimeChatGPT: 111,
+      ceLastUploadTimeChatGPT: 222,
+    });
 
     const getAuthTokenMock = chromeMock.identity.getAuthToken as unknown as ReturnType<
       typeof vi.fn
@@ -129,18 +121,43 @@ describe('GoogleDriveSyncService authentication', () => {
 
     const GoogleDriveSyncService = await loadServiceClass();
     const service = new GoogleDriveSyncService();
-    await service.getState();
-
-    const saveLocalTokenMock = chromeMock.storage.local.set as unknown as ReturnType<typeof vi.fn>;
-    expect(saveLocalTokenMock).toHaveBeenCalledWith(
-      expect.objectContaining({ gvAccessToken: 'identity-token' }),
-    );
-
     const state = await service.getState();
+
+    expect(getAuthTokenMock).toHaveBeenCalledWith({ interactive: false }, expect.any(Function));
+    expect(state.mode).toBe('auto');
+    expect(state.lastSyncTimeChatGPT).toBe(111);
+    expect(state.lastUploadTimeChatGPT).toBe(222);
     expect(state.isAuthenticated).toBe(true);
   });
 
-  it('removes cached identity token during sign out', async () => {
+  it('reuses the in-memory token while it is still fresh', async () => {
+    const chromeMock = createChromeMock();
+    (globalThis as { chrome: MockedChrome }).chrome = chromeMock;
+
+    const getAuthTokenMock = chromeMock.identity.getAuthToken as unknown as ReturnType<
+      typeof vi.fn
+    >;
+    getAuthTokenMock.mockImplementation(
+      (_details: { interactive?: boolean }, callback: (token?: string) => void) => {
+        callback('cached-token');
+      },
+    );
+
+    const GoogleDriveSyncService = await loadServiceClass();
+    const service = new GoogleDriveSyncService();
+    await service.getState();
+    const callsAfterStartup = getAuthTokenMock.mock.calls.length;
+
+    const firstAuth = await service.authenticate(true);
+    const secondAuth = await service.authenticate(true);
+
+    expect(firstAuth).toBe(true);
+    expect(secondAuth).toBe(true);
+    expect(getAuthTokenMock).toHaveBeenCalledTimes(callsAfterStartup);
+    expect(getAuthTokenMock).toHaveBeenCalledWith({ interactive: false }, expect.any(Function));
+  });
+
+  it('removes the cached identity token and revokes it during sign out', async () => {
     const chromeMock = createChromeMock();
     (globalThis as { chrome: MockedChrome }).chrome = chromeMock;
 
@@ -162,21 +179,42 @@ describe('GoogleDriveSyncService authentication', () => {
 
     const removeCachedAuthTokenMock = chromeMock.identity
       .removeCachedAuthToken as unknown as ReturnType<typeof vi.fn>;
+    expect(removeCachedAuthTokenMock).toHaveBeenCalledOnce();
     expect(removeCachedAuthTokenMock).toHaveBeenCalledWith(
       { token: 'cached-token' },
       expect.any(Function),
     );
-
-    const removeLocalTokenMock = chromeMock.storage.local.remove as unknown as ReturnType<
-      typeof vi.fn
-    >;
-    expect(removeLocalTokenMock).toHaveBeenCalledWith(['gvAccessToken', 'gvTokenExpiry']);
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://accounts.google.com/o/oauth2/revoke?token=cached-token',
+    );
 
     const state = await service.getState();
     expect(state.isAuthenticated).toBe(false);
   });
 
-  it('reuses cached token before falling back to interactive web auth again', async () => {
+  it('returns false with a friendly error when native auth is unavailable', async () => {
+    const chromeMock = createChromeMock();
+    (globalThis as { chrome: MockedChrome }).chrome = {
+      ...chromeMock,
+      identity: {
+        ...chromeMock.identity,
+        getAuthToken: undefined,
+      },
+    } as unknown as MockedChrome;
+
+    const GoogleDriveSyncService = await loadServiceClass();
+    const service = new GoogleDriveSyncService();
+    await service.getState();
+
+    const ok = await service.authenticate(true);
+
+    expect(ok).toBe(false);
+    const state = await service.getState();
+    expect(state.isAuthenticated).toBe(false);
+    expect(state.error).toContain('Google 授权失败');
+  });
+
+  it('normalizes Chrome native auth connection failures', async () => {
     const chromeMock = createChromeMock();
     (globalThis as { chrome: MockedChrome }).chrome = chromeMock;
 
@@ -185,32 +223,9 @@ describe('GoogleDriveSyncService authentication', () => {
       typeof vi.fn
     >;
     getAuthTokenMock.mockImplementation(
-      (details: { interactive?: boolean }, callback: (token?: string) => void) => {
-        if (details.interactive) {
-          runtimeRef.lastError = { message: 'OAuth2 service failure' } as chrome.runtime.LastError;
-          callback(undefined);
-          runtimeRef.lastError = null;
-          return;
-        }
-
-        callback(undefined);
-      },
-    );
-
-    const launchWebAuthFlowMock = chromeMock.identity.launchWebAuthFlow as unknown as ReturnType<
-      typeof vi.fn
-    >;
-    launchWebAuthFlowMock.mockImplementationOnce(
-      (_details: { url: string; interactive: boolean }, callback: (response?: string) => void) => {
-        callback(
-          'https://test-extension.chromiumapp.org/#access_token=legacy-token&expires_in=3600',
-        );
-      },
-    );
-    launchWebAuthFlowMock.mockImplementation(
-      (_details: { url: string; interactive: boolean }, callback: (response?: string) => void) => {
+      (_details: { interactive?: boolean }, callback: (token?: string) => void) => {
         runtimeRef.lastError = {
-          message: 'The user did not approve access',
+          message: 'OAuth2 request failed: -100 Connection failed',
         } as chrome.runtime.LastError;
         callback(undefined);
         runtimeRef.lastError = null;
@@ -221,91 +236,11 @@ describe('GoogleDriveSyncService authentication', () => {
     const service = new GoogleDriveSyncService();
     await service.getState();
 
-    const firstAuth = await service.authenticate(true);
-    const secondAuth = await service.authenticate(true);
-
-    expect(firstAuth).toBe(true);
-    expect(secondAuth).toBe(true);
-    expect(launchWebAuthFlowMock).toHaveBeenCalledTimes(1);
-  });
-
-  it('falls back to launchWebAuthFlow when identity.getAuthToken is unavailable', async () => {
-    const chromeMock = createChromeMock();
-    const launchWebAuthFlowMock = chromeMock.identity.launchWebAuthFlow as unknown as ReturnType<
-      typeof vi.fn
-    >;
-    launchWebAuthFlowMock.mockImplementation(
-      (_details: { url: string; interactive: boolean }, callback: (response?: string) => void) => {
-        callback(
-          'https://test-extension.chromiumapp.org/#access_token=legacy-token&expires_in=3600',
-        );
-      },
-    );
-
-    const identityWithoutGetAuthToken = {
-      ...chromeMock.identity,
-      getAuthToken: undefined,
-    };
-
-    (globalThis as { chrome: MockedChrome }).chrome = {
-      ...chromeMock,
-      identity: identityWithoutGetAuthToken,
-    } as unknown as MockedChrome;
-
-    const GoogleDriveSyncService = await loadServiceClass();
-    const service = new GoogleDriveSyncService();
-    await service.getState();
-
     const ok = await service.authenticate(true);
 
-    expect(ok).toBe(true);
-    expect(launchWebAuthFlowMock).toHaveBeenCalledTimes(1);
-
-    const saveLocalTokenMock = chromeMock.storage.local.set as unknown as ReturnType<typeof vi.fn>;
-    expect(saveLocalTokenMock).toHaveBeenCalledWith(
-      expect.objectContaining({ gvAccessToken: 'legacy-token' }),
-    );
-  });
-
-  it('falls back to launchWebAuthFlow when identity.getAuthToken fails interactively', async () => {
-    const chromeMock = createChromeMock();
-    (globalThis as { chrome: MockedChrome }).chrome = chromeMock;
-
-    const getAuthTokenMock = chromeMock.identity.getAuthToken as unknown as ReturnType<
-      typeof vi.fn
-    >;
-    getAuthTokenMock.mockImplementation(
-      (details: { interactive?: boolean }, callback: (token?: string) => void) => {
-        if (details.interactive) {
-          (chromeMock.runtime as { lastError: chrome.runtime.LastError | null }).lastError = {
-            message: 'OAuth2 service failure',
-          } as chrome.runtime.LastError;
-          callback(undefined);
-          (chromeMock.runtime as { lastError: chrome.runtime.LastError | null }).lastError = null;
-          return;
-        }
-        callback(undefined);
-      },
-    );
-
-    const launchWebAuthFlowMock = chromeMock.identity.launchWebAuthFlow as unknown as ReturnType<
-      typeof vi.fn
-    >;
-    launchWebAuthFlowMock.mockImplementation(
-      (_details: { url: string; interactive: boolean }, callback: (response?: string) => void) => {
-        callback(
-          'https://test-extension.chromiumapp.org/#access_token=legacy-fallback-token&expires_in=3600',
-        );
-      },
-    );
-
-    const GoogleDriveSyncService = await loadServiceClass();
-    const service = new GoogleDriveSyncService();
-    await service.getState();
-
-    const ok = await service.authenticate(true);
-
-    expect(ok).toBe(true);
-    expect(launchWebAuthFlowMock).toHaveBeenCalledTimes(1);
+    expect(ok).toBe(false);
+    const state = await service.getState();
+    expect(state.isAuthenticated).toBe(false);
+    expect(state.error).toContain('Chrome 原生授权失败');
   });
 });

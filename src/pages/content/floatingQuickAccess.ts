@@ -814,6 +814,16 @@ function setPanelOpen(nextOpen: boolean, target: QuickPanelTarget = activePanel)
   }
 }
 
+function isInsideFloatingWorkspace(target: EventTarget | null): boolean {
+  if (!(target instanceof Node)) return false;
+  return Boolean(panelEl?.contains(target) || rootEl?.contains(target));
+}
+
+function handleOutsidePanelPointerDown(event: PointerEvent): void {
+  if (!panelOpen || isInsideFloatingWorkspace(event.target)) return;
+  setPanelOpen(false);
+}
+
 async function toggleTimelineVisibility(): Promise<void> {
   const nextVisible = !isChatGPTTimelineFloatingPanelVisible();
   await setChatGPTTimelineFloatingPanelVisible(nextVisible);
@@ -1514,6 +1524,7 @@ export function startChatGPTFloatingQuickAccess(): void {
   started = true;
   createRoot();
   setupDragging();
+  document.addEventListener('pointerdown', handleOutsidePanelPointerDown, true);
   window.addEventListener('resize', () => applyPosition());
   window.addEventListener('resize', () => applyPanelPosition());
   readPosition().then((savedPosition) => {

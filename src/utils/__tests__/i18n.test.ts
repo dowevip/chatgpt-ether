@@ -40,12 +40,12 @@ describe('getCurrentLanguage', () => {
     const localGet = browser.storage.local.get as unknown as ReturnType<typeof vi.fn>;
     const uiLang = browser.i18n.getUILanguage as unknown as ReturnType<typeof vi.fn>;
     syncGet.mockResolvedValue({});
-    localGet.mockResolvedValue({ language: 'es' });
+    localGet.mockResolvedValue({ language: 'zh-CN' });
     uiLang.mockReturnValue('en-US');
 
     const lang = await getCurrentLanguage();
 
-    expect(lang).toBe('es');
+    expect(lang).toBe('zh');
   });
 
   it('falls back to chrome storage when browser storage throws', async () => {
@@ -60,12 +60,12 @@ describe('getCurrentLanguage', () => {
       mockImplementation: (fn: (key: string, callback: (result: unknown) => void) => void) => void;
     };
     chromeStorageGet.mockImplementation((key: string, callback: (result: unknown) => void) => {
-      callback({ language: 'ja' });
+      callback({ language: 'zh-TW' });
     });
 
     const lang = await getCurrentLanguage();
 
-    expect(lang).toBe('ja');
+    expect(lang).toBe('zh');
   });
 
   it('falls back to browser UI language when no storage value exists', async () => {
@@ -78,6 +78,6 @@ describe('getCurrentLanguage', () => {
 
     const lang = await getCurrentLanguage();
 
-    expect(lang).toBe('fr');
+    expect(lang).toBe('en');
   });
 });

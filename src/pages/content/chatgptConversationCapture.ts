@@ -55,7 +55,7 @@ function toTimelineNodes(payload: CapturedPayload): ChatGPTTimelineNode[] {
     return left.order - right.order;
   });
 
-  const nextNodes = sorted.map((node, index) => ({
+  const nextNodes: ChatGPTTimelineNode[] = sorted.map((node, index) => ({
     index: index + 1,
     role: node.role,
     summary: node.summary,
@@ -66,7 +66,7 @@ function toTimelineNodes(payload: CapturedPayload): ChatGPTTimelineNode[] {
     parentId: node.parentId ?? null,
     createdAt: node.createdAt ?? null,
     fingerprint: node.fingerprint,
-    source: 'captured',
+    source: 'captured' as const,
   }));
   performanceLog('conversation 捕获入内存耗时', startedAt, {
     total: nextNodes.length,

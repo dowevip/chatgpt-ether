@@ -23,6 +23,9 @@ export type TurnId = Brand<string, 'TurnId'>;
 
 export const StorageKeys = {
   LANGUAGE: 'language',
+  FOLDER_DATA: 'folderData',
+  CHAT_WIDTH: 'chatWidth',
+  PROMPT_ITEMS: 'promptItems',
 } as const;
 
 export type StorageKey = (typeof StorageKeys)[keyof typeof StorageKeys];

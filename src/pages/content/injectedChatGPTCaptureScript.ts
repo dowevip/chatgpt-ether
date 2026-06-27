@@ -113,7 +113,7 @@ function nodeFromMessage(
   order: number,
 ): CapturedNode | null {
   const role = roleFromMessage(message);
-  if (shouldSkipMessage(message, role)) return null;
+  if (!role || shouldSkipMessage(message, role)) return null;
 
   const text =
     role === 'assistant' ? cleanAssistantText(textFromMessage(message)) : textFromMessage(message);
@@ -161,7 +161,7 @@ function extractFromMapping(data: Record<string, unknown>): CapturedNode[] {
     while (cursor && !seen.has(cursor)) {
       seen.add(cursor);
       orderedIds.push(cursor);
-      const rawNode = mapping[cursor];
+      const rawNode: unknown = mapping[cursor];
       cursor =
         rawNode && typeof rawNode === 'object'
           ? ((rawNode as Record<string, unknown>).parent as string | null) || null
@@ -345,7 +345,12 @@ const originalSend = OriginalXHR.prototype.send;
 
 OriginalXHR.prototype.open = function open(method: string, url: string | URL, ...rest: unknown[]) {
   this.__cgEtherUrl = String(url);
-  return originalOpen.call(this, method, url, ...(rest as [boolean?, string?, string?]));
+  const [async = true, username, password] = rest as [
+    boolean | undefined,
+    string | undefined,
+    string | undefined,
+  ];
+  return originalOpen.call(this, method, url, async, username, password);
 };
 
 OriginalXHR.prototype.send = function send(...args: unknown[]) {

@@ -23,7 +23,7 @@ function formatTime(timestamp: number): string {
 }
 
 function isSameConversation(url: string | undefined, conversationId: string): boolean {
-  return Boolean(url?.startsWith('https://chatgpt.com/')) && url?.includes(`/c/${conversationId}`);
+  return Boolean(url?.startsWith('https://chatgpt.com/')) && Boolean(url?.includes(`/c/${conversationId}`));
 }
 
 export function StarredPanel({ onBack }: StarredPanelProps) {

@@ -4,9 +4,9 @@ import { APP_LANGUAGES, isAppLanguage, normalizeLanguage } from '@/utils/languag
 import { extractMessageDictionary } from '@/utils/localeMessages';
 
 describe('normalizeLanguage', () => {
-  it('normalizes empty values to en', () => {
-    expect(normalizeLanguage(undefined)).toBe('en');
-    expect(normalizeLanguage(null)).toBe('en');
+  it('normalizes empty values to zh', () => {
+    expect(normalizeLanguage(undefined)).toBe('zh');
+    expect(normalizeLanguage(null)).toBe('zh');
   });
 
   it('normalizes common language codes', () => {
@@ -14,22 +14,20 @@ describe('normalizeLanguage', () => {
     expect(normalizeLanguage('en-US')).toBe('en');
     expect(normalizeLanguage('zh')).toBe('zh');
     expect(normalizeLanguage('zh-CN')).toBe('zh');
-    expect(normalizeLanguage('ja')).toBe('ja');
-    expect(normalizeLanguage('ja-JP')).toBe('ja');
-    expect(normalizeLanguage('ko')).toBe('ko');
-    expect(normalizeLanguage('ko-KR')).toBe('ko');
   });
 
-  it('normalizes traditional chinese variants', () => {
-    expect(normalizeLanguage('zh-TW')).toBe('zh_TW');
-    expect(normalizeLanguage('zh_TW')).toBe('zh_TW');
-    expect(normalizeLanguage('zh-HK')).toBe('zh_TW');
-    expect(normalizeLanguage('zh-Hant')).toBe('zh_TW');
+  it('normalizes chinese variants to zh', () => {
+    expect(normalizeLanguage('zh-TW')).toBe('zh');
+    expect(normalizeLanguage('zh_TW')).toBe('zh');
+    expect(normalizeLanguage('zh-HK')).toBe('zh');
+    expect(normalizeLanguage('zh-Hant')).toBe('zh');
   });
 
   it('falls back to en for unknown languages', () => {
     expect(normalizeLanguage('de-DE')).toBe('en');
     expect(normalizeLanguage('it-IT')).toBe('en');
+    expect(normalizeLanguage('ja-JP')).toBe('en');
+    expect(normalizeLanguage('ko-KR')).toBe('en');
   });
 });
 
